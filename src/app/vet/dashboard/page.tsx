@@ -11,7 +11,7 @@ import toast from 'react-hot-toast'
 import Link from 'next/link'
 import type { Appointment, VetProfile, Booking } from '@/lib/types'
 
-interface OpenRequest extends Appointment {
+interface OpenRequest extends Omit<Appointment, 'profiles'> {
   profiles: { full_name: string; phone: string | null }
   estimatedFee?: number
   travelFee?: number

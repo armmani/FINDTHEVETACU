@@ -60,7 +60,7 @@ export default function CancelModal({ booking, cancelledBy, ownerUserId, petName
     const name = petName || 'สัตว์เลี้ยง'
     if (isOwnerCancel) {
       // เจ้าของยกเลิก → แจ้งหมอ
-      notifyUser(booking.vet_id, `❌ <b>VetAcu — เจ้าของยกเลิกนัด</b>\n\nเจ้าของยกเลิกนัดสำหรับ <b>${name}</b>\nคุณได้รับเงินมัดจำ ${vetPayout.toLocaleString()} บาท (หลังหัก platform fee)`)
+      notifyUser(booking.vet_id, `❌ <b>VetAcu — เจ้าของยกเลิกนัด</b>\n\nเจ้าของยกเลิกนัดสำหรับ <b>${name}</b>\nคุณได้รับเงินมัดจำ ${vetPayout.toLocaleString()} บาท (หลังหัก Platform Fee)`)
     } else if (ownerUserId) {
       // หมอยกเลิก → แจ้งเจ้าของ
       notifyUser(ownerUserId, `❌ <b>VetAcu — หมอยกเลิกงาน</b>\n\nหมอยกเลิกนัดสำหรับ <b>${name}</b>\nเงินมัดจำ ${ownerRefund.toLocaleString()} บาท จะถูกคืนให้คุณ`)
@@ -93,7 +93,7 @@ export default function CancelModal({ booking, cancelledBy, ownerUserId, petName
                     <span>{booking.deposit_amount.toLocaleString()} บาท</span>
                   </div>
                   <div className="flex justify-between text-xs text-red-400">
-                    <span>หัก platform fee (5%)</span>
+                    <span>หัก Platform Fee (5%)</span>
                     <span>-{platformFee.toLocaleString()} บาท</span>
                   </div>
                   <div className="flex justify-between font-semibold border-t border-red-200 pt-1 mt-1">
@@ -115,7 +115,7 @@ export default function CancelModal({ booking, cancelledBy, ownerUserId, petName
                     <span>{ownerRefund.toLocaleString()} บาท</span>
                   </div>
                   <div className="flex justify-between text-xs text-amber-500">
-                    <span>Platform fee</span>
+                    <span>Platform Fee</span>
                     <span>0 บาท (ไม่หัก)</span>
                   </div>
                 </div>

@@ -4,10 +4,13 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Save, Send } from 'lucide-react'
 import toast from 'react-hot-toast'
+import PhotoUpload from '@/components/PhotoUpload'
 
 export default function OwnerSettingsPage() {
   const supabase = createClient()
+  const [userId, setUserId] = useState<string>('')
   const [chatId, setChatId] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
@@ -16,8 +19,10 @@ export default function OwnerSettingsPage() {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data } = await supabase.from('profiles').select('telegram_chat_id').eq('id', user.id).single()
+      setUserId(user.id)
+      const { data } = await supabase.from('profiles').select('telegram_chat_id, avatar_url').eq('id', user.id).single()
       setChatId((data as any)?.telegram_chat_id || '')
+      setAvatarUrl((data as any)?.avatar_url || null)
       setLoading(false)
     }
     load()
@@ -27,7 +32,10 @@ export default function OwnerSettingsPage() {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { error } = await supabase.from('profiles').update({ telegram_chat_id: chatId || null }).eq('id', user.id)
+    const { error } = await supabase.from('profiles').update({
+      telegram_chat_id: chatId || null,
+      avatar_url: avatarUrl || null,
+    }).eq('id', user.id)
     if (error) toast.error('บันทึกไม่สำเร็จ')
     else toast.success('บันทึกแล้ว!')
     setSaving(false)
@@ -50,9 +58,26 @@ export default function OwnerSettingsPage() {
   if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
 
   return (
-    <div className="max-w-lg mx-auto">
-      <h1 className="text-2xl font-bold mb-6">การแจ้งเตือน</h1>
+    <div className="max-w-lg mx-auto space-y-6">
+      <h1 className="text-2xl font-bold">การตั้งค่า</h1>
 
+      {/* รูปโปรไฟล์ */}
+      <div className="card flex flex-col items-center">
+        <h2 className="font-semibold text-gray-800 mb-4 self-start">รูปโปรไฟล์</h2>
+        {userId && (
+          <PhotoUpload
+            bucket="avatars"
+            currentUrl={avatarUrl}
+            userId={userId}
+            onUploaded={url => setAvatarUrl(url)}
+            size="lg"
+            shape="circle"
+            label="คลิกเพื่อเปลี่ยนรูป"
+          />
+        )}
+      </div>
+
+      {/* Telegram */}
       <div className="card space-y-5">
         <div className="flex items-center gap-3">
           <span className="text-3xl">✈️</span>
@@ -62,14 +87,13 @@ export default function OwnerSettingsPage() {
           </div>
         </div>
 
-        {/* วิธีหา Chat ID */}
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-700 space-y-2">
           <p className="font-semibold">วิธีหา Chat ID ของคุณ</p>
           <ol className="list-decimal list-inside space-y-1 text-blue-600">
             <li>เปิด Telegram แล้วค้นหา <strong>@VETACU_BOT</strong></li>
             <li>กด Start หรือพิมพ์ <code className="bg-blue-100 px-1 rounded">/start</code></li>
-            <li>ไปที่ <a href="https://t.me/userinfobot" target="_blank" rel="noopener noreferrer" className="underline font-medium">@userinfobot</a> แล้วกด Start</li>
-            <li>คัดลอก <strong>Id</strong> ที่ได้มาวางด้านล่าง</li>
+            <li>ไปที่ <strong>@userinfobot</strong> แล้วกด Start</li>
+            <li>คัดลอก <strong>ID</strong> ที่ได้มาวางด้านล่าง</li>
           </ol>
         </div>
 

@@ -9,6 +9,7 @@ import Link from 'next/link'
 import toast from 'react-hot-toast'
 import type { Pet } from '@/lib/types'
 import dynamic from 'next/dynamic'
+import PhotoUpload from '@/components/PhotoUpload'
 
 const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false })
 
@@ -35,7 +36,9 @@ export default function NewRequestPage() {
   const [locationAddress, setLocationAddress] = useState('')
   const [locationLat, setLocationLat] = useState<number | null>(null)
   const [locationLng, setLocationLng] = useState<number | null>(null)
+  const [petPhotoUrl, setPetPhotoUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string>('')
 
   useEffect(() => {
     loadMyPets()
@@ -73,6 +76,7 @@ export default function NewRequestPage() {
   const loadMyPets = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
+    setCurrentUserId(user.id)
     const { data } = await supabase.from('pets').select('*').eq('owner_id', user.id).order('name')
     setMyPets(data || [])
   }
@@ -133,6 +137,7 @@ export default function NewRequestPage() {
       location_lat: locationLat,
       location_lng: locationLng,
       location_address: locationAddress,
+      pet_photo_url: petPhotoUrl || null,
     })
 
     if (error) { toast.error('เกิดข้อผิดพลาด: ' + error.message); setLoading(false); return }
@@ -199,6 +204,19 @@ export default function NewRequestPage() {
           {/* ฟอร์มข้อมูลสัตว์ */}
           {selectedPetId === 'new' && (
             <div className="space-y-3">
+              {currentUserId && (
+                <div className="flex flex-col items-center py-2">
+                  <PhotoUpload
+                    bucket="pet-photos"
+                    currentUrl={petPhotoUrl}
+                    userId={currentUserId}
+                    onUploaded={url => setPetPhotoUrl(url)}
+                    size="md"
+                    shape="square"
+                    label="รูปสัตว์เลี้ยง (ไม่บังคับ)"
+                  />
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2">
                   <label className="label">ชื่อสัตว์เลี้ยง *</label>

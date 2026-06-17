@@ -50,7 +50,7 @@ export default function OwnerHistoryPage() {
         .in('appointment_id', aptIds)
 
       // ดึงชื่อหมอ
-      const vetIds = [...new Set((bookings || []).map(b => b.vet_id))]
+      const vetIds = Array.from(new Set((bookings || []).map(b => b.vet_id)))
       const { data: vetProfiles } = vetIds.length
         ? await supabase.from('profiles').select('id, full_name, phone').in('id', vetIds)
         : { data: [] }

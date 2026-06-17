@@ -1,4 +1,4 @@
-export type Role = 'owner' | 'vet'
+export type Role = 'owner' | 'vet' | 'admin'
 
 export type AppointmentStatus = 'open' | 'accepted' | 'completed' | 'cancelled'
 export type BookingStatus = 'pending_payment' | 'confirmed' | 'awaiting_confirmation' | 'completed' | 'cancelled'

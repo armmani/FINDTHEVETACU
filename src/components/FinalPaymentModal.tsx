@@ -22,7 +22,7 @@ export default function FinalPaymentModal({ booking, petName, onClose, onSuccess
 
   const remaining = booking.total_fee - booking.deposit_amount
   const platformFee = calcPlatformFee(booking.total_fee) // 5% ของ total
-  const vetPayout = booking.total_fee - platformFee       // หมอได้รับหลังหัก platform fee
+  const vetPayout = booking.total_fee - platformFee       // หมอได้รับหลังหัก Platform Fee
 
   const handlePay = async () => {
     setLoading(true)
@@ -47,7 +47,7 @@ export default function FinalPaymentModal({ booking, petName, onClose, onSuccess
       .eq('id', booking.appointment_id)
 
     // แจ้งเตือนหมอ
-    notifyUser(booking.vet_id, `🎉 <b>VetAcu — การรักษาเสร็จสมบูรณ์!</b>\n\nเจ้าของยืนยันและชำระเงินครบสำหรับ <b>${petName || 'สัตว์เลี้ยง'}</b>\nคุณจะได้รับ ${vetPayout.toLocaleString()} บาท (หลังหัก platform fee 5%)`)
+    notifyUser(booking.vet_id, `🎉 <b>VetAcu — การรักษาเสร็จสมบูรณ์!</b>\n\nเจ้าของยืนยันและชำระเงินครบสำหรับ <b>${petName || 'สัตว์เลี้ยง'}</b>\nคุณจะได้รับ ${vetPayout.toLocaleString()} บาท (หลังหัก Platform Fee 5%)`)
 
     setPaid(true)
     setLoading(false)
@@ -96,7 +96,7 @@ export default function FinalPaymentModal({ booking, petName, onClose, onSuccess
                   <span className="font-medium">{vetPayout.toLocaleString()} บาท</span>
                 </div>
                 <div className="flex justify-between text-blue-500">
-                  <span>Platform fee (5%)</span>
+                  <span>Platform Fee (5%)</span>
                   <span>{platformFee.toLocaleString()} บาท</span>
                 </div>
               </div>

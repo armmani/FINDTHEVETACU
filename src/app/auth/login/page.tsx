@@ -32,7 +32,8 @@ export default function LoginPage() {
       .eq('id', data.user.id)
       .single()
 
-    router.push(profile?.role === 'vet' ? '/vet/dashboard' : '/owner/dashboard')
+    const role = profile?.role
+    router.push(role === 'admin' ? '/admin/dashboard' : role === 'vet' ? '/vet/dashboard' : '/owner/dashboard')
     router.refresh()
   }
 

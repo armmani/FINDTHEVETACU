@@ -16,8 +16,9 @@ export default function MapPicker({ lat, lng, onMove, readonly = false }: MapPic
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
+    // ป้องกัน Leaflet init ซ้ำ (React StrictMode double-mount)
+    if ((containerRef.current as any)._leaflet_id) return
 
-    // โหลด Leaflet แบบ dynamic เพราะต้องการ window (ไม่รันฝั่ง server)
     import('leaflet').then(L => {
       // แก้ปัญหา icon หาย default ของ Leaflet ใน Next.js
       delete (L.Icon.Default.prototype as any)._getIconUrl

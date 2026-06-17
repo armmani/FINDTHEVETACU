@@ -76,7 +76,7 @@ export default function VetHistoryPage() {
         <div className="card text-center py-4">
           <Wallet className="w-6 h-6 text-red-400 mx-auto mb-2" />
           <p className="text-2xl font-bold text-gray-800">{totalPlatformFee.toLocaleString()} บาท</p>
-          <p className="text-xs text-gray-500 mt-0.5">Platform fee 5%</p>
+          <p className="text-xs text-gray-500 mt-0.5">Platform Fee 5%</p>
         </div>
         <div className="card text-center py-4 bg-primary-50 border border-primary-100">
           <Wallet className="w-6 h-6 text-primary-600 mx-auto mb-2" />
@@ -139,7 +139,7 @@ export default function VetHistoryPage() {
                     <div className="text-gray-500">ค่าบริการ {booking.total_fee.toLocaleString()} บาท</div>
                     {isCompleted && (
                       <>
-                        <div className="text-red-400 text-xs">Platform fee -{(booking.platform_fee || 0).toLocaleString()} บาท</div>
+                        <div className="text-red-400 text-xs">Platform Fee -{(booking.platform_fee || 0).toLocaleString()} บาท</div>
                         <div className="font-bold text-primary-700 text-base mt-0.5">
                           รับสุทธิ {(booking.vet_payout || 0).toLocaleString()} บาท
                         </div>
@@ -177,7 +177,7 @@ export default function VetHistoryPage() {
             <span>{cancelledByOwner.reduce((s, b) => s + b.deposit_amount, 0).toLocaleString()} บาท</span>
           </div>
           <div className="flex justify-between text-red-400">
-            <span>Platform fee รวม</span>
+            <span>Platform Fee รวม</span>
             <span>-{totalPlatformFee.toLocaleString()} บาท</span>
           </div>
           <div className="flex justify-between font-bold text-primary-700 text-base border-t pt-2 mt-1">
