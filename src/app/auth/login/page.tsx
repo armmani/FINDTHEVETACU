@@ -78,7 +78,13 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <div className="text-center mt-4">
+          <Link href="/auth/forgot-password" className="text-sm text-gray-400 hover:text-primary-600">
+            ลืมรหัสผ่าน?
+          </Link>
+        </div>
+
+        <p className="text-center text-sm text-gray-500 mt-3">
           ยังไม่มีบัญชี?{' '}
           <Link href="/auth/register" className="text-primary-600 font-medium hover:underline">
             สมัครสมาชิก
