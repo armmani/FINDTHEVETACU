@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { geocodeAddress } from '@/lib/distance'
-import { MapPin, ArrowLeft, PawPrint, Plus, Search } from 'lucide-react'
+import { MapPin, ArrowLeft, PawPrint, Plus, Search, Stethoscope } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import type { Pet } from '@/lib/types'
@@ -37,6 +37,8 @@ export default function NewRequestPage() {
   const [locationLat, setLocationLat] = useState<number | null>(null)
   const [locationLng, setLocationLng] = useState<number | null>(null)
   const [petPhotoUrl, setPetPhotoUrl] = useState<string | null>(null)
+  const [preferredVetId, setPreferredVetId] = useState<string>('')
+  const [availableVets, setAvailableVets] = useState<{ user_id: string; full_name: string; location_name: string | null }[]>([])
   const [loading, setLoading] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string>('')
 
@@ -77,8 +79,18 @@ export default function NewRequestPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     setCurrentUserId(user.id)
-    const { data } = await supabase.from('pets').select('*').eq('owner_id', user.id).order('name')
-    setMyPets(data || [])
+    const [{ data: pets }, { data: vets }] = await Promise.all([
+      supabase.from('pets').select('*').eq('owner_id', user.id).order('name'),
+      supabase.from('vet_profiles')
+        .select('user_id, location_name, profiles!inner(full_name)')
+        .eq('is_available', true),
+    ])
+    setMyPets(pets || [])
+    setAvailableVets((vets || []).map((v: any) => ({
+      user_id: v.user_id,
+      full_name: v.profiles?.full_name || '',
+      location_name: v.location_name,
+    })))
   }
 
   const countPastSessions = async (petId: string) => {
@@ -138,6 +150,7 @@ export default function NewRequestPage() {
       location_lng: locationLng,
       location_address: locationAddress,
       pet_photo_url: petPhotoUrl || null,
+      preferred_vet_id: preferredVetId || null,
     })
 
     if (error) { toast.error('เกิดข้อผิดพลาด: ' + error.message); setLoading(false); return }
@@ -293,6 +306,43 @@ export default function NewRequestPage() {
             <p className="text-sm text-gray-400">ครั้งที่ 1 (ครั้งแรก)</p>
           )}
         </div>
+
+        {/* เลือกหมอ */}
+        {availableVets.length > 0 && (
+          <div className="card">
+            <h2 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+              <Stethoscope className="w-4 h-4 text-primary-600" /> เลือกหมอ (ไม่บังคับ)
+            </h2>
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                type="button"
+                onClick={() => setPreferredVetId('')}
+                className={`p-3 rounded-xl border-2 text-left text-sm transition-colors ${
+                  preferredVetId === '' ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="font-medium">🔓 เปิดให้หมอทุกคนรับ</div>
+                <div className="text-gray-400 text-xs mt-0.5">หมอที่ว่างจะเห็นคำขอและรับงานได้</div>
+              </button>
+              {availableVets.map(vet => (
+                <button
+                  key={vet.user_id}
+                  type="button"
+                  onClick={() => setPreferredVetId(vet.user_id)}
+                  className={`p-3 rounded-xl border-2 text-left text-sm transition-colors ${
+                    preferredVetId === vet.user_id ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <div className="font-medium">{vet.full_name}</div>
+                  {vet.location_name && <div className="text-gray-400 text-xs mt-0.5">📍 {vet.location_name}</div>}
+                </button>
+              ))}
+            </div>
+            {preferredVetId && (
+              <p className="text-xs text-primary-600 mt-2">✓ คำขอจะส่งตรงถึงหมอคนนี้เท่านั้น</p>
+            )}
+          </div>
+        )}
 
         {/* อาการ */}
         <div className="card">

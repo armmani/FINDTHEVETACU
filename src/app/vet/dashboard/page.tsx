@@ -46,6 +46,7 @@ export default function VetDashboard() {
       supabase.from('appointments')
         .select('*, profiles:owner_id(full_name, phone)')
         .eq('status', 'open')
+        .or(`preferred_vet_id.is.null,preferred_vet_id.eq.${user.id}`)
         .order('preferred_datetime', { ascending: true }),
       supabase.from('bookings')
         .select('*, appointments(*, profiles:owner_id(full_name, phone))')
