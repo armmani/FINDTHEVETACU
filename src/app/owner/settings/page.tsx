@@ -2,13 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Save, Send } from 'lucide-react'
+import { Save, Send, User } from 'lucide-react'
 import toast from 'react-hot-toast'
 import PhotoUpload from '@/components/PhotoUpload'
 
 export default function OwnerSettingsPage() {
   const supabase = createClient()
   const [userId, setUserId] = useState<string>('')
+  const [fullName, setFullName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [lineId, setLineId] = useState('')
+  const [address, setAddress] = useState('')
   const [chatId, setChatId] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -20,9 +24,17 @@ export default function OwnerSettingsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       setUserId(user.id)
-      const { data } = await supabase.from('profiles').select('telegram_chat_id, avatar_url').eq('id', user.id).single()
-      setChatId((data as any)?.telegram_chat_id || '')
-      setAvatarUrl((data as any)?.avatar_url || null)
+      const { data } = await supabase.from('profiles')
+        .select('full_name, phone, line_id, address, telegram_chat_id, avatar_url')
+        .eq('id', user.id).single()
+      if (data) {
+        setFullName((data as any).full_name || '')
+        setPhone((data as any).phone || '')
+        setLineId((data as any).line_id || '')
+        setAddress((data as any).address || '')
+        setChatId((data as any).telegram_chat_id || '')
+        setAvatarUrl((data as any).avatar_url || null)
+      }
       setLoading(false)
     }
     load()
@@ -33,6 +45,10 @@ export default function OwnerSettingsPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const { error } = await supabase.from('profiles').update({
+      full_name: fullName,
+      phone: phone || null,
+      line_id: lineId || null,
+      address: address || null,
       telegram_chat_id: chatId || null,
       avatar_url: avatarUrl || null,
     }).eq('id', user.id)
@@ -77,6 +93,37 @@ export default function OwnerSettingsPage() {
         )}
       </div>
 
+      {/* ข้อมูลส่วนตัว */}
+      <div className="card space-y-4">
+        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+          <User className="w-4 h-4" /> ข้อมูลส่วนตัว
+        </h2>
+        <div>
+          <label className="label">ชื่อ-นามสกุล</label>
+          <input type="text" value={fullName} onChange={e => setFullName(e.target.value)}
+            className="input" placeholder="สมชาย ใจดี" />
+        </div>
+        <div>
+          <label className="label">เบอร์โทรศัพท์</label>
+          <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+            className="input" placeholder="08x-xxx-xxxx" />
+        </div>
+        <div>
+          <label className="label">Line ID</label>
+          <input type="text" value={lineId} onChange={e => setLineId(e.target.value)}
+            className="input" placeholder="@yourlineid" />
+        </div>
+        <div>
+          <label className="label">ที่อยู่</label>
+          <textarea value={address} onChange={e => setAddress(e.target.value)}
+            className="input resize-none" rows={2} placeholder="บ้านเลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด" />
+        </div>
+        <button onClick={handleSave} disabled={saving} className="btn-primary w-full flex items-center justify-center gap-2">
+          <Save className="w-4 h-4" />
+          {saving ? 'กำลังบันทึก...' : 'บันทึก'}
+        </button>
+      </div>
+
       {/* Telegram */}
       <div className="card space-y-5">
         <div className="flex items-center gap-3">
@@ -86,7 +133,6 @@ export default function OwnerSettingsPage() {
             <p className="text-sm text-gray-500">รับการแจ้งเตือนเมื่อหมอรับงาน ยืนยัน หรือยกเลิก</p>
           </div>
         </div>
-
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-700 space-y-2">
           <p className="font-semibold">วิธีหา Chat ID ของคุณ</p>
           <ol className="list-decimal list-inside space-y-1 text-blue-600">
@@ -96,18 +142,11 @@ export default function OwnerSettingsPage() {
             <li>คัดลอก <strong>ID</strong> ที่ได้มาวางด้านล่าง</li>
           </ol>
         </div>
-
         <div>
           <label className="label">Telegram Chat ID</label>
-          <input
-            type="text"
-            value={chatId}
-            onChange={e => setChatId(e.target.value)}
-            className="input"
-            placeholder="เช่น 123456789"
-          />
+          <input type="text" value={chatId} onChange={e => setChatId(e.target.value)}
+            className="input" placeholder="เช่น 123456789" />
         </div>
-
         <div className="flex gap-3">
           <button onClick={handleTest} disabled={testing} className="btn-secondary flex items-center gap-2 flex-1">
             <Send className="w-4 h-4" />
