@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { geocodeAddress, PLATFORM_ACUPUNCTURE_FEE, PLATFORM_RATE_LABEL } from '@/lib/distance'
 import toast from 'react-hot-toast'
-import { MapPin, Save, Info, Search, Send } from 'lucide-react'
+import { MapPin, Save, Info, Search, Send, ShieldCheck, ShieldX } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import PhotoUpload from '@/components/PhotoUpload'
 
@@ -54,6 +54,7 @@ export default function VetProfilePage() {
   const [locationLat, setLocationLat] = useState<number | null>(null)
   const [locationLng, setLocationLng] = useState<number | null>(null)
   const [isAvailable, setIsAvailable] = useState(true)
+  const [isVerified, setIsVerified] = useState(false)
 
   useEffect(() => { loadProfile() }, [])
 
@@ -76,6 +77,7 @@ export default function VetProfilePage() {
       setLocationLat(data.location_lat)
       setLocationLng(data.location_lng)
       setIsAvailable(data.is_available)
+      setIsVerified(data.is_verified || false)
     }
     setTelegramChatId((profile as any)?.telegram_chat_id || '')
     setAvatarUrl((profile as any)?.avatar_url || null)
@@ -146,15 +148,34 @@ export default function VetProfilePage() {
         <p className="text-gray-500 text-sm mt-0.5">กำหนดค่าบริการและที่ตั้งของคุณ</p>
       </div>
 
+      {/* สถานะการยืนยัน */}
+      <div className={`card mb-4 flex items-center gap-3 ${isVerified ? 'bg-green-50 border border-green-100' : 'bg-amber-50 border border-amber-100'}`}>
+        {isVerified
+          ? <ShieldCheck className="w-5 h-5 text-green-500 shrink-0" />
+          : <ShieldX className="w-5 h-5 text-amber-500 shrink-0" />
+        }
+        <div className="flex-1">
+          <p className={`font-semibold text-sm ${isVerified ? 'text-green-700' : 'text-amber-700'}`}>
+            {isVerified ? 'ยืนยันตัวตนแล้ว' : 'รอการยืนยันตัวตน'}
+          </p>
+          <p className={`text-xs mt-0.5 ${isVerified ? 'text-green-600' : 'text-amber-600'}`}>
+            {isVerified ? 'สามารถเปิดรับงานได้' : 'Admin กำลังตรวจสอบใบอนุญาต กรุณารอสักครู่'}
+          </p>
+        </div>
+      </div>
+
       {/* สถานะรับงาน */}
-      <div className="card mb-4 flex items-center justify-between">
+      <div className={`card mb-4 flex items-center justify-between ${!isVerified ? 'opacity-50' : ''}`}>
         <div>
           <p className="font-semibold">สถานะรับงาน</p>
-          <p className="text-xs text-gray-500 mt-0.5">{isAvailable ? '🟢 พร้อมรับงานอยู่' : '🔴 ปิดรับงานอยู่'}</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            {!isVerified ? '🔒 ต้องยืนยันตัวตนก่อน' : isAvailable ? '🟢 พร้อมรับงานอยู่' : '🔴 ปิดรับงานอยู่'}
+          </p>
         </div>
-        <button type="button" onClick={handleToggleAvailable}
-          className={`relative inline-flex w-12 h-6 rounded-full transition-colors focus:outline-none overflow-hidden shrink-0 ${isAvailable ? 'bg-primary-500' : 'bg-gray-300'}`}>
-          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isAvailable ? 'translate-x-6' : 'translate-x-0'}`} />
+        <button type="button"
+          onClick={isVerified ? handleToggleAvailable : () => toast.error('กรุณารอ Admin ยืนยันตัวตนก่อน')}
+          className={`relative inline-flex w-12 h-6 rounded-full transition-colors focus:outline-none overflow-hidden shrink-0 ${isAvailable && isVerified ? 'bg-primary-500' : 'bg-gray-300'}`}>
+          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isAvailable && isVerified ? 'translate-x-6' : 'translate-x-0'}`} />
         </button>
       </div>
 

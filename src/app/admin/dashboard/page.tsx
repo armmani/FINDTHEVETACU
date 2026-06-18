@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Users, Stethoscope, CalendarCheck, Banknote, TrendingUp, Clock, XCircle, CheckCircle } from 'lucide-react'
+import { Users, Stethoscope, CalendarCheck, Banknote, TrendingUp, Clock, XCircle, CheckCircle, ShieldCheck, ShieldX } from 'lucide-react'
 
 interface Stats {
   totalOwners: number
@@ -23,6 +23,7 @@ interface VetRow {
   graduation_year: string | null
   additional_education: string[]
   is_available: boolean
+  is_verified: boolean
   license_number: string | null
   full_name: string
   avatar_url: string | null
@@ -53,6 +54,14 @@ export default function AdminDashboard() {
   const [vets, setVets] = useState<VetRow[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
+  const [verifying, setVerifying] = useState<string | null>(null)
+
+  const handleVerify = async (vetId: string, currentVal: boolean) => {
+    setVerifying(vetId)
+    await supabase.from('vet_profiles').update({ is_verified: !currentVal }).eq('user_id', vetId)
+    setVets(prev => prev.map(v => v.user_id === vetId ? { ...v, is_verified: !currentVal } : v))
+    setVerifying(null)
+  }
 
   useEffect(() => { loadData() }, [])
 
@@ -71,15 +80,16 @@ export default function AdminDashboard() {
         vet_profile:profiles!bookings_vet_id_fkey(full_name)
       `).order('created_at', { ascending: false }),
       supabase.from('vet_profiles').select(`
-        user_id, university, graduation_year, additional_education, is_available, license_number,
+        user_id, university, graduation_year, additional_education, is_available, is_verified, license_number,
         profiles!inner(full_name, avatar_url)
-      `).order('is_available', { ascending: false }),
+      `).order('is_verified', { ascending: true }),
     ])
 
     const mappedVets = (vetData || []).map((v: any) => ({
       ...v,
       full_name: v.profiles?.full_name || '',
       avatar_url: v.profiles?.avatar_url || null,
+      is_verified: v.is_verified || false,
     }))
     setVets(mappedVets)
 
@@ -201,7 +211,8 @@ export default function AdminDashboard() {
           <div className="space-y-3">
             {vets.map(vet => (
               <div key={vet.user_id} className="card">
-                <div className="flex gap-4 items-start">
+                <div className="flex gap-4 items-start justify-between">
+                  <div className="flex gap-4 items-start flex-1 min-w-0">
                   {vet.avatar_url ? (
                     <img src={vet.avatar_url} alt={vet.full_name}
                       className="w-10 h-10 rounded-full object-cover shrink-0" />
@@ -216,10 +227,26 @@ export default function AdminDashboard() {
                       <span className={`text-xs px-2 py-0.5 rounded-full ${vet.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                         {vet.is_available ? 'รับงาน' : 'ปิดรับ'}
                       </span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${vet.is_verified ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                        {vet.is_verified ? <ShieldCheck className="w-3 h-3" /> : <ShieldX className="w-3 h-3" />}
+                        {vet.is_verified ? 'ยืนยันแล้ว' : 'รอยืนยัน'}
+                      </span>
                       {vet.license_number && (
                         <span className="text-xs text-gray-400">ใบอนุญาต: {vet.license_number}</span>
                       )}
                     </div>
+                  </div>
+                  <button
+                    onClick={() => handleVerify(vet.user_id, vet.is_verified)}
+                    disabled={verifying === vet.user_id}
+                    className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors shrink-0 ${
+                      vet.is_verified
+                        ? 'border-red-200 text-red-500 hover:bg-red-50'
+                        : 'border-blue-300 text-blue-600 hover:bg-blue-50'
+                    }`}
+                  >
+                    {verifying === vet.user_id ? '...' : vet.is_verified ? 'ยกเลิก' : '✓ ยืนยัน'}
+                  </button>
                     {(vet.university || vet.graduation_year) && (
                       <p className="text-sm text-gray-600 mt-0.5">
                         {vet.university || ''}
