@@ -9,6 +9,7 @@ import PhotoUpload from '@/components/PhotoUpload'
 export default function OwnerSettingsPage() {
   const supabase = createClient()
   const [userId, setUserId] = useState<string>('')
+  const [email, setEmail] = useState('')
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
   const [lineId, setLineId] = useState('')
@@ -24,6 +25,7 @@ export default function OwnerSettingsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       setUserId(user.id)
+      setEmail(user.email || '')
       const { data } = await supabase.from('profiles')
         .select('full_name, phone, line_id, address, telegram_chat_id, avatar_url')
         .eq('id', user.id).single()
@@ -98,6 +100,11 @@ export default function OwnerSettingsPage() {
         <h2 className="font-semibold text-gray-800 flex items-center gap-2">
           <User className="w-4 h-4" /> ข้อมูลส่วนตัว
         </h2>
+        <div>
+          <label className="label">อีเมล</label>
+          <input type="email" value={email} className="input bg-gray-50 text-gray-400 cursor-not-allowed" disabled />
+          <p className="text-xs text-gray-400 mt-0.5">ไม่สามารถเปลี่ยนอีเมลได้</p>
+        </div>
         <div>
           <label className="label">ชื่อ-นามสกุล</label>
           <input type="text" value={fullName} onChange={e => setFullName(e.target.value)}
