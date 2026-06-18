@@ -13,6 +13,7 @@ import type { Appointment, VetProfile, Booking } from '@/lib/types'
 
 interface OpenRequest extends Omit<Appointment, 'profiles'> {
   profiles: { full_name: string; phone: string | null }
+  preferred_vet_id?: string | null
   estimatedFee?: number
   travelFee?: number
   distanceKm?: number
