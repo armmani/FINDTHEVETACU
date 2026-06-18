@@ -244,17 +244,25 @@ export default function VetDashboard() {
                   </div>
                 )}
 
-                <button
-                  onClick={() => handleAccept(apt)}
-                  disabled={accepting === apt.id}
-                  className="btn-primary w-full flex items-center justify-center gap-2"
-                >
-                  {accepting === apt.id ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> กำลังรับงาน...</>
-                  ) : (
-                    'รับงานนี้'
+                <div className="flex gap-2">
+                  {apt.preferred_vet_id && (
+                    <Link href={`/vet/appointment/${apt.id}`}
+                      className="btn-secondary flex items-center gap-1.5 text-sm shrink-0">
+                      <MessageCircle className="w-4 h-4" /> แชท
+                    </Link>
                   )}
-                </button>
+                  <button
+                    onClick={() => handleAccept(apt)}
+                    disabled={accepting === apt.id}
+                    className="btn-primary flex-1 flex items-center justify-center gap-2"
+                  >
+                    {accepting === apt.id ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> กำลังรับงาน...</>
+                    ) : (
+                      'รับงานนี้'
+                    )}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

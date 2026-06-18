@@ -17,6 +17,7 @@ interface BookingWithVet extends Booking {
 
 interface AppointmentWithBooking extends Appointment {
   booking?: BookingWithVet
+  preferred_vet_id?: string | null
 }
 
 export default function OwnerDashboard() {
@@ -135,6 +136,16 @@ export default function OwnerDashboard() {
                         {apt.location_address}
                       </span>
                     </div>
+                    {/* แชทก่อน booking (เฉพาะเมื่อเลือกหมอ + ยัง open) */}
+                    {apt.status === 'open' && apt.preferred_vet_id && (
+                      <div className="mt-3">
+                        <Link href={`/owner/appointment/${apt.id}`}
+                          className="btn-secondary inline-flex items-center gap-2 text-sm">
+                          <MessageCircle className="w-4 h-4" />
+                          แชทกับหมอที่เลือก
+                        </Link>
+                      </div>
+                    )}
                   </div>
 
                   {needsPayment && (
