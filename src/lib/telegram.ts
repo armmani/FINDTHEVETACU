@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase'
 
-// ดึง telegram_chat_id ของ user แล้วส่งข้อความ (ถ้ามี)
 export async function notifyUser(userId: string, message: string) {
   const supabase = createClient()
   const { data } = await supabase
@@ -12,6 +11,16 @@ export async function notifyUser(userId: string, message: string) {
   const chatId = (data as any)?.telegram_chat_id
   if (!chatId) return
 
+  await fetch('/api/notify', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, message }),
+  })
+}
+
+export async function notifyAdmin(message: string) {
+  const chatId = process.env.NEXT_PUBLIC_ADMIN_TELEGRAM_CHAT_ID
+  if (!chatId) return
   await fetch('/api/notify', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

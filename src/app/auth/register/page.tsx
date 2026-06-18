@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase'
 import { Syringe, PawPrint, Stethoscope, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { Role } from '@/lib/types'
+import { notifyAdmin } from '@/lib/telegram'
 
 export default function RegisterPage() {
   return <Suspense><RegisterForm /></Suspense>
@@ -75,9 +76,10 @@ function RegisterForm() {
       await supabase.from('profiles').update({ phone }).eq('id', userId)
     }
 
-    // ถ้าเป็นหมอ สร้าง vet_profile เปล่าๆ
+    // ถ้าเป็นหมอ สร้าง vet_profile เปล่าๆ แล้วแจ้ง admin
     if (role === 'vet') {
       await supabase.from('vet_profiles').upsert({ user_id: userId })
+      notifyAdmin(`🩺 <b>VetAcu — หมอใหม่รอยืนยัน!</b>\n\n<b>${fullName}</b> สมัครเป็นสัตวแพทย์\nกรุณาตรวจสอบใบอนุญาตและยืนยันตัวตนใน Admin Dashboard`)
     }
 
     toast.success('ยืนยันอีเมลสำเร็จ!')
