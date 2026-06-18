@@ -2,14 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { GraduationCap, Star, MapPin } from 'lucide-react'
+import { Stethoscope, MapPin, ExternalLink, ShieldCheck } from 'lucide-react'
 
 interface VetInfo {
   user_id: string
   bio: string | null
   license_number: string | null
-  university: string | null
-  graduation_year: string | null
   additional_education: string[]
   is_available: boolean
   location_name: string | null
@@ -23,6 +21,8 @@ const EDU_LABELS: Record<string, string> = {
   resident: 'Resident',
 }
 
+const VERIFY_URL = 'http://209.15.98.88/index.php?option=com_content&view=article&id=183'
+
 export default function OwnerVetsPage() {
   const supabase = createClient()
   const [vets, setVets] = useState<VetInfo[]>([])
@@ -33,8 +33,7 @@ export default function OwnerVetsPage() {
       const { data } = await supabase
         .from('vet_profiles')
         .select(`
-          user_id, bio, license_number, university, graduation_year,
-          additional_education, is_available, location_name,
+          user_id, bio, license_number, additional_education, is_available, location_name,
           profiles!inner(full_name, avatar_url)
         `)
         .order('is_available', { ascending: false })
@@ -54,14 +53,31 @@ export default function OwnerVetsPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold">รายชื่อสัตวแพทย์</h1>
         <p className="text-gray-500 text-sm mt-0.5">สัตวแพทย์ที่ลงทะเบียนในระบบ VetAcu</p>
       </div>
 
+      {/* กล่องวิธีตรวจสอบใบอนุญาต */}
+      <div className="card bg-blue-50 border border-blue-100 mb-5 flex gap-3">
+        <ShieldCheck className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+        <div className="text-sm text-blue-700">
+          <p className="font-semibold mb-1">วิธีตรวจสอบใบอนุญาตประกอบวิชาชีพ</p>
+          <p className="text-blue-600 mb-2">พิมพ์ชื่อหรือนามสกุลของหมอที่เว็บสัตวแพทยสภา เพื่อยืนยันว่าเป็นสัตวแพทย์ที่ได้รับใบอนุญาตจริง</p>
+          <a
+            href={VERIFY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 font-medium underline hover:text-blue-900"
+          >
+            ไปที่เว็บสัตวแพทยสภา <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        </div>
+      </div>
+
       {vets.length === 0 ? (
         <div className="card text-center text-gray-400 py-12">
-          <GraduationCap className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <Stethoscope className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p>ยังไม่มีหมอลงทะเบียน</p>
         </div>
       ) : (
@@ -92,15 +108,19 @@ export default function OwnerVetsPage() {
                     </span>
                   </div>
 
-                  {/* การศึกษา */}
-                  {(vet.university || vet.graduation_year) && (
-                    <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
-                      <GraduationCap className="w-3.5 h-3.5 text-primary-500 shrink-0" />
-                      <span>
-                        {vet.university || ''}
-                        {vet.university && vet.graduation_year ? ' · ' : ''}
-                        {vet.graduation_year ? `รุ่น ${vet.graduation_year}` : ''}
-                      </span>
+                  {/* เลขใบอนุญาต */}
+                  {vet.license_number && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                      <span className="text-sm text-gray-600">ใบอนุญาต: <span className="font-medium">{vet.license_number}</span></span>
+                      <a
+                        href={VERIFY_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
+                      >
+                        ตรวจสอบ <ExternalLink className="w-3 h-3" />
+                      </a>
                     </div>
                   )}
 
