@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { geocodeAddress, PLATFORM_ACUPUNCTURE_FEE, PLATFORM_RATE_LABEL } from '@/lib/distance'
 import toast from 'react-hot-toast'
-import { MapPin, Save, Info, Search, Send, ShieldCheck, ShieldX } from 'lucide-react'
+import { MapPin, Save, Info, Search, Send, ShieldCheck, ShieldX, Lock } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import PhotoUpload from '@/components/PhotoUpload'
 
@@ -55,6 +55,9 @@ export default function VetProfilePage() {
   const [locationLng, setLocationLng] = useState<number | null>(null)
   const [isAvailable, setIsAvailable] = useState(true)
   const [isVerified, setIsVerified] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [changingPassword, setChangingPassword] = useState(false)
 
   useEffect(() => { loadProfile() }, [])
 
@@ -137,6 +140,16 @@ export default function VetProfilePage() {
     toast.success('บันทึกโปรไฟล์สำเร็จ!')
     router.push('/vet/dashboard')
     setSaving(false)
+  }
+
+  const handleChangePassword = async () => {
+    if (newPassword.length < 6) { toast.error('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'); return }
+    if (newPassword !== confirmPassword) { toast.error('รหัสผ่านไม่ตรงกัน'); return }
+    setChangingPassword(true)
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) toast.error('เปลี่ยนรหัสผ่านไม่สำเร็จ')
+    else { toast.success('เปลี่ยนรหัสผ่านแล้ว!'); setNewPassword(''); setConfirmPassword('') }
+    setChangingPassword(false)
   }
 
   if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
@@ -332,6 +345,28 @@ export default function VetProfilePage() {
           {saving ? 'กำลังบันทึก...' : 'บันทึกโปรไฟล์'}
         </button>
       </form>
+
+      {/* เปลี่ยนรหัสผ่าน */}
+      <div className="card space-y-4 mt-4">
+        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+          <Lock className="w-4 h-4" /> เปลี่ยนรหัสผ่าน
+        </h2>
+        <div>
+          <label className="label">รหัสผ่านใหม่</label>
+          <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
+            className="input" placeholder="อย่างน้อย 6 ตัวอักษร" />
+        </div>
+        <div>
+          <label className="label">ยืนยันรหัสผ่านใหม่</label>
+          <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+            className="input" placeholder="พิมพ์รหัสผ่านอีกครั้ง" />
+        </div>
+        <button onClick={handleChangePassword} disabled={changingPassword || !newPassword}
+          className="btn-primary w-full flex items-center justify-center gap-2">
+          <Lock className="w-4 h-4" />
+          {changingPassword ? 'กำลังเปลี่ยน...' : 'เปลี่ยนรหัสผ่าน'}
+        </button>
+      </div>
     </div>
   )
 }
