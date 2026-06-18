@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Syringe, LogOut, User, History, Bell, Stethoscope } from 'lucide-react'
+import { Syringe, LogOut, User, History, Bell, Stethoscope, Home } from 'lucide-react'
 import type { Profile } from '@/lib/types'
 
 interface NavbarProps {
@@ -33,6 +33,10 @@ export default function Navbar({ profile }: NavbarProps) {
         <div className="flex items-center gap-4">
           {profile.role === 'vet' && (
             <>
+              <Link href="/vet/dashboard" className="text-sm text-gray-600 hover:text-primary-600 flex items-center gap-1">
+                <Home className="w-4 h-4" />
+                <span className="hidden sm:block">หน้าหลัก</span>
+              </Link>
               <Link href="/vet/history" className="text-sm text-gray-600 hover:text-primary-600 flex items-center gap-1">
                 <History className="w-4 h-4" />
                 <span className="hidden sm:block">ประวัติ</span>
@@ -45,6 +49,10 @@ export default function Navbar({ profile }: NavbarProps) {
           )}
           {profile.role === 'owner' && (
             <>
+              <Link href="/owner/dashboard" className="text-sm text-gray-600 hover:text-primary-600 flex items-center gap-1">
+                <Home className="w-4 h-4" />
+                <span className="hidden sm:block">หน้าหลัก</span>
+              </Link>
               <Link href="/owner/vets" className="text-sm text-gray-600 hover:text-primary-600 flex items-center gap-1">
                 <Stethoscope className="w-4 h-4" />
                 <span className="hidden sm:block">หมอ</span>
