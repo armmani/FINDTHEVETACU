@@ -59,7 +59,9 @@ export default function Navbar({ profile }: NavbarProps) {
               </Link>
             </>
           )}
-          <span className="text-sm text-gray-500 hidden sm:block">{profile.full_name}</span>
+          {profile.full_name && !profile.full_name.includes('@') && (
+            <span className="text-sm text-gray-500 hidden sm:block">{profile.full_name}</span>
+          )}
           <button onClick={handleSignOut} className="text-gray-500 hover:text-red-500 transition-colors" title="ออกจากระบบ">
             <LogOut className="w-5 h-5" />
           </button>
