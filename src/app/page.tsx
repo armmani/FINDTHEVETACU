@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Syringe, Clock, MapPin, Shield } from 'lucide-react'
+import { Syringe, Clock, MapPin, Shield, Search } from 'lucide-react'
 
 export default function LandingPage() {
   return (
@@ -14,10 +14,10 @@ export default function LandingPage() {
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-4">VetAcu</h1>
           <p className="text-xl md:text-2xl text-primary-100 mb-2">
-            หมอฝังเข็มสัตว์ถึงบ้านคุณ
+            ค้นหาสัตวแพทย์ฝังเข็ม ใกล้บ้านคุณ
           </p>
           <p className="text-primary-200 mb-10 max-w-xl mx-auto">
-            เลือกเวลาที่สะดวก รอหมอว่างตอบรับ ชำระมัดจำหลังยืนยัน — ง่าย ปลอดภัย ไม่ต้องออกจากบ้าน
+            ดูตารางออกตรวจตามเขต/จังหวัด เลือกหมอที่ไว้ใจ — นัดออกตรวจถึงบ้าน หรือไปพบที่คลินิก ง่าย ปลอดภัย
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/auth/register?role=owner" className="bg-white text-primary-700 font-bold py-3 px-8 rounded-xl hover:bg-primary-50 transition-colors">
@@ -42,22 +42,22 @@ export default function LandingPage() {
         <div className="grid md:grid-cols-3 gap-8">
           {[
             {
-              icon: Clock,
+              icon: Search,
               step: '1',
-              title: 'เลือกเวลาที่ต้องการ',
-              desc: 'กรอกข้อมูลสัตว์เลี้ยง อาการ และเวลาที่ต้องการให้หมอมา',
+              title: 'ค้นหาหมอใกล้คุณ',
+              desc: 'ค้นหาสัตวแพทย์ฝังเข็มตามจังหวัดหรือเขต ดูโปรไฟล์และตารางออกตรวจของแต่ละหมอ',
+            },
+            {
+              icon: Clock,
+              step: '2',
+              title: 'นัดหมายตามสะดวก',
+              desc: 'เลือกหมอที่ชอบแล้วส่งคำขอนัด — ให้หมอมาถึงบ้าน หรือไปพบที่คลินิกตามตาราง',
             },
             {
               icon: Shield,
-              step: '2',
-              title: 'หมอตอบรับ',
-              desc: 'สัตวแพทย์ที่ว่างจะเห็นคำขอและเข้ามารับงาน พร้อมราคารวมค่าเดินทาง',
-            },
-            {
-              icon: MapPin,
               step: '3',
-              title: 'ชำระมัดจำ & นัดหมาย',
-              desc: 'ชำระมัดจำ 50% หลังหมอยืนยัน ส่วนที่เหลือชำระวันนัดหมาย',
+              title: 'ยืนยัน & ปลอดภัย',
+              desc: 'หมอทุกคนผ่านการตรวจสอบใบอนุญาต ชำระมัดจำหลังยืนยัน ส่วนที่เหลือชำระวันนัด',
             },
           ].map(({ icon: Icon, step, title, desc }) => (
             <div key={step} className="text-center">
@@ -76,7 +76,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-gray-200 py-8 text-center text-sm text-gray-500">
-        © 2025 VetAcu — บริการหาสัตวแพทย์ฝังเข็มออนไลน์
+        © 2026 VetAcu — แพลตฟอร์มค้นหาสัตวแพทย์ฝังเข็ม
       </footer>
     </main>
   )
