@@ -116,10 +116,10 @@ function RegisterForm() {
               <input
                 type="text"
                 value={otp}
-                onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 8))}
                 className="input text-center text-2xl tracking-widest font-bold"
-                placeholder="000000"
-                maxLength={6}
+                placeholder="00000000"
+                maxLength={8}
                 required
                 autoFocus
               />
