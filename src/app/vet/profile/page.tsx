@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { geocodeAddress, PLATFORM_ACUPUNCTURE_FEE, PLATFORM_RATE_LABEL } from '@/lib/distance'
 import toast from 'react-hot-toast'
 import { MapPin, Save, Info, Search, Send, ShieldCheck, ShieldX, Lock, Calendar, Plus, Trash2 } from 'lucide-react'
+import { getProvinces, getDistricts, getSubDistricts } from '@/lib/thaiAddress'
 import dynamic from 'next/dynamic'
 import PhotoUpload from '@/components/PhotoUpload'
 
@@ -447,21 +448,30 @@ export default function VetProfilePage() {
               <input type="text" value={newPlace} onChange={e => setNewPlace(e.target.value)}
                 className="input" placeholder="เช่น คลินิกสัตว์รักษ์, รพ.สัตว์จุฬา" />
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="space-y-2">
               <div>
-                <label className="label text-xs">แขวง/ตำบล</label>
-                <input type="text" value={newSubDistrict} onChange={e => setNewSubDistrict(e.target.value)}
-                  className="input text-sm" placeholder="แขวง/ตำบล" />
+                <label className="label text-xs">จังหวัด *</label>
+                <select value={newProvince} onChange={e => { setNewProvince(e.target.value); setNewDistrict(''); setNewSubDistrict('') }}
+                  className="input text-sm">
+                  <option value="">-- เลือกจังหวัด --</option>
+                  {getProvinces().map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
               </div>
               <div>
                 <label className="label text-xs">เขต/อำเภอ</label>
-                <input type="text" value={newDistrict} onChange={e => setNewDistrict(e.target.value)}
-                  className="input text-sm" placeholder="เขต/อำเภอ" />
+                <select value={newDistrict} onChange={e => { setNewDistrict(e.target.value); setNewSubDistrict('') }}
+                  className="input text-sm" disabled={!newProvince}>
+                  <option value="">-- เลือกเขต/อำเภอ --</option>
+                  {newProvince && getDistricts(newProvince).map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
               </div>
               <div>
-                <label className="label text-xs">จังหวัด *</label>
-                <input type="text" value={newProvince} onChange={e => setNewProvince(e.target.value)}
-                  className="input text-sm" placeholder="กรุงเทพฯ" />
+                <label className="label text-xs">แขวง/ตำบล</label>
+                <select value={newSubDistrict} onChange={e => setNewSubDistrict(e.target.value)}
+                  className="input text-sm" disabled={!newDistrict}>
+                  <option value="">-- เลือกแขวง/ตำบล --</option>
+                  {newDistrict && getSubDistricts(newProvince, newDistrict).map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
               </div>
             </div>
             <div>
