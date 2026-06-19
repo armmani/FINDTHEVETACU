@@ -1,0 +1,215 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase'
+import { ShieldCheck, ExternalLink, MapPin, Calendar, ArrowLeft, Stethoscope, Phone, Clock } from 'lucide-react'
+import Link from 'next/link'
+
+interface VetSchedule {
+  id: string
+  place_name: string
+  sub_district: string | null
+  district: string | null
+  province: string
+  days: number[]
+  start_time: string
+  end_time: string
+}
+
+interface VetDetail {
+  user_id: string
+  bio: string | null
+  license_number: string | null
+  additional_education: string[]
+  is_available: boolean
+  location_name: string | null
+  acupuncture_fee: number | null
+  travel_rate: number | null
+  full_name: string
+  avatar_url: string | null
+  phone: string | null
+  schedules: VetSchedule[]
+}
+
+const DAY_NAMES = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์']
+const DAY_LABELS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']
+
+const EDU_LABELS: Record<string, string> = {
+  internship: 'Internship (ฝึกอบรมพิเศษ)',
+  certificate: 'Certificate (ใบรับรองเฉพาะทาง)',
+  resident: 'Resident (ผู้เชี่ยวชาญ)',
+}
+
+const VERIFY_URL = 'http://209.15.98.88/index.php?option=com_content&view=article&id=183'
+
+export default function VetDetailPage() {
+  const { id } = useParams<{ id: string }>()
+  const router = useRouter()
+  const supabase = createClient()
+  const [vet, setVet] = useState<VetDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      const [{ data: vp }, { data: schedules }] = await Promise.all([
+        supabase
+          .from('vet_profiles')
+          .select(`
+            user_id, bio, license_number, additional_education,
+            is_available, location_name, acupuncture_fee, travel_rate,
+            profiles!inner(full_name, avatar_url, phone)
+          `)
+          .eq('user_id', id)
+          .single(),
+        supabase.from('vet_schedules').select('*').eq('vet_id', id).order('created_at'),
+      ])
+
+      if (!vp) { setLoading(false); return }
+      setVet({
+        ...(vp as any),
+        full_name: (vp as any).profiles?.full_name || '',
+        avatar_url: (vp as any).profiles?.avatar_url || null,
+        phone: (vp as any).profiles?.phone || null,
+        schedules: (schedules as VetSchedule[]) || [],
+      })
+      setLoading(false)
+    }
+    load()
+  }, [id])
+
+  if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
+  if (!vet) return <div className="text-center py-20 text-gray-400">ไม่พบข้อมูลหมอ</div>
+
+  return (
+    <div className="max-w-lg mx-auto space-y-4">
+      <div className="flex items-center gap-3 mb-2">
+        <button onClick={() => router.back()}
+          className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h1 className="text-xl font-bold">โปรไฟล์สัตวแพทย์</h1>
+      </div>
+
+      {/* รูปและชื่อ */}
+      <div className="card flex flex-col items-center text-center gap-3">
+        {vet.avatar_url ? (
+          <img src={vet.avatar_url} alt={vet.full_name}
+            className="w-24 h-24 rounded-full object-cover border-4 border-primary-100" />
+        ) : (
+          <div className="w-24 h-24 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 text-3xl font-bold">
+            {vet.full_name[0] || 'H'}
+          </div>
+        )}
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">{vet.full_name}</h2>
+          <span className={`inline-block text-sm px-3 py-0.5 rounded-full font-medium mt-1 ${
+            vet.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+          }`}>
+            {vet.is_available ? '🟢 รับงาน' : '🔴 ไม่ว่าง'}
+          </span>
+        </div>
+
+        {vet.additional_education?.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-1.5">
+            {vet.additional_education.map(k => (
+              <span key={k} className="text-xs bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-full">
+                {EDU_LABELS[k] || k}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ใบอนุญาต */}
+      {vet.license_number && (
+        <div className="card flex items-center gap-3">
+          <ShieldCheck className="w-5 h-5 text-green-500 shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm text-gray-500">เลขใบอนุญาต</p>
+            <p className="font-semibold">{vet.license_number}</p>
+          </div>
+          <a href={VERIFY_URL} target="_blank" rel="noopener noreferrer"
+            className="text-xs text-blue-500 hover:underline flex items-center gap-1 shrink-0">
+            ตรวจสอบ <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
+      )}
+
+      {/* bio */}
+      {vet.bio && (
+        <div className="card">
+          <p className="text-sm font-semibold text-gray-500 mb-1">เกี่ยวกับหมอ</p>
+          <p className="text-gray-700 text-sm leading-relaxed">{vet.bio}</p>
+        </div>
+      )}
+
+      {/* พื้นที่บริการ */}
+      {vet.location_name && (
+        <div className="card flex items-start gap-3">
+          <MapPin className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-gray-500">พื้นที่บริการ (ออกตรวจถึงบ้าน)</p>
+            <p className="text-gray-700">{vet.location_name}</p>
+          </div>
+        </div>
+      )}
+
+      {/* ค่าบริการ */}
+      <div className="card space-y-2">
+        <p className="text-sm font-semibold text-gray-500 mb-2">ค่าบริการ</p>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-600">ค่าฝังเข็ม</span>
+          <span className="font-medium">{(vet.acupuncture_fee || 1800).toLocaleString()} บาท</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-600">ค่าเดินทาง</span>
+          <span className="font-medium">{vet.travel_rate || 8} บาท/กม. (ไป-กลับ)</span>
+        </div>
+        <div className="text-xs text-gray-400 mt-1">* ค่าใช้จ่ายรวม Platform fee 5% คำนวณอัตโนมัติเมื่อนัดหมาย</div>
+      </div>
+
+      {/* ตารางออกตรวจ */}
+      {vet.schedules.length > 0 && (
+        <div className="card space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Calendar className="w-4 h-4 text-primary-500" />
+            <p className="font-semibold text-gray-800">ตารางออกตรวจ</p>
+          </div>
+          {vet.schedules.map(s => (
+            <div key={s.id} className="bg-gray-50 rounded-xl p-3">
+              <p className="font-medium text-sm text-gray-800">{s.place_name}</p>
+              <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+                <MapPin className="w-3 h-3 shrink-0" />
+                {[s.sub_district, s.district, s.province].filter(Boolean).join(' · ')}
+              </div>
+              <div className="flex items-center gap-3 mt-1.5">
+                <div className="flex flex-wrap gap-1">
+                  {s.days.map(d => (
+                    <span key={d} className="text-xs bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded">
+                      {DAY_LABELS[d]}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <Clock className="w-3 h-3" />
+                  {s.start_time.slice(0,5)}–{s.end_time.slice(0,5)} น.
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ปุ่มนัดหมาย */}
+      {vet.is_available && (
+        <Link
+          href={`/owner/request/new?vet=${vet.user_id}`}
+          className="btn-primary w-full flex items-center justify-center gap-2 py-3">
+          <Stethoscope className="w-5 h-5" />
+          นัดหมายกับหมอคนนี้
+        </Link>
+      )}
+    </div>
+  )
+}

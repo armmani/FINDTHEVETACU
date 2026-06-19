@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Stethoscope, MapPin, ExternalLink, ShieldCheck, Calendar, ChevronDown, ChevronUp } from 'lucide-react'
+import { Stethoscope, MapPin, ExternalLink, ShieldCheck, Search, ChevronRight } from 'lucide-react'
+import Link from 'next/link'
 
 interface VetSchedule {
   id: string
@@ -27,8 +28,6 @@ interface VetInfo {
   schedules: VetSchedule[]
 }
 
-const DAY_LABELS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']
-
 const EDU_LABELS: Record<string, string> = {
   internship: 'Internship',
   certificate: 'Certificate',
@@ -41,8 +40,8 @@ export default function OwnerVetsPage() {
   const supabase = createClient()
   const [vets, setVets] = useState<VetInfo[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchText, setSearchText] = useState('')
   const [provinceFilter, setProvinceFilter] = useState('')
-  const [expandedSchedule, setExpandedSchedule] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -76,9 +75,21 @@ export default function OwnerVetsPage() {
     vets.flatMap(v => v.schedules.map(s => s.province))
   )).sort()
 
-  const filtered = provinceFilter
-    ? vets.filter(v => v.schedules.some(s => s.province === provinceFilter))
-    : vets
+  const filtered = vets.filter(v => {
+    const search = searchText.toLowerCase().trim()
+    const matchSearch = !search ||
+      v.full_name.toLowerCase().includes(search) ||
+      v.location_name?.toLowerCase().includes(search) ||
+      v.schedules.some(s =>
+        s.province.toLowerCase().includes(search) ||
+        s.district?.toLowerCase().includes(search) ||
+        s.sub_district?.toLowerCase().includes(search) ||
+        s.place_name.toLowerCase().includes(search)
+      )
+    const matchProvince = !provinceFilter ||
+      v.schedules.some(s => s.province === provinceFilter)
+    return matchSearch && matchProvince
+  })
 
   if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
 
@@ -86,7 +97,7 @@ export default function OwnerVetsPage() {
     <div className="max-w-2xl mx-auto">
       <div className="mb-4">
         <h1 className="text-2xl font-bold">รายชื่อสัตวแพทย์</h1>
-        <p className="text-gray-500 text-sm mt-0.5">สัตวแพทย์ที่ลงทะเบียนในระบบ VetAcu</p>
+        <p className="text-gray-500 text-sm mt-0.5">สัตวแพทย์ฝังเข็มที่ลงทะเบียนในระบบ VetAcu</p>
       </div>
 
       {/* กล่องวิธีตรวจสอบใบอนุญาต */}
@@ -102,35 +113,54 @@ export default function OwnerVetsPage() {
         </div>
       </div>
 
-      {/* Filter จังหวัด */}
-      {allProvinces.length > 0 && (
-        <div className="mb-4 flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
-          <select value={provinceFilter} onChange={e => setProvinceFilter(e.target.value)}
-            className="input flex-1">
-            <option value="">ทุกจังหวัด</option>
-            {allProvinces.map(p => <option key={p} value={p}>{p}</option>)}
-          </select>
+      {/* ค้นหา */}
+      <div className="space-y-2 mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+            className="input pl-9"
+            placeholder="ค้นหาชื่อหมอ, คลินิก, เขต, จังหวัด..."
+          />
         </div>
-      )}
+        {allProvinces.length > 0 && (
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
+            <select value={provinceFilter} onChange={e => setProvinceFilter(e.target.value)}
+              className="input flex-1">
+              <option value="">ทุกจังหวัด</option>
+              {allProvinces.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
+          </div>
+        )}
+      </div>
 
       {filtered.length === 0 ? (
         <div className="card text-center text-gray-400 py-12">
           <Stethoscope className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p>{provinceFilter ? `ไม่มีหมอที่ออกตรวจในจังหวัด${provinceFilter}` : 'ยังไม่มีหมอลงทะเบียน'}</p>
+          <p>{searchText || provinceFilter ? 'ไม่พบหมอที่ตรงกับการค้นหา' : 'ยังไม่มีหมอลงทะเบียน'}</p>
+          {(searchText || provinceFilter) && (
+            <button onClick={() => { setSearchText(''); setProvinceFilter('') }}
+              className="text-primary-500 text-sm mt-2 hover:underline">
+              ล้างการค้นหา
+            </button>
+          )}
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {filtered.map(vet => (
-            <div key={vet.user_id} className="card">
-              <div className="flex gap-4">
+            <Link key={vet.user_id} href={`/owner/vets/${vet.user_id}`}
+              className="card block hover:shadow-md transition-shadow">
+              <div className="flex gap-4 items-center">
                 {/* รูป */}
                 <div className="shrink-0">
                   {vet.avatar_url ? (
                     <img src={vet.avatar_url} alt={vet.full_name}
-                      className="w-16 h-16 rounded-full object-cover border-2 border-gray-100" />
+                      className="w-14 h-14 rounded-full object-cover border-2 border-gray-100" />
                   ) : (
-                    <div className="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 text-xl font-bold">
+                    <div className="w-14 h-14 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 text-xl font-bold">
                       {vet.full_name[0] || 'H'}
                     </div>
                   )}
@@ -138,35 +168,44 @@ export default function OwnerVetsPage() {
 
                 {/* ข้อมูล */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2 flex-wrap">
-                    <h3 className="font-semibold text-gray-900">{vet.full_name}</h3>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
-                      vet.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                    }`}>
-                      {vet.is_available ? '🟢 รับงาน' : '🔴 ไม่ว่าง'}
-                    </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-semibold text-gray-900 truncate">{vet.full_name}</h3>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                        vet.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {vet.is_available ? '🟢 รับงาน' : '🔴 ไม่ว่าง'}
+                      </span>
+                      <ChevronRight className="w-4 h-4 text-gray-300" />
+                    </div>
                   </div>
 
                   {vet.license_number && (
-                    <div className="flex items-center gap-1.5 mt-1">
+                    <div className="flex items-center gap-1 mt-0.5">
                       <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0" />
-                      <span className="text-sm text-gray-600">ใบอนุญาต: <span className="font-medium">{vet.license_number}</span></span>
-                      <a href={VERIFY_URL} target="_blank" rel="noopener noreferrer"
-                        className="text-xs text-blue-500 hover:underline flex items-center gap-0.5">
-                        ตรวจสอบ <ExternalLink className="w-3 h-3" />
-                      </a>
+                      <span className="text-xs text-gray-500">ใบอนุญาต: {vet.license_number}</span>
                     </div>
                   )}
 
                   {vet.location_name && (
-                    <div className="flex items-center gap-1 text-sm text-gray-500 mt-0.5">
-                      <MapPin className="w-3.5 h-3.5 shrink-0" />
+                    <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
+                      <MapPin className="w-3 h-3 shrink-0" />
                       <span className="truncate">{vet.location_name}</span>
                     </div>
                   )}
 
+                  {vet.schedules.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {Array.from(new Set(vet.schedules.map(s => s.province))).map(p => (
+                        <span key={p} className="text-xs bg-primary-50 text-primary-600 px-2 py-0.5 rounded-full">
+                          {p}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   {vet.additional_education?.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
+                    <div className="flex flex-wrap gap-1 mt-1">
                       {vet.additional_education.map(k => (
                         <span key={k} className="text-xs bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-full">
                           {EDU_LABELS[k] || k}
@@ -174,45 +213,9 @@ export default function OwnerVetsPage() {
                       ))}
                     </div>
                   )}
-
-                  {vet.bio && (
-                    <p className="text-sm text-gray-500 mt-2 line-clamp-2">{vet.bio}</p>
-                  )}
                 </div>
               </div>
-
-              {/* ตารางออกตรวจ */}
-              {vet.schedules.length > 0 && (
-                <div className="mt-3 border-t border-gray-100 pt-3">
-                  <button
-                    onClick={() => setExpandedSchedule(expandedSchedule === vet.user_id ? null : vet.user_id)}
-                    className="flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700">
-                    <Calendar className="w-4 h-4" />
-                    ตารางออกตรวจ ({vet.schedules.length} สถานที่)
-                    {expandedSchedule === vet.user_id
-                      ? <ChevronUp className="w-3.5 h-3.5" />
-                      : <ChevronDown className="w-3.5 h-3.5" />}
-                  </button>
-
-                  {expandedSchedule === vet.user_id && (
-                    <div className="mt-2 space-y-2">
-                      {vet.schedules.map(s => (
-                        <div key={s.id} className="bg-gray-50 rounded-xl p-3">
-                          <p className="font-medium text-sm text-gray-800">{s.place_name}</p>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            <MapPin className="w-3 h-3 inline mr-0.5" />
-                            {[s.sub_district, s.district, s.province].filter(Boolean).join(' · ')}
-                          </p>
-                          <p className="text-xs text-primary-600 mt-1">
-                            {s.days.map(d => DAY_LABELS[d]).join(' · ')} · {s.start_time.slice(0,5)}–{s.end_time.slice(0,5)} น.
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+            </Link>
           ))}
         </div>
       )}

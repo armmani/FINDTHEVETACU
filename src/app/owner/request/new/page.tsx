@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase'
 import { geocodeAddress } from '@/lib/distance'
 import { MapPin, ArrowLeft, PawPrint, Plus, Search, Stethoscope } from 'lucide-react'
@@ -16,7 +17,12 @@ const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false }
 const PET_TYPES = ['สุนัข', 'แมว', 'กระต่าย', 'นก', 'สัตว์เลื้อยคลาน', 'อื่นๆ']
 
 export default function NewRequestPage() {
+  return <Suspense><NewRequestForm /></Suspense>
+}
+
+function NewRequestForm() {
   const router = useRouter()
+  const params = useSearchParams()
   const supabase = createClient()
   const [geocoding, setGeocoding] = useState(false)
 
@@ -37,7 +43,7 @@ export default function NewRequestPage() {
   const [locationLat, setLocationLat] = useState<number | null>(null)
   const [locationLng, setLocationLng] = useState<number | null>(null)
   const [petPhotoUrl, setPetPhotoUrl] = useState<string | null>(null)
-  const [preferredVetId, setPreferredVetId] = useState<string>('')
+  const [preferredVetId, setPreferredVetId] = useState<string>(params.get('vet') || '')
   const [availableVets, setAvailableVets] = useState<{ user_id: string; full_name: string; location_name: string | null }[]>([])
   const [loading, setLoading] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string>('')
