@@ -6,15 +6,19 @@ import { createClient } from '@/lib/supabase'
 import { ShieldCheck, ExternalLink, MapPin, Calendar, ArrowLeft, Stethoscope, Phone, Clock } from 'lucide-react'
 import Link from 'next/link'
 
+interface Slot {
+  day: number
+  start_time: string
+  end_time: string
+}
+
 interface VetSchedule {
   id: string
   place_name: string
   sub_district: string | null
   district: string | null
   province: string
-  days: number[]
-  start_time: string
-  end_time: string
+  slots: Slot[]
 }
 
 interface VetDetail {
@@ -33,7 +37,6 @@ interface VetDetail {
 }
 
 const DAY_NAMES = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์']
-const DAY_LABELS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']
 
 const EDU_LABELS: Record<string, string> = {
   internship: 'Internship (ฝึกอบรมพิเศษ)',
@@ -183,18 +186,16 @@ export default function VetDetailPage() {
                 <MapPin className="w-3 h-3 shrink-0" />
                 {[s.sub_district, s.district, s.province].filter(Boolean).join(' · ')}
               </div>
-              <div className="flex items-center gap-3 mt-1.5">
-                <div className="flex flex-wrap gap-1">
-                  {s.days.map(d => (
-                    <span key={d} className="text-xs bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded">
-                      {DAY_LABELS[d]}
+              <div className="mt-1.5 space-y-1">
+                {(s.slots || []).map((slot, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
+                    <span className="bg-primary-100 text-primary-700 px-2 py-0.5 rounded font-medium">
+                      {DAY_NAMES[slot.day]}
                     </span>
-                  ))}
-                </div>
-                <div className="flex items-center gap-1 text-xs text-gray-500">
-                  <Clock className="w-3 h-3" />
-                  {s.start_time.slice(0,5)}–{s.end_time.slice(0,5)} น.
-                </div>
+                    <Clock className="w-3 h-3 text-gray-400" />
+                    {slot.start_time.slice(0,5)}–{slot.end_time.slice(0,5)} น.
+                  </div>
+                ))}
               </div>
             </div>
           ))}

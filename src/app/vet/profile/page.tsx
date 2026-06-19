@@ -31,15 +31,19 @@ const UNIVERSITIES = [
 const DAY_LABELS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']
 const DAY_NAMES = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์']
 
+interface Slot {
+  day: number
+  start_time: string
+  end_time: string
+}
+
 interface VetSchedule {
   id: string
   place_name: string
   sub_district: string | null
   district: string | null
   province: string
-  days: number[]
-  start_time: string
-  end_time: string
+  slots: Slot[]
 }
 
 const ADDITIONAL_EDU_OPTIONS = [
@@ -80,9 +84,7 @@ export default function VetProfilePage() {
   const [newSubDistrict, setNewSubDistrict] = useState('')
   const [newDistrict, setNewDistrict] = useState('')
   const [newProvince, setNewProvince] = useState('')
-  const [newDays, setNewDays] = useState<number[]>([])
-  const [newStartTime, setNewStartTime] = useState('09:00')
-  const [newEndTime, setNewEndTime] = useState('17:00')
+  const [newSlots, setNewSlots] = useState<Slot[]>([{ day: 1, start_time: '09:00', end_time: '17:00' }])
 
   useEffect(() => { loadProfile() }, [])
 
@@ -122,24 +124,22 @@ export default function VetProfilePage() {
 
   const handleAddSchedule = async () => {
     if (!newPlace.trim() || !newProvince.trim()) { toast.error('กรุณากรอกชื่อสถานที่และจังหวัด'); return }
-    if (newDays.length === 0) { toast.error('กรุณาเลือกอย่างน้อย 1 วัน'); return }
+    if (newSlots.length === 0) { toast.error('กรุณาเพิ่มอย่างน้อย 1 วัน/เวลา'); return }
     setSavingSchedule(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const { data, error } = await supabase.from('vet_schedules').insert({
       vet_id: user.id,
       place_name: newPlace.trim(),
-      sub_district: newSubDistrict.trim() || null,
-      district: newDistrict.trim() || null,
-      province: newProvince.trim(),
-      days: newDays.sort(),
-      start_time: newStartTime,
-      end_time: newEndTime,
+      sub_district: newSubDistrict || null,
+      district: newDistrict || null,
+      province: newProvince,
+      slots: newSlots,
     }).select().single()
     if (error) { toast.error('บันทึกไม่สำเร็จ'); setSavingSchedule(false); return }
     setSchedules(prev => [...prev, data as VetSchedule])
     setNewPlace(''); setNewSubDistrict(''); setNewDistrict(''); setNewProvince('')
-    setNewDays([]); setNewStartTime('09:00'); setNewEndTime('17:00')
+    setNewSlots([{ day: 1, start_time: '09:00', end_time: '17:00' }])
     setShowAddSchedule(false)
     toast.success('เพิ่มสถานที่ออกตรวจแล้ว')
     setSavingSchedule(false)
@@ -151,8 +151,12 @@ export default function VetProfilePage() {
     toast.success('ลบแล้ว')
   }
 
-  const toggleDay = (d: number) => {
-    setNewDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d])
+  const updateSlot = (i: number, field: keyof Slot, value: string | number) => {
+    setNewSlots(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: value } : s))
+  }
+
+  const removeSlot = (i: number) => {
+    setNewSlots(prev => prev.filter((_, idx) => idx !== i))
   }
 
   const handleGeocode = async () => {
@@ -433,9 +437,13 @@ export default function VetProfilePage() {
                 <p className="text-sm text-gray-500 mt-0.5">
                   {[s.sub_district, s.district, s.province].filter(Boolean).join(' · ')}
                 </p>
-                <p className="text-sm text-primary-600 mt-1">
-                  {s.days.map(d => DAY_LABELS[d]).join(', ')} · {s.start_time.slice(0,5)}–{s.end_time.slice(0,5)} น.
-                </p>
+                <div className="mt-1 space-y-0.5">
+                  {(s.slots || []).map((slot, i) => (
+                    <p key={i} className="text-sm text-primary-600">
+                      {DAY_NAMES[slot.day]} · {slot.start_time.slice(0,5)}–{slot.end_time.slice(0,5)} น.
+                    </p>
+                  ))}
+                </div>
               </div>
             ))}
           </div>
@@ -475,29 +483,34 @@ export default function VetProfilePage() {
               </div>
             </div>
             <div>
-              <label className="label">วันที่ออกตรวจ</label>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {DAY_NAMES.map((name, i) => (
-                  <button key={i} type="button" onClick={() => toggleDay(i)}
-                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                      newDays.includes(i)
-                        ? 'bg-primary-500 text-white border-primary-500'
-                        : 'border-gray-200 text-gray-500 hover:border-primary-300'
-                    }`}>
-                    {name}
-                  </button>
+              <label className="label">วัน / เวลาออกตรวจ</label>
+              <div className="space-y-2 mt-1">
+                {newSlots.map((slot, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <select value={slot.day} onChange={e => updateSlot(i, 'day', Number(e.target.value))}
+                      className="input flex-1 text-sm">
+                      {DAY_NAMES.map((name, d) => <option key={d} value={d}>{name}</option>)}
+                    </select>
+                    <input type="time" value={slot.start_time}
+                      onChange={e => updateSlot(i, 'start_time', e.target.value)}
+                      className="input w-28 text-sm" />
+                    <span className="text-gray-400 shrink-0">–</span>
+                    <input type="time" value={slot.end_time}
+                      onChange={e => updateSlot(i, 'end_time', e.target.value)}
+                      className="input w-28 text-sm" />
+                    {newSlots.length > 1 && (
+                      <button type="button" onClick={() => removeSlot(i)}
+                        className="text-gray-300 hover:text-red-400 shrink-0">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 ))}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex-1">
-                <label className="label text-xs">เวลาเริ่ม</label>
-                <input type="time" value={newStartTime} onChange={e => setNewStartTime(e.target.value)} className="input" />
-              </div>
-              <span className="mt-5 text-gray-400">–</span>
-              <div className="flex-1">
-                <label className="label text-xs">เวลาสิ้นสุด</label>
-                <input type="time" value={newEndTime} onChange={e => setNewEndTime(e.target.value)} className="input" />
+                <button type="button"
+                  onClick={() => setNewSlots(prev => [...prev, { day: 1, start_time: '09:00', end_time: '17:00' }])}
+                  className="text-sm text-primary-600 hover:underline flex items-center gap-1 mt-1">
+                  <Plus className="w-3.5 h-3.5" /> เพิ่มวัน/เวลา
+                </button>
               </div>
             </div>
             <div className="flex gap-2">

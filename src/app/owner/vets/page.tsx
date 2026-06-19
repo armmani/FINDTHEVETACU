@@ -5,15 +5,19 @@ import { createClient } from '@/lib/supabase'
 import { Stethoscope, MapPin, ExternalLink, ShieldCheck, Search, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
+interface Slot {
+  day: number
+  start_time: string
+  end_time: string
+}
+
 interface VetSchedule {
   id: string
   place_name: string
   sub_district: string | null
   district: string | null
   province: string
-  days: number[]
-  start_time: string
-  end_time: string
+  slots: Slot[]
 }
 
 interface VetInfo {
