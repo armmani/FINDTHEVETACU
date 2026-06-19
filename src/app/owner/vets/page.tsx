@@ -2,7 +2,18 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Stethoscope, MapPin, ExternalLink, ShieldCheck } from 'lucide-react'
+import { Stethoscope, MapPin, ExternalLink, ShieldCheck, Calendar, ChevronDown, ChevronUp } from 'lucide-react'
+
+interface VetSchedule {
+  id: string
+  place_name: string
+  sub_district: string | null
+  district: string | null
+  province: string
+  days: number[]
+  start_time: string
+  end_time: string
+}
 
 interface VetInfo {
   user_id: string
@@ -13,7 +24,10 @@ interface VetInfo {
   location_name: string | null
   full_name: string
   avatar_url: string | null
+  schedules: VetSchedule[]
 }
+
+const DAY_LABELS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']
 
 const EDU_LABELS: Record<string, string> = {
   internship: 'Internship',
@@ -27,27 +41,44 @@ export default function OwnerVetsPage() {
   const supabase = createClient()
   const [vets, setVets] = useState<VetInfo[]>([])
   const [loading, setLoading] = useState(true)
+  const [provinceFilter, setProvinceFilter] = useState('')
+  const [expandedSchedule, setExpandedSchedule] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from('vet_profiles')
-        .select(`
-          user_id, bio, license_number, additional_education, is_available, location_name,
-          profiles!inner(full_name, avatar_url)
-        `)
-        .order('is_available', { ascending: false })
+      const [{ data: vetData }, { data: scheduleData }] = await Promise.all([
+        supabase
+          .from('vet_profiles')
+          .select(`user_id, bio, license_number, additional_education, is_available, location_name, profiles!inner(full_name, avatar_url)`)
+          .order('is_available', { ascending: false }),
+        supabase.from('vet_schedules').select('*').order('created_at', { ascending: true }),
+      ])
 
-      const mapped = (data || []).map((v: any) => ({
+      const schedulesByVet: Record<string, VetSchedule[]> = {}
+      for (const s of (scheduleData || [])) {
+        if (!schedulesByVet[s.vet_id]) schedulesByVet[s.vet_id] = []
+        schedulesByVet[s.vet_id].push(s as VetSchedule)
+      }
+
+      const mapped = (vetData || []).map((v: any) => ({
         ...v,
         full_name: v.profiles?.full_name || '',
         avatar_url: v.profiles?.avatar_url || null,
+        schedules: schedulesByVet[v.user_id] || [],
       }))
       setVets(mapped)
       setLoading(false)
     }
     load()
   }, [])
+
+  const allProvinces = Array.from(new Set(
+    vets.flatMap(v => v.schedules.map(s => s.province))
+  )).sort()
+
+  const filtered = provinceFilter
+    ? vets.filter(v => v.schedules.some(s => s.province === provinceFilter))
+    : vets
 
   if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
 
@@ -59,30 +90,38 @@ export default function OwnerVetsPage() {
       </div>
 
       {/* กล่องวิธีตรวจสอบใบอนุญาต */}
-      <div className="card bg-blue-50 border border-blue-100 mb-5 flex gap-3">
+      <div className="card bg-blue-50 border border-blue-100 mb-4 flex gap-3">
         <ShieldCheck className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
         <div className="text-sm text-blue-700">
           <p className="font-semibold mb-1">วิธีตรวจสอบใบอนุญาตประกอบวิชาชีพ</p>
-          <p className="text-blue-600 mb-2">พิมพ์ชื่อหรือนามสกุลของหมอที่เว็บสัตวแพทยสภา เพื่อยืนยันว่าเป็นสัตวแพทย์ที่ได้รับใบอนุญาตจริง</p>
-          <a
-            href={VERIFY_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 font-medium underline hover:text-blue-900"
-          >
+          <p className="text-blue-600 mb-2">พิมพ์ชื่อหรือนามสกุลของหมอที่เว็บสัตวแพทยสภา เพื่อยืนยันว่าเป็นสัตวแพทย์จริง</p>
+          <a href={VERIFY_URL} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 font-medium underline hover:text-blue-900">
             ไปที่เว็บสัตวแพทยสภา <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
       </div>
 
-      {vets.length === 0 ? (
+      {/* Filter จังหวัด */}
+      {allProvinces.length > 0 && (
+        <div className="mb-4 flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-gray-400 shrink-0" />
+          <select value={provinceFilter} onChange={e => setProvinceFilter(e.target.value)}
+            className="input flex-1">
+            <option value="">ทุกจังหวัด</option>
+            {allProvinces.map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+        </div>
+      )}
+
+      {filtered.length === 0 ? (
         <div className="card text-center text-gray-400 py-12">
           <Stethoscope className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p>ยังไม่มีหมอลงทะเบียน</p>
+          <p>{provinceFilter ? `ไม่มีหมอที่ออกตรวจในจังหวัด${provinceFilter}` : 'ยังไม่มีหมอลงทะเบียน'}</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {vets.map(vet => (
+          {filtered.map(vet => (
             <div key={vet.user_id} className="card">
               <div className="flex gap-4">
                 {/* รูป */}
@@ -108,23 +147,17 @@ export default function OwnerVetsPage() {
                     </span>
                   </div>
 
-                  {/* เลขใบอนุญาต */}
                   {vet.license_number && (
                     <div className="flex items-center gap-1.5 mt-1">
                       <ShieldCheck className="w-3.5 h-3.5 text-green-500 shrink-0" />
                       <span className="text-sm text-gray-600">ใบอนุญาต: <span className="font-medium">{vet.license_number}</span></span>
-                      <a
-                        href={VERIFY_URL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-500 hover:underline flex items-center gap-0.5"
-                      >
+                      <a href={VERIFY_URL} target="_blank" rel="noopener noreferrer"
+                        className="text-xs text-blue-500 hover:underline flex items-center gap-0.5">
                         ตรวจสอบ <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
                   )}
 
-                  {/* ที่ตั้ง */}
                   {vet.location_name && (
                     <div className="flex items-center gap-1 text-sm text-gray-500 mt-0.5">
                       <MapPin className="w-3.5 h-3.5 shrink-0" />
@@ -132,7 +165,6 @@ export default function OwnerVetsPage() {
                     </div>
                   )}
 
-                  {/* การศึกษาเพิ่มเติม */}
                   {vet.additional_education?.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {vet.additional_education.map(k => (
@@ -143,12 +175,43 @@ export default function OwnerVetsPage() {
                     </div>
                   )}
 
-                  {/* bio */}
                   {vet.bio && (
                     <p className="text-sm text-gray-500 mt-2 line-clamp-2">{vet.bio}</p>
                   )}
                 </div>
               </div>
+
+              {/* ตารางออกตรวจ */}
+              {vet.schedules.length > 0 && (
+                <div className="mt-3 border-t border-gray-100 pt-3">
+                  <button
+                    onClick={() => setExpandedSchedule(expandedSchedule === vet.user_id ? null : vet.user_id)}
+                    className="flex items-center gap-1.5 text-sm font-medium text-primary-600 hover:text-primary-700">
+                    <Calendar className="w-4 h-4" />
+                    ตารางออกตรวจ ({vet.schedules.length} สถานที่)
+                    {expandedSchedule === vet.user_id
+                      ? <ChevronUp className="w-3.5 h-3.5" />
+                      : <ChevronDown className="w-3.5 h-3.5" />}
+                  </button>
+
+                  {expandedSchedule === vet.user_id && (
+                    <div className="mt-2 space-y-2">
+                      {vet.schedules.map(s => (
+                        <div key={s.id} className="bg-gray-50 rounded-xl p-3">
+                          <p className="font-medium text-sm text-gray-800">{s.place_name}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            <MapPin className="w-3 h-3 inline mr-0.5" />
+                            {[s.sub_district, s.district, s.province].filter(Boolean).join(' · ')}
+                          </p>
+                          <p className="text-xs text-primary-600 mt-1">
+                            {s.days.map(d => DAY_LABELS[d]).join(' · ')} · {s.start_time.slice(0,5)}–{s.end_time.slice(0,5)} น.
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>

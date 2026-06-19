@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { geocodeAddress, PLATFORM_ACUPUNCTURE_FEE, PLATFORM_RATE_LABEL } from '@/lib/distance'
 import toast from 'react-hot-toast'
-import { MapPin, Save, Info, Search, Send, ShieldCheck, ShieldX, Lock } from 'lucide-react'
+import { MapPin, Save, Info, Search, Send, ShieldCheck, ShieldX, Lock, Calendar, Plus, Trash2 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import PhotoUpload from '@/components/PhotoUpload'
 
@@ -26,6 +26,20 @@ const UNIVERSITIES = [
   'มหาวิทยาลัยสงขลานครินทร์',
   'อื่นๆ',
 ]
+
+const DAY_LABELS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']
+const DAY_NAMES = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์']
+
+interface VetSchedule {
+  id: string
+  place_name: string
+  sub_district: string | null
+  district: string | null
+  province: string
+  days: number[]
+  start_time: string
+  end_time: string
+}
 
 const ADDITIONAL_EDU_OPTIONS = [
   { key: 'internship', label: 'Internship (ฝึกอบรมพิเศษ)' },
@@ -58,6 +72,16 @@ export default function VetProfilePage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [changingPassword, setChangingPassword] = useState(false)
+  const [schedules, setSchedules] = useState<VetSchedule[]>([])
+  const [showAddSchedule, setShowAddSchedule] = useState(false)
+  const [savingSchedule, setSavingSchedule] = useState(false)
+  const [newPlace, setNewPlace] = useState('')
+  const [newSubDistrict, setNewSubDistrict] = useState('')
+  const [newDistrict, setNewDistrict] = useState('')
+  const [newProvince, setNewProvince] = useState('')
+  const [newDays, setNewDays] = useState<number[]>([])
+  const [newStartTime, setNewStartTime] = useState('09:00')
+  const [newEndTime, setNewEndTime] = useState('17:00')
 
   useEffect(() => { loadProfile() }, [])
 
@@ -84,7 +108,50 @@ export default function VetProfilePage() {
     }
     setTelegramChatId((profile as any)?.telegram_chat_id || '')
     setAvatarUrl((profile as any)?.avatar_url || null)
+
+    const { data: schData } = await supabase
+      .from('vet_schedules')
+      .select('*')
+      .eq('vet_id', user.id)
+      .order('created_at', { ascending: true })
+    setSchedules((schData as VetSchedule[]) || [])
+
     setLoading(false)
+  }
+
+  const handleAddSchedule = async () => {
+    if (!newPlace.trim() || !newProvince.trim()) { toast.error('กรุณากรอกชื่อสถานที่และจังหวัด'); return }
+    if (newDays.length === 0) { toast.error('กรุณาเลือกอย่างน้อย 1 วัน'); return }
+    setSavingSchedule(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data, error } = await supabase.from('vet_schedules').insert({
+      vet_id: user.id,
+      place_name: newPlace.trim(),
+      sub_district: newSubDistrict.trim() || null,
+      district: newDistrict.trim() || null,
+      province: newProvince.trim(),
+      days: newDays.sort(),
+      start_time: newStartTime,
+      end_time: newEndTime,
+    }).select().single()
+    if (error) { toast.error('บันทึกไม่สำเร็จ'); setSavingSchedule(false); return }
+    setSchedules(prev => [...prev, data as VetSchedule])
+    setNewPlace(''); setNewSubDistrict(''); setNewDistrict(''); setNewProvince('')
+    setNewDays([]); setNewStartTime('09:00'); setNewEndTime('17:00')
+    setShowAddSchedule(false)
+    toast.success('เพิ่มสถานที่ออกตรวจแล้ว')
+    setSavingSchedule(false)
+  }
+
+  const handleDeleteSchedule = async (id: string) => {
+    await supabase.from('vet_schedules').delete().eq('id', id)
+    setSchedules(prev => prev.filter(s => s.id !== id))
+    toast.success('ลบแล้ว')
+  }
+
+  const toggleDay = (d: number) => {
+    setNewDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d])
   }
 
   const handleGeocode = async () => {
@@ -345,6 +412,97 @@ export default function VetProfilePage() {
           {saving ? 'กำลังบันทึก...' : 'บันทึกโปรไฟล์'}
         </button>
       </form>
+
+      {/* ตารางออกตรวจ */}
+      <div className="card space-y-4 mt-4">
+        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+          <Calendar className="w-4 h-4" /> ตารางออกตรวจ
+        </h2>
+        <p className="text-xs text-gray-400 -mt-2">เพิ่มคลินิก/โรงพยาบาลที่คุณออกตรวจ เพื่อให้เจ้าของสัตว์เลี้ยงรู้ว่าคุณอยู่ที่ไหนบ้าง</p>
+
+        {schedules.length > 0 && (
+          <div className="space-y-3">
+            {schedules.map(s => (
+              <div key={s.id} className="border border-gray-100 rounded-xl p-3 relative">
+                <button onClick={() => handleDeleteSchedule(s.id)}
+                  className="absolute top-2 right-2 text-gray-300 hover:text-red-400 transition-colors">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <p className="font-medium text-gray-800 pr-6">{s.place_name}</p>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  {[s.sub_district, s.district, s.province].filter(Boolean).join(' · ')}
+                </p>
+                <p className="text-sm text-primary-600 mt-1">
+                  {s.days.map(d => DAY_LABELS[d]).join(', ')} · {s.start_time.slice(0,5)}–{s.end_time.slice(0,5)} น.
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {showAddSchedule ? (
+          <div className="border border-dashed border-primary-200 rounded-xl p-4 space-y-3 bg-primary-50/30">
+            <div>
+              <label className="label">ชื่อคลินิก / โรงพยาบาล</label>
+              <input type="text" value={newPlace} onChange={e => setNewPlace(e.target.value)}
+                className="input" placeholder="เช่น คลินิกสัตว์รักษ์, รพ.สัตว์จุฬา" />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="label text-xs">แขวง/ตำบล</label>
+                <input type="text" value={newSubDistrict} onChange={e => setNewSubDistrict(e.target.value)}
+                  className="input text-sm" placeholder="แขวง/ตำบล" />
+              </div>
+              <div>
+                <label className="label text-xs">เขต/อำเภอ</label>
+                <input type="text" value={newDistrict} onChange={e => setNewDistrict(e.target.value)}
+                  className="input text-sm" placeholder="เขต/อำเภอ" />
+              </div>
+              <div>
+                <label className="label text-xs">จังหวัด *</label>
+                <input type="text" value={newProvince} onChange={e => setNewProvince(e.target.value)}
+                  className="input text-sm" placeholder="กรุงเทพฯ" />
+              </div>
+            </div>
+            <div>
+              <label className="label">วันที่ออกตรวจ</label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {DAY_NAMES.map((name, i) => (
+                  <button key={i} type="button" onClick={() => toggleDay(i)}
+                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                      newDays.includes(i)
+                        ? 'bg-primary-500 text-white border-primary-500'
+                        : 'border-gray-200 text-gray-500 hover:border-primary-300'
+                    }`}>
+                    {name}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <label className="label text-xs">เวลาเริ่ม</label>
+                <input type="time" value={newStartTime} onChange={e => setNewStartTime(e.target.value)} className="input" />
+              </div>
+              <span className="mt-5 text-gray-400">–</span>
+              <div className="flex-1">
+                <label className="label text-xs">เวลาสิ้นสุด</label>
+                <input type="time" value={newEndTime} onChange={e => setNewEndTime(e.target.value)} className="input" />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={handleAddSchedule} disabled={savingSchedule}
+                className="btn-primary flex-1">{savingSchedule ? 'กำลังบันทึก...' : 'บันทึก'}</button>
+              <button onClick={() => setShowAddSchedule(false)} className="btn-secondary flex-1">ยกเลิก</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setShowAddSchedule(true)}
+            className="btn-secondary w-full flex items-center justify-center gap-2">
+            <Plus className="w-4 h-4" /> เพิ่มสถานที่ออกตรวจ
+          </button>
+        )}
+      </div>
 
       {/* เปลี่ยนรหัสผ่าน */}
       <div className="card space-y-4 mt-4">
