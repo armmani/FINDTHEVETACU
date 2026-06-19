@@ -52,6 +52,7 @@ export default function VetDetailPage() {
   const supabase = createClient()
   const [vet, setVet] = useState<VetDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const [lightbox, setLightbox] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -97,8 +98,13 @@ export default function VetDetailPage() {
       {/* รูปและชื่อ */}
       <div className="card flex flex-col items-center text-center gap-3">
         {vet.avatar_url ? (
-          <img src={vet.avatar_url} alt={vet.full_name}
-            className="w-24 h-24 rounded-full object-cover border-4 border-primary-100" />
+          <button onClick={() => setLightbox(true)} className="relative group cursor-zoom-in">
+            <img src={vet.avatar_url} alt={vet.full_name}
+              className="w-24 h-24 rounded-full object-cover border-4 border-primary-100 group-hover:brightness-90 transition-all" />
+            <div className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <span className="text-white text-xs bg-black/40 px-2 py-0.5 rounded-full">ขยาย</span>
+            </div>
+          </button>
         ) : (
           <div className="w-24 h-24 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 text-3xl font-bold">
             {vet.full_name[0] || 'H'}
@@ -210,6 +216,21 @@ export default function VetDetailPage() {
           <Stethoscope className="w-5 h-5" />
           นัดหมายกับหมอคนนี้
         </Link>
+      )}
+
+      {/* Lightbox */}
+      {lightbox && vet?.avatar_url && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setLightbox(false)}>
+          <button className="absolute top-4 right-4 text-white/70 hover:text-white">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <img src={vet.avatar_url} alt={vet.full_name}
+            className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl"
+            onClick={e => e.stopPropagation()} />
+        </div>
       )}
     </div>
   )
