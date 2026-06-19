@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase'
 import { geocodeAddress } from '@/lib/distance'
-import { MapPin, ArrowLeft, PawPrint, Plus, Search, Stethoscope } from 'lucide-react'
+import { MapPin, ArrowLeft, PawPrint, Plus, Search, Stethoscope, X, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import type { Pet } from '@/lib/types'
@@ -45,6 +45,8 @@ function NewRequestForm() {
   const [petPhotoUrl, setPetPhotoUrl] = useState<string | null>(null)
   const [preferredVetId, setPreferredVetId] = useState<string>(params.get('vet') || '')
   const [availableVets, setAvailableVets] = useState<{ user_id: string; full_name: string; location_name: string | null }[]>([])
+  const [vetSearch, setVetSearch] = useState('')
+  const [showVetDropdown, setShowVetDropdown] = useState(false)
   const [loading, setLoading] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string>('')
 
@@ -314,41 +316,73 @@ function NewRequestForm() {
         </div>
 
         {/* เลือกหมอ */}
-        {availableVets.length > 0 && (
-          <div className="card">
-            <h2 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-              <Stethoscope className="w-4 h-4 text-primary-600" /> เลือกหมอ (ไม่บังคับ)
-            </h2>
-            <div className="grid grid-cols-1 gap-2">
-              <button
-                type="button"
-                onClick={() => setPreferredVetId('')}
-                className={`p-3 rounded-xl border-2 text-left text-sm transition-colors ${
-                  preferredVetId === '' ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="font-medium">🔓 เปิดให้หมอทุกคนรับ</div>
-                <div className="text-gray-400 text-xs mt-0.5">หมอที่ว่างจะเห็นคำขอและรับงานได้</div>
+        <div className="card">
+          <h2 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+            <Stethoscope className="w-4 h-4 text-primary-600" /> เลือกหมอ (ไม่บังคับ)
+          </h2>
+
+          {/* selected vet display */}
+          {preferredVetId ? (
+            <div className="flex items-center gap-3 p-3 rounded-xl border-2 border-primary-400 bg-primary-50 mb-2">
+              <div className="flex-1">
+                <p className="font-medium text-primary-800 text-sm">
+                  {availableVets.find(v => v.user_id === preferredVetId)?.full_name || 'หมอที่เลือก'}
+                </p>
+                <p className="text-xs text-primary-600 mt-0.5">คำขอจะส่งตรงถึงหมอคนนี้เท่านั้น</p>
+              </div>
+              <button type="button" onClick={() => { setPreferredVetId(''); setVetSearch('') }}
+                className="text-primary-400 hover:text-primary-600">
+                <X className="w-4 h-4" />
               </button>
-              {availableVets.map(vet => (
-                <button
-                  key={vet.user_id}
-                  type="button"
-                  onClick={() => setPreferredVetId(vet.user_id)}
-                  className={`p-3 rounded-xl border-2 text-left text-sm transition-colors ${
-                    preferredVetId === vet.user_id ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="font-medium">{vet.full_name}</div>
-                  {vet.location_name && <div className="text-gray-400 text-xs mt-0.5">📍 {vet.location_name}</div>}
-                </button>
-              ))}
             </div>
-            {preferredVetId && (
-              <p className="text-xs text-primary-600 mt-2">✓ คำขอจะส่งตรงถึงหมอคนนี้เท่านั้น</p>
+          ) : (
+            <p className="text-xs text-gray-400 mb-2">ไม่เลือก = เปิดให้หมอทุกคนที่ว่างรับงานได้</p>
+          )}
+
+          {/* search input */}
+          <div className="relative">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={vetSearch}
+                onChange={e => { setVetSearch(e.target.value); setShowVetDropdown(true) }}
+                onFocus={() => setShowVetDropdown(true)}
+                onBlur={() => setTimeout(() => setShowVetDropdown(false), 150)}
+                placeholder="พิมพ์ชื่อหมอเพื่อค้นหา..."
+                className="input pl-9 pr-9"
+              />
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+            </div>
+
+            {showVetDropdown && (
+              <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-56 overflow-y-auto">
+                {availableVets
+                  .filter(v => !vetSearch.trim() || v.full_name.toLowerCase().includes(vetSearch.toLowerCase()) ||
+                    v.location_name?.toLowerCase().includes(vetSearch.toLowerCase()))
+                  .length === 0 ? (
+                  <div className="p-3 text-sm text-gray-400 text-center">ไม่พบหมอที่ตรงกัน</div>
+                ) : (
+                  availableVets
+                    .filter(v => !vetSearch.trim() || v.full_name.toLowerCase().includes(vetSearch.toLowerCase()) ||
+                      v.location_name?.toLowerCase().includes(vetSearch.toLowerCase()))
+                    .map(vet => (
+                      <button key={vet.user_id} type="button"
+                        onMouseDown={() => { setPreferredVetId(vet.user_id); setVetSearch(''); setShowVetDropdown(false) }}
+                        className={`w-full text-left px-4 py-2.5 hover:bg-primary-50 transition-colors border-b border-gray-50 last:border-0 ${
+                          preferredVetId === vet.user_id ? 'bg-primary-50' : ''
+                        }`}>
+                        <p className="text-sm font-medium text-gray-800">{vet.full_name}</p>
+                        {vet.location_name && (
+                          <p className="text-xs text-gray-400 mt-0.5">📍 {vet.location_name}</p>
+                        )}
+                      </button>
+                    ))
+                )}
+              </div>
             )}
           </div>
-        )}
+        </div>
 
         {/* อาการ */}
         <div className="card">
