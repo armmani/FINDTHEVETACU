@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
+import ThemeProvider from '@/components/ThemeProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -12,10 +13,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="th">
+    <html lang="th" suppressHydrationWarning>
       <body className={inter.className}>
-        {children}
-        <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
+        <ThemeProvider>
+          {children}
+          <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
+        </ThemeProvider>
       </body>
     </html>
   )
