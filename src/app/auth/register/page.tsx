@@ -31,6 +31,8 @@ function RegisterForm() {
 
   const handleGoogleRegister = async () => {
     setGoogleLoading(true)
+    // ส่ง role ผ่าน cookie ให้ callback route อ่าน
+    document.cookie = `pending_oauth_role=${role}; path=/; max-age=300; SameSite=Lax`
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -260,9 +262,6 @@ function RegisterForm() {
           {googleLoading ? 'กำลังเชื่อมต่อ...' : 'สมัครด้วย Google'}
         </button>
 
-        <p className="text-xs text-gray-400 text-center mt-2">
-          * สมัครด้วย Google จะได้ role เป็นเจ้าของสัตว์ หากเป็นสัตวแพทย์กรุณาสมัครแบบปกติ
-        </p>
 
         <p className="text-center text-sm text-gray-500 mt-4">
           มีบัญชีแล้ว?{' '}
