@@ -154,17 +154,6 @@ export default function VetDetailPage() {
         </div>
       )}
 
-      {/* พื้นที่บริการ */}
-      {vet.location_name && (
-        <div className="card flex items-start gap-3">
-          <MapPin className="w-4 h-4 text-primary-500 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-semibold text-gray-500">พื้นที่บริการ (ออกตรวจถึงบ้าน)</p>
-            <p className="text-gray-700">{vet.location_name}</p>
-          </div>
-        </div>
-      )}
-
       {/* เบอร์ติดต่อหมอ */}
       {vet.phone && (
         <div className="card flex items-center gap-3">
@@ -175,20 +164,6 @@ export default function VetDetailPage() {
           </div>
         </div>
       )}
-
-      {/* ค่าบริการ */}
-      <div className="card space-y-2">
-        <p className="text-sm font-semibold text-gray-500 mb-2">ค่าบริการ</p>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">ค่าฝังเข็ม</span>
-          <span className="font-medium">{(vet.acupuncture_fee || 1800).toLocaleString()} บาท</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">ค่าเดินทาง</span>
-          <span className="font-medium">{vet.travel_rate || 8} บาท/กม. (ไป-กลับ)</span>
-        </div>
-        <div className="text-xs text-gray-400 mt-1">* ค่าใช้จ่ายรวม Platform fee 5% คำนวณอัตโนมัติเมื่อนัดหมาย</div>
-      </div>
 
       {/* ตารางออกตรวจ */}
       {vet.schedules.length > 0 && (
