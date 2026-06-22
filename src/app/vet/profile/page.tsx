@@ -40,6 +40,7 @@ interface Slot {
 interface VetSchedule {
   id: string
   place_name: string
+  clinic_phone: string | null
   sub_district: string | null
   district: string | null
   province: string
@@ -81,12 +82,14 @@ export default function VetProfilePage() {
   const [showAddSchedule, setShowAddSchedule] = useState(false)
   const [savingSchedule, setSavingSchedule] = useState(false)
   const [newPlace, setNewPlace] = useState('')
+  const [newClinicPhone, setNewClinicPhone] = useState('')
   const [newSubDistrict, setNewSubDistrict] = useState('')
   const [newDistrict, setNewDistrict] = useState('')
   const [newProvince, setNewProvince] = useState('')
   const [newSlots, setNewSlots] = useState<Slot[]>([{ day: 1, start_time: '09:00', end_time: '17:00' }])
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editPlace, setEditPlace] = useState('')
+  const [editClinicPhone, setEditClinicPhone] = useState('')
   const [editSubDistrict, setEditSubDistrict] = useState('')
   const [editDistrict, setEditDistrict] = useState('')
   const [editProvince, setEditProvince] = useState('')
@@ -138,6 +141,7 @@ export default function VetProfilePage() {
     const { data, error } = await supabase.from('vet_schedules').insert({
       vet_id: user.id,
       place_name: newPlace.trim(),
+      clinic_phone: newClinicPhone.trim() || null,
       sub_district: newSubDistrict || null,
       district: newDistrict || null,
       province: newProvince,
@@ -145,7 +149,7 @@ export default function VetProfilePage() {
     }).select().single()
     if (error) { toast.error('บันทึกไม่สำเร็จ'); setSavingSchedule(false); return }
     setSchedules(prev => [...prev, data as VetSchedule])
-    setNewPlace(''); setNewSubDistrict(''); setNewDistrict(''); setNewProvince('')
+    setNewPlace(''); setNewClinicPhone(''); setNewSubDistrict(''); setNewDistrict(''); setNewProvince('')
     setNewSlots([{ day: 1, start_time: '09:00', end_time: '17:00' }])
     setShowAddSchedule(false)
     toast.success('เพิ่มสถานที่ออกตรวจแล้ว')
@@ -161,6 +165,7 @@ export default function VetProfilePage() {
   const startEdit = (s: VetSchedule) => {
     setEditingId(s.id)
     setEditPlace(s.place_name)
+    setEditClinicPhone(s.clinic_phone || '')
     setEditSubDistrict(s.sub_district || '')
     setEditDistrict(s.district || '')
     setEditProvince(s.province)
@@ -173,6 +178,7 @@ export default function VetProfilePage() {
     setSavingEdit(true)
     const { error } = await supabase.from('vet_schedules').update({
       place_name: editPlace.trim(),
+      clinic_phone: editClinicPhone.trim() || null,
       sub_district: editSubDistrict || null,
       district: editDistrict || null,
       province: editProvince,
@@ -180,7 +186,8 @@ export default function VetProfilePage() {
     }).eq('id', editingId!)
     if (error) { toast.error('บันทึกไม่สำเร็จ'); setSavingEdit(false); return }
     setSchedules(prev => prev.map(s => s.id === editingId ? {
-      ...s, place_name: editPlace, sub_district: editSubDistrict || null,
+      ...s, place_name: editPlace, clinic_phone: editClinicPhone.trim() || null,
+      sub_district: editSubDistrict || null,
       district: editDistrict || null, province: editProvince, slots: editSlots,
     } : s))
     setEditingId(null)
@@ -476,6 +483,10 @@ export default function VetProfilePage() {
                       <label className="label text-xs">ชื่อคลินิก / โรงพยาบาล</label>
                       <input type="text" value={editPlace} onChange={e => setEditPlace(e.target.value)} className="input text-sm" />
                     </div>
+                    <div>
+                      <label className="label text-xs">เบอร์โทรคลินิก / โรงพยาบาล</label>
+                      <input type="tel" value={editClinicPhone} onChange={e => setEditClinicPhone(e.target.value)} className="input text-sm" placeholder="02-xxx-xxxx" />
+                    </div>
                     <div className="space-y-2">
                       <div>
                         <label className="label text-xs">จังหวัด *</label>
@@ -538,6 +549,9 @@ export default function VetProfilePage() {
                         <p className="text-sm text-gray-500 mt-0.5">
                           {[s.sub_district, s.district, s.province].filter(Boolean).join(' · ')}
                         </p>
+                        {s.clinic_phone && (
+                          <p className="text-sm text-gray-500 mt-0.5">📞 {s.clinic_phone}</p>
+                        )}
                         <div className="mt-1 space-y-0.5">
                           {(s.slots || []).map((slot, i) => (
                             <p key={i} className="text-sm text-primary-600">
@@ -568,6 +582,11 @@ export default function VetProfilePage() {
               <label className="label">ชื่อคลินิก / โรงพยาบาล</label>
               <input type="text" value={newPlace} onChange={e => setNewPlace(e.target.value)}
                 className="input" placeholder="เช่น คลินิกสัตว์รักษ์, รพ.สัตว์จุฬา" />
+            </div>
+            <div>
+              <label className="label">เบอร์โทรคลินิก / โรงพยาบาล</label>
+              <input type="tel" value={newClinicPhone} onChange={e => setNewClinicPhone(e.target.value)}
+                className="input" placeholder="02-xxx-xxxx" />
             </div>
             <div className="space-y-2">
               <div>

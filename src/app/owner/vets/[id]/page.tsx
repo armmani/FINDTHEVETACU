@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { ShieldCheck, ExternalLink, MapPin, Calendar, ArrowLeft, Stethoscope, Phone, Clock } from 'lucide-react'
+import { ShieldCheck, ExternalLink, MapPin, Calendar, ArrowLeft, Phone, Clock } from 'lucide-react'
 import Link from 'next/link'
 
 interface Slot {
@@ -15,6 +15,7 @@ interface Slot {
 interface VetSchedule {
   id: string
   place_name: string
+  clinic_phone: string | null
   sub_district: string | null
   district: string | null
   province: string
@@ -164,6 +165,17 @@ export default function VetDetailPage() {
         </div>
       )}
 
+      {/* เบอร์ติดต่อหมอ */}
+      {vet.phone && (
+        <div className="card flex items-center gap-3">
+          <Phone className="w-4 h-4 text-primary-500 shrink-0" />
+          <div>
+            <p className="text-sm text-gray-500">เบอร์ติดต่อหมอ</p>
+            <a href={`tel:${vet.phone}`} className="font-semibold text-primary-600 hover:underline">{vet.phone}</a>
+          </div>
+        </div>
+      )}
+
       {/* ค่าบริการ */}
       <div className="card space-y-2">
         <p className="text-sm font-semibold text-gray-500 mb-2">ค่าบริการ</p>
@@ -192,6 +204,12 @@ export default function VetDetailPage() {
                 <MapPin className="w-3 h-3 shrink-0" />
                 {[s.sub_district, s.district, s.province].filter(Boolean).join(' · ')}
               </div>
+              {s.clinic_phone && (
+                <a href={`tel:${s.clinic_phone}`} className="flex items-center gap-1 text-xs text-primary-600 hover:underline mt-0.5">
+                  <Phone className="w-3 h-3 shrink-0" />
+                  {s.clinic_phone}
+                </a>
+              )}
               <div className="mt-1.5 space-y-1">
                 {(s.slots || []).map((slot, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs text-gray-600">
