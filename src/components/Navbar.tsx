@@ -20,7 +20,7 @@ export default function Navbar({ profile }: NavbarProps) {
     router.refresh()
   }
 
-  const dashboardHref = profile.role === 'owner' ? '/owner/dashboard' : '/vet/dashboard'
+  const dashboardHref = profile.role === 'owner' ? '/owner/vets' : '/vet/dashboard'
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
@@ -49,21 +49,13 @@ export default function Navbar({ profile }: NavbarProps) {
           )}
           {profile.role === 'owner' && (
             <>
-              <Link href="/owner/dashboard" className="text-sm text-gray-600 hover:text-primary-600 flex items-center gap-1">
-                <Home className="w-4 h-4" />
-                <span className="hidden sm:block">หน้าหลัก</span>
-              </Link>
               <Link href="/owner/vets" className="text-sm text-gray-600 hover:text-primary-600 flex items-center gap-1">
                 <Stethoscope className="w-4 h-4" />
-                <span className="hidden sm:block">หมอ</span>
-              </Link>
-              <Link href="/owner/history" className="text-sm text-gray-600 hover:text-primary-600 flex items-center gap-1">
-                <History className="w-4 h-4" />
-                <span className="hidden sm:block">ประวัติ</span>
+                <span className="hidden sm:block">ค้นหาหมอ</span>
               </Link>
               <Link href="/owner/settings" className="text-sm text-gray-600 hover:text-primary-600 flex items-center gap-1">
-                <Bell className="w-4 h-4" />
-                <span className="hidden sm:block">ตั้งค่า</span>
+                <User className="w-4 h-4" />
+                <span className="hidden sm:block">โปรไฟล์</span>
               </Link>
             </>
           )}
