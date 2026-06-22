@@ -17,6 +17,15 @@ interface Stats {
   totalPayout: number
 }
 
+interface OwnerRow {
+  id: string
+  full_name: string
+  phone: string | null
+  avatar_url: string | null
+  created_at: string
+  email: string | null
+}
+
 interface VetRow {
   user_id: string
   university: string | null
@@ -52,6 +61,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [bookings, setBookings] = useState<BookingRow[]>([])
   const [vets, setVets] = useState<VetRow[]>([])
+  const [owners, setOwners] = useState<OwnerRow[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [verifying, setVerifying] = useState<string | null>(null)
@@ -67,12 +77,12 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     const [
-      { count: owners },
+      { count: ownerCount, data: ownerData },
       { count: vetCount },
       { data: allBookings },
       { data: vetData },
     ] = await Promise.all([
-      supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'owner'),
+      supabase.from('profiles').select('id, full_name, phone, avatar_url, created_at', { count: 'exact' }).eq('role', 'owner').order('created_at', { ascending: false }),
       supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'vet'),
       supabase.from('bookings').select(`
         *,
@@ -100,8 +110,10 @@ export default function AdminDashboard() {
     const totalPlatformFee = bk.reduce((s, b) => s + (b.platform_fee || 0), 0)
     const totalPayout = completed.reduce((s, b) => s + (b.vet_payout || 0), 0)
 
+    setOwners((ownerData || []) as OwnerRow[])
+
     setStats({
-      totalOwners: owners || 0,
+      totalOwners: ownerCount || 0,
       totalVets: vetCount || 0,
       totalBookings: bk.length,
       pendingBookings: bk.filter(b => b.status === 'pending_payment').length,
@@ -265,6 +277,35 @@ export default function AdminDashboard() {
                     )}
                   </div>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Owner list */}
+      {owners.length > 0 && (
+        <div>
+          <h2 className="text-lg font-bold mb-4">รายชื่อเจ้าของสัตว์ ({owners.length})</h2>
+          <div className="space-y-2">
+            {owners.map((o, i) => (
+              <div key={o.id} className="card flex items-center gap-4 py-3">
+                <span className="text-sm text-gray-300 w-6 text-right shrink-0">{i + 1}</span>
+                {o.avatar_url ? (
+                  <img src={o.avatar_url} alt={o.full_name}
+                    className="w-9 h-9 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold shrink-0 text-sm">
+                    {o.full_name?.[0] || '?'}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-gray-800">{o.full_name || '-'}</p>
+                  {o.phone && <p className="text-sm text-gray-500">📞 {o.phone}</p>}
+                </div>
+                <p className="text-xs text-gray-400 shrink-0">
+                  {new Date(o.created_at).toLocaleDateString('th-TH', { dateStyle: 'short' })}
+                </p>
               </div>
             ))}
           </div>
