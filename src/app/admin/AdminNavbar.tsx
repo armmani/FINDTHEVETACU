@@ -2,12 +2,14 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
-import { Syringe, LogOut, LayoutDashboard } from 'lucide-react'
+import { Syringe, LogOut, LayoutDashboard, Sun, Moon } from 'lucide-react'
 
 export default function AdminNavbar({ fullName }: { fullName: string }) {
   const router = useRouter()
   const supabase = createClient()
+  const { theme, setTheme } = useTheme()
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -16,19 +18,26 @@ export default function AdminNavbar({ fullName }: { fullName: string }) {
   }
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link href="/admin/dashboard" className="flex items-center gap-2 font-bold text-primary-600">
           <Syringe className="w-5 h-5" />
           VetAcu <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full">Admin</span>
         </Link>
         <div className="flex items-center gap-4">
-          <Link href="/admin/dashboard" className="text-sm text-gray-600 hover:text-primary-600 flex items-center gap-1">
+          <Link href="/admin/dashboard" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
             <LayoutDashboard className="w-4 h-4" />
             <span className="hidden sm:block">Dashboard</span>
           </Link>
-          <span className="text-sm text-gray-500 hidden sm:block">{fullName}</span>
-          <button onClick={handleSignOut} className="text-gray-500 hover:text-red-500 transition-colors" title="ออกจากระบบ">
+          <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">{fullName}</span>
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+            title="เปลี่ยนธีม"
+          >
+            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
+          <button onClick={handleSignOut} className="text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors" title="ออกจากระบบ">
             <LogOut className="w-5 h-5" />
           </button>
         </div>
