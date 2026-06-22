@@ -223,8 +223,7 @@ export default function AdminDashboard() {
           <div className="space-y-3">
             {vets.map(vet => (
               <div key={vet.user_id} className="card">
-                <div className="flex gap-4 items-start justify-between">
-                  <div className="flex gap-4 items-start flex-1 min-w-0">
+                <div className="flex gap-3 items-start">
                   {vet.avatar_url ? (
                     <img src={vet.avatar_url} alt={vet.full_name}
                       className="w-10 h-10 rounded-full object-cover shrink-0" />
@@ -234,47 +233,50 @@ export default function AdminDashboard() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold">{vet.full_name}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${vet.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                        {vet.is_available ? 'รับงาน' : 'ปิดรับ'}
-                      </span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${vet.is_verified ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
-                        {vet.is_verified ? <ShieldCheck className="w-3 h-3" /> : <ShieldX className="w-3 h-3" />}
-                        {vet.is_verified ? 'ยืนยันแล้ว' : 'รอยืนยัน'}
-                      </span>
-                      {vet.license_number && (
-                        <span className="text-xs text-gray-400">ใบอนุญาต: {vet.license_number}</span>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleVerify(vet.user_id, vet.is_verified)}
-                    disabled={verifying === vet.user_id}
-                    className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors shrink-0 ${
-                      vet.is_verified
-                        ? 'border-red-200 text-red-500 hover:bg-red-50'
-                        : 'border-blue-300 text-blue-600 hover:bg-blue-50'
-                    }`}
-                  >
-                    {verifying === vet.user_id ? '...' : vet.is_verified ? 'ยกเลิก' : '✓ ยืนยัน'}
-                  </button>
-                    {(vet.university || vet.graduation_year) && (
-                      <p className="text-sm text-gray-600 mt-0.5">
-                        {vet.university || ''}
-                        {vet.university && vet.graduation_year ? ' · ' : ''}
-                        {vet.graduation_year ? `รุ่น ${vet.graduation_year}` : ''}
-                      </p>
-                    )}
-                    {vet.additional_education?.length > 0 && (
-                      <div className="flex gap-1 mt-1 flex-wrap">
-                        {vet.additional_education.map((k: string) => (
-                          <span key={k} className="text-xs bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-full">
-                            {k === 'internship' ? 'Internship' : k === 'certificate' ? 'Certificate' : k === 'resident' ? 'Resident' : k}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold">{vet.full_name}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${vet.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                            {vet.is_available ? 'รับงาน' : 'ปิดรับ'}
                           </span>
-                        ))}
+                          <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${vet.is_verified ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
+                            {vet.is_verified ? <ShieldCheck className="w-3 h-3" /> : <ShieldX className="w-3 h-3" />}
+                            {vet.is_verified ? 'ยืนยันแล้ว' : 'รอยืนยัน'}
+                          </span>
+                          {vet.license_number && (
+                            <span className="text-xs text-gray-400">ใบอนุญาต: {vet.license_number}</span>
+                          )}
+                        </div>
+                        {(vet.university || vet.graduation_year) && (
+                          <p className="text-sm text-gray-600 mt-0.5">
+                            {vet.university || ''}
+                            {vet.university && vet.graduation_year ? ' · ' : ''}
+                            {vet.graduation_year ? `รุ่น ${vet.graduation_year}` : ''}
+                          </p>
+                        )}
+                        {vet.additional_education?.length > 0 && (
+                          <div className="flex gap-1 mt-1 flex-wrap">
+                            {vet.additional_education.map((k: string) => (
+                              <span key={k} className="text-xs bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-full">
+                                {k === 'internship' ? 'Internship' : k === 'certificate' ? 'Certificate' : k === 'resident' ? 'Resident' : k}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
+                      <button
+                        onClick={() => handleVerify(vet.user_id, vet.is_verified)}
+                        disabled={verifying === vet.user_id}
+                        className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors shrink-0 ${
+                          vet.is_verified
+                            ? 'border-red-200 text-red-500 hover:bg-red-50'
+                            : 'border-blue-300 text-blue-600 hover:bg-blue-50'
+                        }`}
+                      >
+                        {verifying === vet.user_id ? '...' : vet.is_verified ? 'ยกเลิก' : '✓ ยืนยัน'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
