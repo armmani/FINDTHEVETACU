@@ -62,6 +62,7 @@ export default function VetProfilePage() {
   const [geocoding, setGeocoding] = useState(false)
   const [userId, setUserId] = useState<string>('')
 
+  const [title, setTitle] = useState('')
   const [bio, setBio] = useState('')
   const [licenseNumber, setLicenseNumber] = useState('')
   const [university, setUniversity] = useState('')
@@ -108,6 +109,7 @@ export default function VetProfilePage() {
       supabase.from('profiles').select('telegram_chat_id, avatar_url').eq('id', user.id).single(),
     ])
     if (data) {
+      setTitle(data.title || '')
       setBio(data.bio || '')
       setLicenseNumber(data.license_number || '')
       setUniversity(data.university || '')
@@ -244,7 +246,7 @@ export default function VetProfilePage() {
 
     await Promise.all([
       supabase.from('vet_profiles').upsert({
-        user_id: user.id, bio, license_number: licenseNumber,
+        user_id: user.id, title: title || null, bio, license_number: licenseNumber,
         university: university || null, graduation_year: graduationYear || null,
         additional_education: additionalEdu,
         acupuncture_fee: PLATFORM_ACUPUNCTURE_FEE, travel_rate: 8,
@@ -334,6 +336,21 @@ export default function VetProfilePage() {
         <div className="card">
           <h2 className="font-semibold text-gray-800 mb-3">ข้อมูลทั่วไป</h2>
           <div className="space-y-3">
+            <div>
+              <label className="label">คำนำหน้าชื่อ</label>
+              <div className="flex gap-2">
+                {['น.สพ.', 'สพ.ญ.'].map(t => (
+                  <button key={t} type="button" onClick={() => setTitle(t)}
+                    className={`flex-1 py-2 rounded-lg border-2 text-sm font-medium transition-colors ${
+                      title === t
+                        ? 'border-primary-500 bg-primary-50 text-primary-700'
+                        : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                    }`}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div>
               <label className="label">เลขใบอนุญาต (ไม่บังคับ)</label>
               <input type="text" value={licenseNumber} onChange={e => setLicenseNumber(e.target.value)}

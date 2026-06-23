@@ -23,6 +23,7 @@ interface VetSchedule {
 
 interface VetDetail {
   user_id: string
+  title: string | null
   bio: string | null
   license_number: string | null
   additional_education: string[]
@@ -60,7 +61,7 @@ export default function VetDetailPage() {
         supabase
           .from('vet_profiles')
           .select(`
-            user_id, bio, license_number, additional_education,
+            user_id, title, bio, license_number, additional_education,
             is_available, location_name, acupuncture_fee, travel_rate,
             profiles!inner(full_name, avatar_url, phone)
           `)
@@ -111,7 +112,7 @@ export default function VetDetailPage() {
           </div>
         )}
         <div>
-          <h2 className="text-xl font-bold">{vet.full_name}</h2>
+          <h2 className="text-xl font-bold">{vet.title ? `${vet.title}${vet.full_name}` : vet.full_name}</h2>
           <span className={`inline-block text-sm px-3 py-0.5 rounded-full font-medium mt-1 ${
             vet.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
           }`}>
