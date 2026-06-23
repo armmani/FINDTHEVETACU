@@ -63,6 +63,7 @@ export default function VetProfilePage() {
   const [userId, setUserId] = useState<string>('')
 
   const [title, setTitle] = useState('')
+  const [fullName, setFullName] = useState('')
   const [fullNameEn, setFullNameEn] = useState('')
   const [bio, setBio] = useState('')
   const [licenseNumber, setLicenseNumber] = useState('')
@@ -107,7 +108,7 @@ export default function VetProfilePage() {
 
     const [{ data }, { data: profile }] = await Promise.all([
       supabase.from('vet_profiles').select('*').eq('user_id', user.id).single(),
-      supabase.from('profiles').select('telegram_chat_id, avatar_url').eq('id', user.id).single(),
+      supabase.from('profiles').select('full_name, telegram_chat_id, avatar_url').eq('id', user.id).single(),
     ])
     if (data) {
       setTitle(data.title || '')
@@ -123,6 +124,7 @@ export default function VetProfilePage() {
       setIsAvailable(data.is_available)
       setIsVerified(data.is_verified || false)
     }
+    setFullName((profile as any)?.full_name || '')
     setTelegramChatId((profile as any)?.telegram_chat_id || '')
     setAvatarUrl((profile as any)?.avatar_url || null)
 
@@ -256,6 +258,7 @@ export default function VetProfilePage() {
         is_available: isAvailable,
       }, { onConflict: 'user_id' }),
       supabase.from('profiles').update({
+        full_name: fullName.trim() || null,
         telegram_chat_id: telegramChatId || null,
         avatar_url: avatarUrl || null,
       }).eq('id', user.id),
@@ -338,6 +341,11 @@ export default function VetProfilePage() {
         <div className="card">
           <h2 className="font-semibold text-gray-800 mb-3">ข้อมูลทั่วไป</h2>
           <div className="space-y-3">
+            <div>
+              <label className="label">ชื่อ-นามสกุล (ภาษาไทย)</label>
+              <input type="text" value={fullName} onChange={e => setFullName(e.target.value)}
+                className="input" placeholder="สมชาย ใจดี" />
+            </div>
             <div>
               <label className="label">คำนำหน้าชื่อ</label>
               <div className="flex gap-2">
