@@ -63,6 +63,7 @@ export default function VetProfilePage() {
   const [userId, setUserId] = useState<string>('')
 
   const [title, setTitle] = useState('')
+  const [fullNameEn, setFullNameEn] = useState('')
   const [bio, setBio] = useState('')
   const [licenseNumber, setLicenseNumber] = useState('')
   const [university, setUniversity] = useState('')
@@ -110,6 +111,7 @@ export default function VetProfilePage() {
     ])
     if (data) {
       setTitle(data.title || '')
+      setFullNameEn(data.full_name_en || '')
       setBio(data.bio || '')
       setLicenseNumber(data.license_number || '')
       setUniversity(data.university || '')
@@ -246,7 +248,7 @@ export default function VetProfilePage() {
 
     await Promise.all([
       supabase.from('vet_profiles').upsert({
-        user_id: user.id, title: title || null, bio, license_number: licenseNumber,
+        user_id: user.id, title: title || null, full_name_en: fullNameEn.trim() || null, bio, license_number: licenseNumber,
         university: university || null, graduation_year: graduationYear || null,
         additional_education: additionalEdu,
         acupuncture_fee: PLATFORM_ACUPUNCTURE_FEE, travel_rate: 8,
@@ -350,6 +352,11 @@ export default function VetProfilePage() {
                   </button>
                 ))}
               </div>
+            </div>
+            <div>
+              <label className="label">ชื่อภาษาอังกฤษ <span className="text-gray-400 font-normal">(แสดงเมื่อเลือกภาษา EN)</span></label>
+              <input type="text" value={fullNameEn} onChange={e => setFullNameEn(e.target.value)}
+                className="input" placeholder="e.g. Somchai Jaidee" />
             </div>
             <div>
               <label className="label">เลขใบอนุญาต (ไม่บังคับ)</label>

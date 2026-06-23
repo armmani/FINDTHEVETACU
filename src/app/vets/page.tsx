@@ -24,6 +24,7 @@ interface VetSchedule {
 interface VetInfo {
   user_id: string
   title: string | null
+  full_name_en: string | null
   bio: string | null
   license_number: string | null
   additional_education: string[]
@@ -44,7 +45,7 @@ const VERIFY_URL = 'http://209.15.98.88/index.php?option=com_content&view=articl
 
 export default function VetsPage() {
   const supabase = createClient()
-  const { t } = useLang()
+  const { t, lang } = useLang()
   const [vets, setVets] = useState<VetInfo[]>([])
   const [loading, setLoading] = useState(true)
   const [searchText, setSearchText] = useState('')
@@ -55,7 +56,7 @@ export default function VetsPage() {
       const [{ data: vetData }, { data: scheduleData }] = await Promise.all([
         supabase
           .from('vet_profiles')
-          .select(`user_id, title, bio, license_number, additional_education, is_available, location_name, profiles!inner(full_name, avatar_url)`)
+          .select(`user_id, title, full_name_en, bio, license_number, additional_education, is_available, location_name, profiles!inner(full_name, avatar_url)`)
           .order('is_available', { ascending: false }),
         supabase.from('vet_schedules').select('*').order('created_at', { ascending: true }),
       ])
@@ -165,7 +166,11 @@ export default function VetsPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-semibold truncate">{vet.title ? `${vet.title}${vet.full_name}` : vet.full_name}</h3>
+                    <h3 className="font-semibold truncate">
+                      {lang === 'en' && vet.full_name_en
+                        ? vet.full_name_en
+                        : vet.title ? `${vet.title}${vet.full_name}` : vet.full_name}
+                    </h3>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         vet.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
