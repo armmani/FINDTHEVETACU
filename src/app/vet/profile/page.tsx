@@ -47,6 +47,14 @@ interface VetSchedule {
   slots: Slot[]
 }
 
+function formatLicense(input: string): string {
+  const d = input.replace(/\D/g, '').slice(0, 10)
+  let r = d.slice(0, 2)
+  if (d.length > 2) r += '-' + d.slice(2, 6)
+  if (d.length > 6) r += '/' + d.slice(6, 10)
+  return r
+}
+
 const ADDITIONAL_EDU_OPTIONS = [
   { key: 'internship', label: 'Internship (ฝึกอบรมพิเศษ)' },
   { key: 'certificate', label: 'Certificate (ใบรับรองเฉพาะทาง)' },
@@ -246,7 +254,7 @@ export default function VetProfilePage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!licenseNumber.trim()) { toast.error('กรุณากรอกเลขใบอนุญาต'); return }
+    if (licenseNumber.replace(/\D/g, '').length < 10) { toast.error('กรุณากรอกเลขใบอนุญาตให้ครบ (xx-xxxx/xxxx)'); return }
     if (!locationLat || !locationLng) { toast.error('กรุณากดปุ่ม "ค้นหาพิกัด" ก่อนบันทึก'); return }
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -372,8 +380,11 @@ export default function VetProfilePage() {
             </div>
             <div>
               <label className="label">เลขใบอนุญาต <span className="text-red-500">*</span></label>
-              <input type="text" value={licenseNumber} onChange={e => setLicenseNumber(e.target.value)}
-                className="input" placeholder="เช่น 01-12345/2567" required />
+              <input type="text" value={licenseNumber}
+                onChange={e => setLicenseNumber(formatLicense(e.target.value))}
+                className="input tracking-widest font-mono"
+                placeholder="01-1234/2567"
+                maxLength={11} />
             </div>
             <div>
               <label className="label">แนะนำตัวเอง</label>
