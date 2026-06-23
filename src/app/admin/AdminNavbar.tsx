@@ -4,12 +4,14 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
+import { useLang } from '@/contexts/LanguageContext'
 import { Syringe, LogOut, LayoutDashboard, Sun, Moon } from 'lucide-react'
 
 export default function AdminNavbar({ fullName }: { fullName: string }) {
   const router = useRouter()
   const supabase = createClient()
   const { theme, setTheme } = useTheme()
+  const { lang, setLang } = useLang()
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -31,9 +33,14 @@ export default function AdminNavbar({ fullName }: { fullName: string }) {
           </Link>
           <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">{fullName}</span>
           <button
+            onClick={() => setLang(lang === 'th' ? 'en' : 'th')}
+            className="text-xs font-bold px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-primary-400 hover:text-primary-600 transition-colors"
+          >
+            {lang === 'th' ? 'EN' : 'TH'}
+          </button>
+          <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-            title="เปลี่ยนธีม"
           >
             {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>

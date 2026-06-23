@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { ShieldCheck, ExternalLink, MapPin, Calendar, ArrowLeft, Phone, Clock } from 'lucide-react'
+import { useLang } from '@/contexts/LanguageContext'
 
 interface Slot {
   day: number
@@ -51,6 +52,7 @@ export default function VetDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const supabase = createClient()
+  const { t } = useLang()
   const [vet, setVet] = useState<VetDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [lightbox, setLightbox] = useState(false)
@@ -83,8 +85,8 @@ export default function VetDetailPage() {
     load()
   }, [id])
 
-  if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
-  if (!vet) return <div className="text-center py-20 text-gray-400">ไม่พบข้อมูลหมอ</div>
+  if (loading) return <div className="text-center py-20 text-gray-400">{t.vetDetail.loading}</div>
+  if (!vet) return <div className="text-center py-20 text-gray-400">{t.vetDetail.notFound}</div>
 
   return (
     <div className="max-w-lg mx-auto space-y-4">
@@ -93,7 +95,7 @@ export default function VetDetailPage() {
           className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h1 className="text-xl font-bold">โปรไฟล์สัตวแพทย์</h1>
+        <h1 className="text-xl font-bold">{t.vetDetail.pageTitle}</h1>
       </div>
 
       {/* รูปและชื่อ */}
@@ -116,7 +118,7 @@ export default function VetDetailPage() {
           <span className={`inline-block text-sm px-3 py-0.5 rounded-full font-medium mt-1 ${
             vet.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
           }`}>
-            {vet.is_available ? '🟢 รับงาน' : '🔴 ไม่ว่าง'}
+            {vet.is_available ? t.vetDetail.available : t.vetDetail.unavailable}
           </span>
         </div>
 
@@ -136,12 +138,12 @@ export default function VetDetailPage() {
         <div className="card flex items-center gap-3">
           <ShieldCheck className="w-5 h-5 text-green-500 shrink-0" />
           <div className="flex-1">
-            <p className="text-sm text-gray-500">เลขใบอนุญาต</p>
+            <p className="text-sm text-gray-500">{t.vetDetail.licenseNo}</p>
             <p className="font-semibold">{vet.license_number}</p>
           </div>
           <a href={VERIFY_URL} target="_blank" rel="noopener noreferrer"
             className="text-xs text-blue-500 hover:underline flex items-center gap-1 shrink-0">
-            ตรวจสอบ <ExternalLink className="w-3 h-3" />
+            {t.vetDetail.verify} <ExternalLink className="w-3 h-3" />
           </a>
         </div>
       )}
@@ -149,7 +151,7 @@ export default function VetDetailPage() {
       {/* bio */}
       {vet.bio && (
         <div className="card">
-          <p className="text-sm font-semibold text-gray-500 mb-1">เกี่ยวกับหมอ</p>
+          <p className="text-sm font-semibold text-gray-500 mb-1">{t.vetDetail.about}</p>
           <p className="text-sm leading-relaxed">{vet.bio}</p>
         </div>
       )}
@@ -159,7 +161,7 @@ export default function VetDetailPage() {
         <div className="card flex items-center gap-3">
           <Phone className="w-4 h-4 text-primary-500 shrink-0" />
           <div>
-            <p className="text-sm text-gray-500">เบอร์ติดต่อหมอ</p>
+            <p className="text-sm text-gray-500">{t.vetDetail.phone}</p>
             <a href={`tel:${vet.phone}`} className="font-semibold text-primary-600 hover:underline">{vet.phone}</a>
           </div>
         </div>
@@ -170,7 +172,7 @@ export default function VetDetailPage() {
         <div className="card space-y-3">
           <div className="flex items-center gap-2 mb-1">
             <Calendar className="w-4 h-4 text-primary-500" />
-            <p className="font-semibold">ตารางออกตรวจ</p>
+            <p className="font-semibold">{t.vetDetail.schedule}</p>
           </div>
           {vet.schedules.map(s => (
             <div key={s.id} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
@@ -203,8 +205,8 @@ export default function VetDetailPage() {
 
       {/* coming soon */}
       <div className="card bg-amber-50 border border-amber-100 text-center py-4">
-        <p className="text-amber-700 font-medium text-sm">🔧 ระบบนัดหมายออนไลน์กำลังจะเปิดเร็วๆ นี้</p>
-        <p className="text-amber-600 text-xs mt-1">ขณะนี้สามารถดูตารางออกตรวจและติดต่อคลินิกโดยตรง</p>
+        <p className="text-amber-700 font-medium text-sm">{t.vetDetail.comingSoon}</p>
+        <p className="text-amber-600 text-xs mt-1">{t.vetDetail.comingSoonSub}</p>
       </div>
 
       {/* Lightbox */}

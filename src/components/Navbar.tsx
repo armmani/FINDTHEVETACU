@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
+import { useLang } from '@/contexts/LanguageContext'
 import { Syringe, LogOut, User, History, Stethoscope, Home, Sun, Moon } from 'lucide-react'
 import type { Profile } from '@/lib/types'
 
@@ -15,6 +16,7 @@ export default function Navbar({ profile }: NavbarProps) {
   const router = useRouter()
   const supabase = createClient()
   const { theme, setTheme } = useTheme()
+  const { lang, setLang, t } = useLang()
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -35,15 +37,15 @@ export default function Navbar({ profile }: NavbarProps) {
             <>
               <Link href="/vets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
                 <Stethoscope className="w-4 h-4" />
-                <span className="hidden sm:block">ค้นหาหมอ</span>
+                <span className="hidden sm:block">{t.nav.findVet}</span>
               </Link>
               <Link href="/vet/dashboard" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
                 <Home className="w-4 h-4" />
-                <span className="hidden sm:block">Dashboard</span>
+                <span className="hidden sm:block">{t.nav.dashboard}</span>
               </Link>
               <Link href="/vet/profile" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
                 <User className="w-4 h-4" />
-                <span className="hidden sm:block">โปรไฟล์</span>
+                <span className="hidden sm:block">{t.nav.profile}</span>
               </Link>
             </>
           )}
@@ -51,25 +53,37 @@ export default function Navbar({ profile }: NavbarProps) {
             <>
               <Link href="/vets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
                 <Stethoscope className="w-4 h-4" />
-                <span className="hidden sm:block">ค้นหาหมอ</span>
+                <span className="hidden sm:block">{t.nav.findVet}</span>
               </Link>
               <Link href="/owner/settings" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
                 <User className="w-4 h-4" />
-                <span className="hidden sm:block">โปรไฟล์</span>
+                <span className="hidden sm:block">{t.nav.profile}</span>
               </Link>
             </>
           )}
           <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
             {profile.full_name && !profile.full_name.includes('@') ? profile.full_name : profile.full_name?.split('@')[0]}
           </span>
+
+          {/* Language toggle */}
+          <button
+            onClick={() => setLang(lang === 'th' ? 'en' : 'th')}
+            className="text-xs font-bold px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+            title={t.nav.changeTheme}
+          >
+            {lang === 'th' ? 'EN' : 'TH'}
+          </button>
+
+          {/* Dark mode toggle */}
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-            title="เปลี่ยนธีม"
+            title={t.nav.changeTheme}
           >
             {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </button>
-          <button onClick={handleSignOut} className="text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors" title="ออกจากระบบ">
+
+          <button onClick={handleSignOut} className="text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors" title={t.nav.signOut}>
             <LogOut className="w-5 h-5" />
           </button>
         </div>
