@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { ShieldCheck, ExternalLink, MapPin, Calendar, ArrowLeft, Phone, Clock } from 'lucide-react'
 import { useLang } from '@/contexts/LanguageContext'
+import { toProvinceEn } from '@/lib/provinces'
 
 interface Slot {
   day: number
@@ -117,7 +118,7 @@ export default function VetDetailPage() {
         <div>
           <h2 className="text-xl font-bold">
             {lang === 'en' && vet.full_name_en
-              ? vet.full_name_en
+              ? `${vet.full_name_en}, DVM`
               : vet.title ? `${vet.title}${vet.full_name}` : vet.full_name}
           </h2>
           <span className={`inline-block text-sm px-3 py-0.5 rounded-full font-medium mt-1 ${
@@ -184,7 +185,9 @@ export default function VetDetailPage() {
               <p className="font-medium text-sm">{s.place_name}</p>
               <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
                 <MapPin className="w-3 h-3 shrink-0" />
-                {[s.sub_district, s.district, s.province].filter(Boolean).join(' · ')}
+                {lang === 'en'
+                  ? [s.sub_district, s.district, toProvinceEn(s.province)].filter(Boolean).join(' · ')
+                  : [s.sub_district, s.district, s.province].filter(Boolean).join(' · ')}
               </div>
               {s.clinic_phone && (
                 <a href={`tel:${s.clinic_phone}`} className="flex items-center gap-1 text-xs text-primary-600 hover:underline mt-0.5">

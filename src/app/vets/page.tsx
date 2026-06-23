@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { Stethoscope, MapPin, ExternalLink, ShieldCheck, Search, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { useLang } from '@/contexts/LanguageContext'
+import { toProvinceEn } from '@/lib/provinces'
 
 interface Slot {
   day: number
@@ -168,7 +169,7 @@ export default function VetsPage() {
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="font-semibold truncate">
                       {lang === 'en' && vet.full_name_en
-                        ? vet.full_name_en
+                        ? `${vet.full_name_en}, DVM`
                         : vet.title ? `${vet.title}${vet.full_name}` : vet.full_name}
                     </h3>
                     <div className="flex items-center gap-1.5 shrink-0">
@@ -189,7 +190,9 @@ export default function VetsPage() {
                   {vet.schedules.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1.5">
                       {Array.from(new Set(vet.schedules.map(s => s.province))).map(p => (
-                        <span key={p} className="text-xs bg-primary-50 text-primary-600 px-2 py-0.5 rounded-full">{p}</span>
+                        <span key={p} className="text-xs bg-primary-50 text-primary-600 px-2 py-0.5 rounded-full">
+                          {lang === 'en' ? toProvinceEn(p) : p}
+                        </span>
                       ))}
                     </div>
                   )}
