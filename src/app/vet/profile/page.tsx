@@ -384,7 +384,7 @@ export default function VetProfilePage() {
                 onChange={e => setLicenseNumber(formatLicense(e.target.value))}
                 className="input tracking-widest font-mono"
                 placeholder="01-1234/2567"
-                maxLength={11} />
+                maxLength={12} />
             </div>
             <div>
               <label className="label">แนะนำตัวเอง</label>
