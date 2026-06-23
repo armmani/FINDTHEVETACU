@@ -51,6 +51,9 @@ const ADDITIONAL_EDU_OPTIONS = [
   { key: 'internship', label: 'Internship (ฝึกอบรมพิเศษ)' },
   { key: 'certificate', label: 'Certificate (ใบรับรองเฉพาะทาง)' },
   { key: 'resident', label: 'Resident (ผู้เชี่ยวชาญ)' },
+  { key: 'postgrad', label: 'PostGrad (บัณฑิตศึกษา)' },
+  { key: 'phd', label: 'Ph.D. (ปริญญาเอก)' },
+  { key: 'other', label: 'อื่นๆ' },
 ]
 
 export default function VetProfilePage() {
@@ -243,6 +246,7 @@ export default function VetProfilePage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!licenseNumber.trim()) { toast.error('กรุณากรอกเลขใบอนุญาต'); return }
     if (!locationLat || !locationLng) { toast.error('กรุณากดปุ่ม "ค้นหาพิกัด" ก่อนบันทึก'); return }
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -367,9 +371,9 @@ export default function VetProfilePage() {
                 className="input" placeholder="e.g. Somchai Jaidee" />
             </div>
             <div>
-              <label className="label">เลขใบอนุญาต (ไม่บังคับ)</label>
+              <label className="label">เลขใบอนุญาต <span className="text-red-500">*</span></label>
               <input type="text" value={licenseNumber} onChange={e => setLicenseNumber(e.target.value)}
-                className="input" placeholder="เช่น 12345" />
+                className="input" placeholder="เช่น 01-12345/2567" required />
             </div>
             <div>
               <label className="label">แนะนำตัวเอง</label>

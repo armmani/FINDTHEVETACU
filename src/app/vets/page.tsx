@@ -40,6 +40,9 @@ const EDU_LABELS: Record<string, string> = {
   internship: 'Internship',
   certificate: 'Certificate',
   resident: 'Resident',
+  postgrad: 'PostGrad',
+  phd: 'Ph.D.',
+  other: 'อื่นๆ',
 }
 
 const VERIFY_URL = 'http://209.15.98.88/index.php?option=com_content&view=article&id=183'

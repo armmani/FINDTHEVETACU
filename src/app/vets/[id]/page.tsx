@@ -46,6 +46,9 @@ const EDU_LABELS: Record<string, string> = {
   internship: 'Internship (ฝึกอบรมพิเศษ)',
   certificate: 'Certificate (ใบรับรองเฉพาะทาง)',
   resident: 'Resident (ผู้เชี่ยวชาญ)',
+  postgrad: 'PostGrad (บัณฑิตศึกษา)',
+  phd: 'Ph.D. (ปริญญาเอก)',
+  other: 'อื่นๆ',
 }
 
 const VERIFY_URL = 'http://209.15.98.88/index.php?option=com_content&view=article&id=183'
