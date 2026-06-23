@@ -97,7 +97,7 @@ function RegisterForm() {
     }
 
     toast.success('ยืนยันอีเมลสำเร็จ!')
-    router.push(role === 'vet' ? '/vet/profile' : '/owner/dashboard')
+    router.push(role === 'vet' ? '/vet/profile' : '/vets')
     router.refresh()
   }
 

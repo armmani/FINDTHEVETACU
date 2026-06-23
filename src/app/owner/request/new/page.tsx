@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
 
 export default function NewRequestPage() {
-  redirect('/owner/vets')
+  redirect('/vets')
 }

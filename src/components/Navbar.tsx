@@ -22,12 +22,10 @@ export default function Navbar({ profile }: NavbarProps) {
     router.refresh()
   }
 
-  const dashboardHref = profile.role === 'owner' ? '/owner/vets' : '/vet/dashboard'
-
   return (
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href={dashboardHref} className="flex items-center gap-2 font-bold text-primary-600">
+        <Link href="/vets" className="flex items-center gap-2 font-bold text-primary-600">
           <Syringe className="w-5 h-5" />
           VetAcu
         </Link>
@@ -35,13 +33,13 @@ export default function Navbar({ profile }: NavbarProps) {
         <div className="flex items-center gap-4">
           {profile.role === 'vet' && (
             <>
+              <Link href="/vets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+                <Stethoscope className="w-4 h-4" />
+                <span className="hidden sm:block">ค้นหาหมอ</span>
+              </Link>
               <Link href="/vet/dashboard" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
                 <Home className="w-4 h-4" />
-                <span className="hidden sm:block">หน้าหลัก</span>
-              </Link>
-              <Link href="/vet/history" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                <History className="w-4 h-4" />
-                <span className="hidden sm:block">ประวัติ</span>
+                <span className="hidden sm:block">Dashboard</span>
               </Link>
               <Link href="/vet/profile" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
                 <User className="w-4 h-4" />
@@ -51,7 +49,7 @@ export default function Navbar({ profile }: NavbarProps) {
           )}
           {profile.role === 'owner' && (
             <>
-              <Link href="/owner/vets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+              <Link href="/vets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
                 <Stethoscope className="w-4 h-4" />
                 <span className="hidden sm:block">ค้นหาหมอ</span>
               </Link>

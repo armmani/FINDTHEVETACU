@@ -54,7 +54,7 @@ export async function GET(request: Request) {
           return NextResponse.redirect(`${origin}/vet/profile`)
         }
 
-        return NextResponse.redirect(`${origin}/owner/vets`)
+        return NextResponse.redirect(`${origin}/vets`)
       }
 
       // ไม่มี cookie → login ปกติ → ดู role จาก profiles
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
       const role = profile?.role || user.user_metadata?.role
       if (role === 'vet') return NextResponse.redirect(`${origin}/vet/dashboard`)
       if (role === 'admin') return NextResponse.redirect(`${origin}/admin/dashboard`)
-      return NextResponse.redirect(`${origin}/owner/vets`)
+      return NextResponse.redirect(`${origin}/vets`)
     }
   }
 
