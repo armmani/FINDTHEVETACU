@@ -12,7 +12,7 @@ export default function HomePage() {
     <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
       {/* Logo */}
       <div className="mb-6">
-        <Image src="/FindTheVet.png" alt="FindTheVet" width={220} height={80} className="h-24 w-auto" priority />
+        <Image src="/FindTheVet.png" alt="FindTheVet" width={220} height={80} className="h-16 w-auto" priority />
       </div>
 
       <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">
