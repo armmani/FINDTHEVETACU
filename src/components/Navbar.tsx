@@ -48,6 +48,10 @@ export default function Navbar({ profile, fullNameEn }: NavbarProps) {
                 <Home className="w-4 h-4" />
                 <span className="hidden sm:block">{t.nav.dashboard}</span>
               </Link>
+              <Link href="/clinic/manage" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+                <Building2 className="w-4 h-4" />
+                <span className="hidden sm:block">{t.nav.myClinics}</span>
+              </Link>
               <Link href="/vet/profile" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
                 <User className="w-4 h-4" />
                 <span className="hidden sm:block">{t.nav.profile}</span>

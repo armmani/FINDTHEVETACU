@@ -5,6 +5,7 @@ const t = {
     nav: {
       findVet: 'ค้นหาหมอ',
       clinics: 'คลินิก',
+      myClinics: 'คลินิกของฉัน',
       profile: 'โปรไฟล์',
       dashboard: 'คำขอนัด',
       signOut: 'ออกจากระบบ',
@@ -83,6 +84,7 @@ const t = {
     nav: {
       findVet: 'Find Vets',
       clinics: 'Clinics',
+      myClinics: 'My Clinics',
       profile: 'Profile',
       dashboard: 'Appointments',
       signOut: 'Sign Out',
