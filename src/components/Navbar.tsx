@@ -64,7 +64,7 @@ export default function Navbar({ profile, fullNameEn }: NavbarProps) {
           )}
           <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
             {lang === 'en' && fullNameEn
-              ? `${fullNameEn}, DVM`
+              ? fullNameEn
               : profile.full_name && !profile.full_name.includes('@')
                 ? profile.full_name
                 : profile.full_name?.split('@')[0]}
