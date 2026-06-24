@@ -154,6 +154,15 @@ function RegisterForm() {
               แก้ไขอีเมล
             </button>
           </div>
+
+          <div className="mt-5 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 text-center">
+            ไม่ได้รับรหัส OTP? ระบบอีเมลอาจมีข้อจำกัด<br />
+            แนะนำให้ใช้{' '}
+            <button onClick={() => setStep('form')} className="font-semibold underline">
+              Google สมัครสมาชิก
+            </button>{' '}
+            แทนครับ
+          </div>
         </div>
       </div>
     )
