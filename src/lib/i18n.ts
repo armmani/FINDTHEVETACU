@@ -5,7 +5,7 @@ const t = {
     nav: {
       findVet: 'ค้นหาหมอ',
       profile: 'โปรไฟล์',
-      dashboard: 'Dashboard',
+      dashboard: 'คำขอนัด',
       signOut: 'ออกจากระบบ',
       changeTheme: 'เปลี่ยนธีม',
     },
@@ -82,7 +82,7 @@ const t = {
     nav: {
       findVet: 'Find Vets',
       profile: 'Profile',
-      dashboard: 'Dashboard',
+      dashboard: 'Appointments',
       signOut: 'Sign Out',
       changeTheme: 'Toggle Theme',
     },
