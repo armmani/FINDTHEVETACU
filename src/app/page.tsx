@@ -24,10 +24,10 @@ export default function LandingPage() {
             <Image src="/FindTheVet.png" alt="FindTheVet" width={280} height={100} className="h-32 w-auto brightness-0 invert" priority />
           </div>
           <p className="text-xl md:text-2xl text-primary-100 mb-2">
-            ค้นหาสัตวแพทย์ฝังเข็ม ใกล้บ้านคุณ
+            สัตวแพทย์ไหนดี? เราช่วยคุณหาได้
           </p>
           <p className="text-primary-200 mb-10 max-w-xl mx-auto">
-            ดูโปรไฟล์ ใบอนุญาต และตารางออกตรวจ — เลือกหมอที่ไว้ใจแล้วติดต่อได้เลย
+            ค้นหาสัตวแพทย์และคลินิกใกล้บ้าน ดูโปรไฟล์ ใบอนุญาต และตารางออกตรวจได้เลย
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/auth/register?role=owner" className="bg-white text-navy-700 font-bold py-3 px-8 rounded-xl hover:bg-gray-100 transition-colors">
