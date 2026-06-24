@@ -17,9 +17,15 @@ export default async function VetLayout({ children }: { children: React.ReactNod
 
   if (!profile || profile.role !== 'vet') redirect('/owner/dashboard')
 
+  const { data: vp } = await supabase
+    .from('vet_profiles')
+    .select('full_name_en')
+    .eq('user_id', user.id)
+    .single()
+
   return (
     <div className="min-h-screen">
-      <Navbar profile={profile as Profile} />
+      <Navbar profile={profile as Profile} fullNameEn={vp?.full_name_en ?? null} />
       <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
     </div>
   )

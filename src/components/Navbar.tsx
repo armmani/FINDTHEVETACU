@@ -10,9 +10,10 @@ import type { Profile } from '@/lib/types'
 
 interface NavbarProps {
   profile: Profile
+  fullNameEn?: string | null
 }
 
-export default function Navbar({ profile }: NavbarProps) {
+export default function Navbar({ profile, fullNameEn }: NavbarProps) {
   const router = useRouter()
   const supabase = createClient()
   const { theme, setTheme } = useTheme()
@@ -62,7 +63,11 @@ export default function Navbar({ profile }: NavbarProps) {
             </>
           )}
           <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
-            {profile.full_name && !profile.full_name.includes('@') ? profile.full_name : profile.full_name?.split('@')[0]}
+            {lang === 'en' && fullNameEn
+              ? `${fullNameEn}, DVM`
+              : profile.full_name && !profile.full_name.includes('@')
+                ? profile.full_name
+                : profile.full_name?.split('@')[0]}
           </span>
 
           {/* Language toggle */}
