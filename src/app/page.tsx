@@ -74,7 +74,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-gray-200 py-8 text-center text-sm text-gray-500">
-        © 2026 Thai acuPETure — แพลตฟอร์มค้นหาสัตวแพทย์ฝังเข็ม
+        © 2026 FindTheVet — แพลตฟอร์มค้นหาสัตวแพทย์ฝังเข็ม
       </footer>
     </main>
   )

@@ -68,7 +68,7 @@ export default function OwnerSettingsPage() {
     const res = await fetch('/api/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, message: '✅ <b>Thai acuPETure</b>\nเชื่อมต่อ Telegram สำเร็จแล้ว! คุณจะได้รับการแจ้งเตือนที่นี่' }),
+      body: JSON.stringify({ chat_id: chatId, message: '✅ <b>FindTheVet</b>\nเชื่อมต่อ Telegram สำเร็จแล้ว! คุณจะได้รับการแจ้งเตือนที่นี่' }),
     })
     const data = await res.json()
     if (data.ok) toast.success('ส่งข้อความทดสอบแล้ว ตรวจสอบ Telegram!')

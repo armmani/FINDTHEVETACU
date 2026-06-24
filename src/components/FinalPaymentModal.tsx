@@ -47,7 +47,7 @@ export default function FinalPaymentModal({ booking, petName, onClose, onSuccess
       .eq('id', booking.appointment_id)
 
     // แจ้งเตือนหมอ
-    notifyUser(booking.vet_id, `🎉 <b>Thai acuPETure — การรักษาเสร็จสมบูรณ์!</b>\n\nเจ้าของยืนยันและชำระเงินครบสำหรับ <b>${petName || 'สัตว์เลี้ยง'}</b>\nคุณจะได้รับ ${vetPayout.toLocaleString()} บาท (หลังหัก Platform Fee 5%)`)
+    notifyUser(booking.vet_id, `🎉 <b>FindTheVet — การรักษาเสร็จสมบูรณ์!</b>\n\nเจ้าของยืนยันและชำระเงินครบสำหรับ <b>${petName || 'สัตว์เลี้ยง'}</b>\nคุณจะได้รับ ${vetPayout.toLocaleString()} บาท (หลังหัก Platform Fee 5%)`)
 
     setPaid(true)
     setLoading(false)
