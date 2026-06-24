@@ -1,10 +1,22 @@
+'use client'
+
 import Link from 'next/link'
 import Image from 'next/image'
 import { Phone, Shield, Search } from 'lucide-react'
+import { useTheme } from 'next-themes'
+import { useEffect } from 'react'
 
 export default function LandingPage() {
+  const { theme, setTheme } = useTheme()
+
+  useEffect(() => {
+    const prev = theme
+    setTheme('light')
+    return () => { if (prev) setTheme(prev) }
+  }, [])
+
   return (
-    <main className="light min-h-screen bg-white text-gray-900">
+    <main className="min-h-screen bg-white text-gray-900">
       {/* Hero */}
       <section className="bg-gradient-to-br from-navy-700 to-navy-800 text-white">
         <div className="max-w-5xl mx-auto px-4 py-20 text-center">
@@ -36,7 +48,7 @@ export default function LandingPage() {
 
       {/* How it works */}
       <section className="max-w-5xl mx-auto px-4 py-20">
-        <h2 className="text-2xl font-bold text-center mb-12">วิธีการใช้งาน</h2>
+        <h2 className="text-2xl font-bold text-center mb-12 text-gray-900">วิธีการใช้งาน</h2>
         <div className="grid md:grid-cols-3 gap-8">
           {[
             {
@@ -65,7 +77,7 @@ export default function LandingPage() {
                   {step}
                 </span>
               </div>
-              <h3 className="font-semibold text-lg mb-2">{title}</h3>
+              <h3 className="font-semibold text-lg mb-2 text-gray-900">{title}</h3>
               <p className="text-gray-600 text-sm leading-relaxed">{desc}</p>
             </div>
           ))}
