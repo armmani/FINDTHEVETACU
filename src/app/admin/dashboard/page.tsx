@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Users, Stethoscope, CalendarCheck, Banknote, TrendingUp, Clock, XCircle, CheckCircle, ShieldCheck, ShieldX, Building2, ExternalLink, Plus, Trash2, Eye } from 'lucide-react'
+import { Users, Stethoscope, CalendarCheck, XCircle, CheckCircle, ShieldCheck, ShieldX, Building2, Plus, Trash2, Eye } from 'lucide-react'
 import Link from 'next/link'
 
 interface Stats {
@@ -144,7 +144,7 @@ export default function AdminDashboard() {
       supabase.from('clinics').select(`
         id, name, type, province, phone, status, license_doc_url, created_at,
         owner:profiles!clinics_owner_vet_id_fkey(full_name)
-      `).eq('status', 'pending').order('created_at'),
+      `).order('created_at', { ascending: false }),
     ])
 
     const mappedVets = (vetData || []).map((v: any) => ({
@@ -226,49 +226,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Revenue stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="card bg-primary-50 border border-primary-100">
-          <div className="flex items-center gap-3 mb-1">
-            <TrendingUp className="w-5 h-5 text-primary-600" />
-            <p className="text-sm text-primary-600 font-medium">รายได้รวม (Completed)</p>
-          </div>
-          <p className="text-2xl font-bold text-primary-700">{stats?.totalRevenue.toLocaleString()} บาท</p>
-        </div>
-        <div className="card bg-green-50 border border-green-100">
-          <div className="flex items-center gap-3 mb-1">
-            <Banknote className="w-5 h-5 text-green-600" />
-            <p className="text-sm text-green-600 font-medium">Platform Fee รวม</p>
-          </div>
-          <p className="text-2xl font-bold text-green-700">{stats?.totalPlatformFee.toLocaleString()} บาท</p>
-        </div>
-        <div className="card bg-gray-50 border border-gray-200">
-          <div className="flex items-center gap-3 mb-1">
-            <CheckCircle className="w-5 h-5 text-gray-500" />
-            <p className="text-sm text-gray-500 font-medium">จ่ายให้หมอรวม</p>
-          </div>
-          <p className="text-2xl font-bold text-gray-700">{stats?.totalPayout.toLocaleString()} บาท</p>
-        </div>
-      </div>
-
-      {/* Booking status summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { key: 'all', label: 'ทั้งหมด', count: stats?.totalBookings, color: 'gray' },
-          { key: 'pending_payment', label: 'รอมัดจำ', count: stats?.pendingBookings, color: 'yellow' },
-          { key: 'confirmed', label: 'กำลังดำเนินการ', count: stats?.confirmedBookings, color: 'green' },
-          { key: 'cancelled', label: 'ยกเลิก', count: stats?.cancelledBookings, color: 'red' },
-        ].map(s => (
-          <button
-            key={s.key}
-            onClick={() => setFilter(s.key)}
-            className={`card text-left transition-all ${filter === s.key ? 'ring-2 ring-primary-400' : ''}`}
-          >
-            <p className="text-2xl font-bold">{s.count}</p>
-            <p className="text-sm text-gray-500">{s.label}</p>
-          </button>
-        ))}
-      </div>
 
       {/* Specialty Types Management */}
       <div>
@@ -303,65 +260,62 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Pending Clinics */}
-      {clinics.length > 0 && (
-        <div>
-          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-amber-500" />
-            คลินิกรอตรวจสอบ ({clinics.length})
-          </h2>
+      {/* All Clinics */}
+      <div>
+        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <Building2 className="w-5 h-5 text-primary-500" />
+          รายชื่อคลินิก ({clinics.length})
+          {clinics.filter(c => c.status === 'pending').length > 0 && (
+            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+              รอตรวจสอบ {clinics.filter(c => c.status === 'pending').length}
+            </span>
+          )}
+        </h2>
+        {clinics.length === 0 ? (
+          <div className="card text-center py-8 text-gray-400">ยังไม่มีคลินิกในระบบ</div>
+        ) : (
           <div className="space-y-3">
-            {clinics.map(clinic => (
-              <div key={clinic.id} className="card border-l-4 border-amber-400">
-                <div className="flex items-start justify-between gap-4 flex-wrap">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold">{clinic.name}</span>
-                      <span className="text-xs bg-primary-50 text-primary-600 px-2 py-0.5 rounded-full">
-                        {clinic.type === 'clinic' ? 'คลินิก' : 'โรงพยาบาลสัตว์'}
-                      </span>
+            {clinics.map(clinic => {
+              const statusColor = clinic.status === 'approved'
+                ? 'border-l-primary-400 bg-primary-50/30'
+                : clinic.status === 'rejected'
+                ? 'border-l-red-400 bg-red-50/30'
+                : 'border-l-amber-400 bg-amber-50/30'
+              const statusBadge = clinic.status === 'approved'
+                ? 'bg-green-100 text-green-700'
+                : clinic.status === 'rejected'
+                ? 'bg-red-100 text-red-600'
+                : 'bg-amber-100 text-amber-700'
+              const statusLabel = clinic.status === 'approved' ? 'อนุมัติแล้ว'
+                : clinic.status === 'rejected' ? 'ไม่อนุมัติ' : 'รอตรวจสอบ'
+              return (
+                <div key={clinic.id} className={`card border-l-4 ${statusColor}`}>
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold">{clinic.name}</span>
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                          {clinic.type === 'clinic' ? 'คลินิก' : 'โรงพยาบาลสัตว์'}
+                        </span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusBadge}`}>
+                          {statusLabel}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-0.5">
+                        {clinic.province} · {(clinic.owner as any)?.full_name || '-'}
+                      </p>
                     </div>
-                    <p className="text-sm text-gray-500 mt-0.5">{clinic.province} · ส่งโดย {(clinic.owner as any)?.full_name || '-'}</p>
-                    {clinic.phone && <p className="text-xs text-gray-400">📞 {clinic.phone}</p>}
-                    {clinic.license_doc_url && (
-                      <a href={clinic.license_doc_url} target="_blank" rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-blue-500 hover:underline mt-1">
-                        <ExternalLink className="w-3 h-3" /> ดูใบอนุญาต
-                      </a>
-                    )}
-                    <div className="mt-2">
-                      <input
-                        value={rejectReason[clinic.id] || ''}
-                        onChange={e => setRejectReason(prev => ({ ...prev, [clinic.id]: e.target.value }))}
-                        placeholder="เหตุผลหากไม่อนุมัติ (ไม่บังคับ)"
-                        className="input text-sm py-1.5"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-2 shrink-0 flex-col sm:flex-row">
                     <Link href={`/admin/clinic/${clinic.id}`}
-                      className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium transition-colors">
+                      className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium transition-colors shrink-0">
                       <Eye className="w-4 h-4" /> ดูรายละเอียด
                     </Link>
-                    <button
-                      onClick={() => handleClinicApprove(clinic.id, true)}
-                      disabled={approvingClinic === clinic.id}
-                      className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 font-medium transition-colors">
-                      <CheckCircle className="w-4 h-4" /> อนุมัติ
-                    </button>
-                    <button
-                      onClick={() => handleClinicApprove(clinic.id, false)}
-                      disabled={approvingClinic === clinic.id}
-                      className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 font-medium transition-colors">
-                      <XCircle className="w-4 h-4" /> ไม่อนุมัติ
-                    </button>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Vet profiles */}
       {vets.length > 0 && (
