@@ -60,10 +60,10 @@ export default function CancelModal({ booking, cancelledBy, ownerUserId, petName
     const name = petName || 'สัตว์เลี้ยง'
     if (isOwnerCancel) {
       // เจ้าของยกเลิก → แจ้งหมอ
-      notifyUser(booking.vet_id, `❌ <b>VetAcu — เจ้าของยกเลิกนัด</b>\n\nเจ้าของยกเลิกนัดสำหรับ <b>${name}</b>\nคุณได้รับเงินมัดจำ ${vetPayout.toLocaleString()} บาท (หลังหัก Platform Fee)`)
+      notifyUser(booking.vet_id, `❌ <b>TH AcuPETure — เจ้าของยกเลิกนัด</b>\n\nเจ้าของยกเลิกนัดสำหรับ <b>${name}</b>\nคุณได้รับเงินมัดจำ ${vetPayout.toLocaleString()} บาท (หลังหัก Platform Fee)`)
     } else if (ownerUserId) {
       // หมอยกเลิก → แจ้งเจ้าของ
-      notifyUser(ownerUserId, `❌ <b>VetAcu — หมอยกเลิกงาน</b>\n\nหมอยกเลิกนัดสำหรับ <b>${name}</b>\nเงินมัดจำ ${ownerRefund.toLocaleString()} บาท จะถูกคืนให้คุณ`)
+      notifyUser(ownerUserId, `❌ <b>TH AcuPETure — หมอยกเลิกงาน</b>\n\nหมอยกเลิกนัดสำหรับ <b>${name}</b>\nเงินมัดจำ ${ownerRefund.toLocaleString()} บาท จะถูกคืนให้คุณ`)
     }
 
     toast.success(isOwnerCancel ? 'ยกเลิกนัดแล้ว' : 'ยกเลิกงานแล้ว')

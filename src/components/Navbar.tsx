@@ -30,7 +30,7 @@ export default function Navbar({ profile, fullNameEn }: NavbarProps) {
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link href="/vets" className="flex items-center gap-2 font-bold text-primary-600">
           <Syringe className="w-5 h-5" />
-          VetAcu
+          TH AcuPETure
         </Link>
 
         <div className="flex items-center gap-4">

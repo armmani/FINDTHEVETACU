@@ -93,7 +93,7 @@ function RegisterForm() {
     // ถ้าเป็นหมอ สร้าง vet_profile เปล่าๆ แล้วแจ้ง admin
     if (role === 'vet') {
       await supabase.from('vet_profiles').upsert({ user_id: userId })
-      notifyAdmin(`🩺 <b>VetAcu — หมอใหม่รอยืนยัน!</b>\n\n<b>${fullName}</b> สมัครเป็นสัตวแพทย์\nกรุณาตรวจสอบใบอนุญาตและยืนยันตัวตนใน Admin Dashboard`)
+      notifyAdmin(`🩺 <b>TH AcuPETure — หมอใหม่รอยืนยัน!</b>\n\n<b>${fullName}</b> สมัครเป็นสัตวแพทย์\nกรุณาตรวจสอบใบอนุญาตและยืนยันตัวตนใน Admin Dashboard`)
     }
 
     toast.success('ยืนยันอีเมลสำเร็จ!')

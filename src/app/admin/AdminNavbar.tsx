@@ -24,7 +24,7 @@ export default function AdminNavbar({ fullName }: { fullName: string }) {
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link href="/admin/dashboard" className="flex items-center gap-2 font-bold text-primary-600">
           <Syringe className="w-5 h-5" />
-          VetAcu <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full">Admin</span>
+          TH AcuPETure <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full">Admin</span>
         </Link>
         <div className="flex items-center gap-4">
           <Link href="/admin/dashboard" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">

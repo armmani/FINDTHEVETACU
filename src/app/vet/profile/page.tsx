@@ -493,7 +493,7 @@ export default function VetProfilePage() {
                 setTestingTelegram(true)
                 const res = await fetch('/api/notify', {
                   method: 'POST', headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ chat_id: telegramChatId, message: '✅ <b>VetAcu</b>\nเชื่อมต่อ Telegram สำเร็จแล้ว!' }),
+                  body: JSON.stringify({ chat_id: telegramChatId, message: '✅ <b>TH AcuPETure</b>\nเชื่อมต่อ Telegram สำเร็จแล้ว!' }),
                 })
                 const data = await res.json()
                 if (data.ok) toast.success('ส่งทดสอบแล้ว ตรวจสอบ Telegram!')
