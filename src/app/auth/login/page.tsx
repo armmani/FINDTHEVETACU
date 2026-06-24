@@ -3,8 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase'
-import { Syringe } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function LoginPage() {
@@ -49,55 +49,16 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
       <div className="card w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-3">
-            <div className="bg-primary-100 p-3 rounded-full">
-              <Syringe className="w-8 h-8 text-primary-600" />
-            </div>
+        <div className="text-center mb-6">
+          <div className="flex justify-center mb-4">
+            <Image src="/FindTheVet.png" alt="FindTheVet" width={200} height={60} className="h-12 w-auto" priority />
           </div>
           <h1 className="text-2xl font-bold">เข้าสู่ระบบ</h1>
-          <p className="text-gray-500 text-sm mt-1">FindTheVet — หมอฝังเข็มสัตว์</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="label">อีเมล</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="input"
-              placeholder="your@email.com"
-              required
-            />
-          </div>
-          <div>
-            <label className="label">รหัสผ่าน</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="input"
-              placeholder="••••••••"
-              required
-            />
-          </div>
-          <button type="submit" disabled={loading} className="btn-primary w-full py-2.5">
-            {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
-          </button>
-        </form>
-
-        <div className="relative my-5">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200" />
-          </div>
-          <div className="relative flex justify-center text-xs text-gray-400">
-            <span className="bg-white px-3">หรือ</span>
-          </div>
-        </div>
-
+        {/* Google ขึ้นก่อน */}
         <button onClick={handleGoogleLogin} disabled={googleLoading}
-          className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700">
+          className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700 mb-4">
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -106,6 +67,31 @@ export default function LoginPage() {
           </svg>
           {googleLoading ? 'กำลังเชื่อมต่อ...' : 'เข้าสู่ระบบด้วย Google'}
         </button>
+
+        <div className="relative mb-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-200" />
+          </div>
+          <div className="relative flex justify-center text-xs text-gray-400">
+            <span className="bg-white px-3">หรือเข้าสู่ระบบด้วยอีเมล</span>
+          </div>
+        </div>
+
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="label">อีเมล</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              className="input" placeholder="your@email.com" required />
+          </div>
+          <div>
+            <label className="label">รหัสผ่าน</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+              className="input" placeholder="••••••••" required />
+          </div>
+          <button type="submit" disabled={loading} className="btn-primary w-full py-2.5">
+            {loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
+          </button>
+        </form>
 
         <div className="text-center mt-4">
           <Link href="/auth/forgot-password" className="text-sm text-gray-400 hover:text-primary-600">
