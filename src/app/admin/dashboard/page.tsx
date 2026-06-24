@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Users, Stethoscope, CalendarCheck, Banknote, TrendingUp, Clock, XCircle, CheckCircle, ShieldCheck, ShieldX, Building2, ExternalLink } from 'lucide-react'
+import { Users, Stethoscope, CalendarCheck, Banknote, TrendingUp, Clock, XCircle, CheckCircle, ShieldCheck, ShieldX, Building2, ExternalLink, Plus, Trash2 } from 'lucide-react'
 
 interface Stats {
   totalOwners: number
@@ -75,11 +75,29 @@ export default function AdminDashboard() {
   const [vets, setVets] = useState<VetRow[]>([])
   const [owners, setOwners] = useState<OwnerRow[]>([])
   const [clinics, setClinics] = useState<ClinicRow[]>([])
+  const [specialtyTypes, setSpecialtyTypes] = useState<{ id: string; name_th: string; name_en: string }[]>([])
+  const [newSpTh, setNewSpTh] = useState('')
+  const [newSpEn, setNewSpEn] = useState('')
+  const [savingSp, setSavingSp] = useState(false)
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [verifying, setVerifying] = useState<string | null>(null)
   const [approvingClinic, setApprovingClinic] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState<Record<string, string>>({})
+
+  const handleAddSpecialty = async () => {
+    if (!newSpTh.trim() || !newSpEn.trim()) { return }
+    setSavingSp(true)
+    const { data } = await supabase.from('specialty_types').insert({ name_th: newSpTh.trim(), name_en: newSpEn.trim() }).select().single()
+    if (data) setSpecialtyTypes(prev => [...prev, data])
+    setNewSpTh(''); setNewSpEn('')
+    setSavingSp(false)
+  }
+
+  const handleDeleteSpecialty = async (id: string) => {
+    await supabase.from('specialty_types').delete().eq('id', id)
+    setSpecialtyTypes(prev => prev.filter(s => s.id !== id))
+  }
 
   const handleClinicApprove = async (clinicId: string, approve: boolean) => {
     setApprovingClinic(clinicId)
@@ -107,6 +125,7 @@ export default function AdminDashboard() {
       { count: vetCount },
       { data: allBookings },
       { data: vetData },
+      { data: spData },
       { data: clinicData },
     ] = await Promise.all([
       supabase.from('profiles').select('id, full_name, phone, avatar_url, created_at', { count: 'exact' }).eq('role', 'owner').order('created_at', { ascending: false }),
@@ -120,6 +139,7 @@ export default function AdminDashboard() {
         user_id, university, graduation_year, additional_education, is_available, is_verified, license_number,
         profiles!inner(full_name, avatar_url)
       `).order('is_verified', { ascending: true }),
+      supabase.from('specialty_types').select('*').order('name_th'),
       supabase.from('clinics').select(`
         id, name, type, province, phone, status, license_doc_url, created_at,
         owner:profiles!clinics_owner_vet_id_fkey(full_name)
@@ -142,6 +162,7 @@ export default function AdminDashboard() {
     const totalPayout = completed.reduce((s, b) => s + (b.vet_payout || 0), 0)
 
     setOwners((ownerData || []) as OwnerRow[])
+    setSpecialtyTypes((spData || []) as any)
     setClinics((clinicData || []).map((c: any) => ({ ...c, owner: c.owner })) as ClinicRow[])
 
     setStats({
@@ -246,6 +267,39 @@ export default function AdminDashboard() {
             <p className="text-sm text-gray-500">{s.label}</p>
           </button>
         ))}
+      </div>
+
+      {/* Specialty Types Management */}
+      <div>
+        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <Stethoscope className="w-5 h-5 text-primary-500" />
+          จัดการแผนกเฉพาะทาง
+        </h2>
+        <div className="card space-y-4">
+          <div className="flex gap-2">
+            <input value={newSpTh} onChange={e => setNewSpTh(e.target.value)}
+              placeholder="ชื่อภาษาไทย เช่น ฝังเข็ม" className="input flex-1" />
+            <input value={newSpEn} onChange={e => setNewSpEn(e.target.value)}
+              placeholder="English e.g. Acupuncture" className="input flex-1" />
+            <button onClick={handleAddSpecialty} disabled={savingSp || !newSpTh || !newSpEn}
+              className="btn-primary px-4 flex items-center gap-1 shrink-0">
+              <Plus className="w-4 h-4" /> เพิ่ม
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {specialtyTypes.map(sp => (
+              <div key={sp.id} className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-sm">
+                <span>{sp.name_th}</span>
+                <span className="text-blue-400 text-xs">/ {sp.name_en}</span>
+                <button onClick={() => handleDeleteSpecialty(sp.id)}
+                  className="text-blue-300 hover:text-red-500 transition-colors ml-1">
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+            {specialtyTypes.length === 0 && <p className="text-sm text-gray-400">ยังไม่มีแผนก</p>}
+          </div>
+        </div>
       </div>
 
       {/* Pending Clinics */}

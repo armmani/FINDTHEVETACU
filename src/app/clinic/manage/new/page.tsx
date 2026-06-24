@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 import { getProvinces, getDistricts, getSubDistricts } from '@/lib/thaiAddress'
-import { Plus, Trash2, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 
 const DAYS = [
   { key: '1', label: 'จันทร์' }, { key: '2', label: 'อังคาร' },
@@ -15,12 +15,14 @@ const DAYS = [
 ]
 
 interface DayHours { open: string; close: string }
-interface Specialty { name: string; hours: Record<string, DayHours> }
+interface SpecialtyType { id: string; name_th: string; name_en: string }
+interface SelectedSpecialty { specialty_type_id: string; hours: Record<string, DayHours> }
 
 export default function NewClinicPage() {
   const router = useRouter()
   const supabase = createClient()
   const [saving, setSaving] = useState(false)
+  const [specialtyTypes, setSpecialtyTypes] = useState<SpecialtyType[]>([])
 
   const [name, setName] = useState('')
   const [nameEn, setNameEn] = useState('')
@@ -34,9 +36,13 @@ export default function NewClinicPage() {
   const [subDistrict, setSubDistrict] = useState('')
   const [addressDetail, setAddressDetail] = useState('')
   const [openingHours, setOpeningHours] = useState<Record<string, DayHours>>({})
-  const [specialties, setSpecialties] = useState<Specialty[]>([])
+  const [selectedSpecialties, setSelectedSpecialties] = useState<SelectedSpecialty[]>([])
   const [licenseFile, setLicenseFile] = useState<File | null>(null)
-  const [newSpecialty, setNewSpecialty] = useState('')
+
+  useEffect(() => {
+    supabase.from('specialty_types').select('*').order('name_th')
+      .then(({ data }) => setSpecialtyTypes(data || []))
+  }, [])
 
   const toggleDay = (day: string) => {
     setOpeningHours(prev => {
@@ -49,27 +55,27 @@ export default function NewClinicPage() {
     setOpeningHours(prev => ({ ...prev, [day]: { ...prev[day], [field]: val } }))
   }
 
-  const addSpecialty = () => {
-    if (!newSpecialty.trim()) return
-    setSpecialties(prev => [...prev, { name: newSpecialty.trim(), hours: {} }])
-    setNewSpecialty('')
+  const toggleSpecialty = (id: string) => {
+    setSelectedSpecialties(prev => {
+      if (prev.find(s => s.specialty_type_id === id))
+        return prev.filter(s => s.specialty_type_id !== id)
+      return [...prev, { specialty_type_id: id, hours: {} }]
+    })
   }
 
-  const removeSpecialty = (i: number) => setSpecialties(prev => prev.filter((_, idx) => idx !== i))
-
-  const toggleSpecialtyDay = (si: number, day: string) => {
-    setSpecialties(prev => prev.map((sp, i) => {
-      if (i !== si) return sp
-      const h = { ...sp.hours }
+  const toggleSpecialtyDay = (id: string, day: string) => {
+    setSelectedSpecialties(prev => prev.map(s => {
+      if (s.specialty_type_id !== id) return s
+      const h = { ...s.hours }
       if (h[day]) { delete h[day] } else { h[day] = { open: '08:00', close: '17:00' } }
-      return { ...sp, hours: h }
+      return { ...s, hours: h }
     }))
   }
 
-  const updateSpecialtyHours = (si: number, day: string, field: 'open' | 'close', val: string) => {
-    setSpecialties(prev => prev.map((sp, i) => {
-      if (i !== si) return sp
-      return { ...sp, hours: { ...sp.hours, [day]: { ...sp.hours[day], [field]: val } } }
+  const updateSpecialtyHours = (id: string, day: string, field: 'open' | 'close', val: string) => {
+    setSelectedSpecialties(prev => prev.map(s => {
+      if (s.specialty_type_id !== id) return s
+      return { ...s, hours: { ...s.hours, [day]: { ...s.hours[day], [field]: val } } }
     }))
   }
 
@@ -82,13 +88,11 @@ export default function NewClinicPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    let licenseUrl = ''
     const ext = licenseFile.name.split('.').pop()
     const path = `clinic-licenses/${user.id}-${Date.now()}.${ext}`
     const { error: uploadErr } = await supabase.storage.from('clinic-docs').upload(path, licenseFile)
     if (uploadErr) { toast.error('อัปโหลดไฟล์ไม่สำเร็จ'); setSaving(false); return }
     const { data: urlData } = supabase.storage.from('clinic-docs').getPublicUrl(path)
-    licenseUrl = urlData.publicUrl
 
     const { data: clinic, error } = await supabase.from('clinics').insert({
       name: name.trim(),
@@ -103,18 +107,18 @@ export default function NewClinicPage() {
       sub_district: subDistrict || null,
       address_detail: addressDetail.trim() || null,
       opening_hours: openingHours,
-      license_doc_url: licenseUrl,
+      license_doc_url: urlData.publicUrl,
       owner_vet_id: user.id,
     }).select().single()
 
     if (error || !clinic) { toast.error('บันทึกไม่สำเร็จ'); setSaving(false); return }
 
-    if (specialties.length > 0) {
+    if (selectedSpecialties.length > 0) {
       await supabase.from('clinic_specialties').insert(
-        specialties.map(sp => ({
+        selectedSpecialties.map(s => ({
           clinic_id: clinic.id,
-          name: sp.name,
-          opening_hours: sp.hours,
+          specialty_type_id: s.specialty_type_id,
+          opening_hours: s.hours,
         }))
       )
     }
@@ -139,7 +143,6 @@ export default function NewClinicPage() {
       {/* ข้อมูลพื้นฐาน */}
       <div className="card space-y-4">
         <h2 className="font-semibold text-gray-700">ข้อมูลพื้นฐาน</h2>
-
         <div>
           <label className="label">ประเภท</label>
           <div className="flex gap-2">
@@ -153,7 +156,6 @@ export default function NewClinicPage() {
             ))}
           </div>
         </div>
-
         <div>
           <label className="label">ชื่อ (ภาษาไทย) *</label>
           <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="เช่น คลินิกสัตว์เลี้ยงสุขใจ" />
@@ -236,12 +238,10 @@ export default function NewClinicPage() {
           <div key={d.key} className="flex items-center gap-2 text-sm">
             <span className="w-16 text-gray-600 shrink-0">{d.label}</span>
             <input type="time" value={openingHours[d.key].open}
-              onChange={e => updateDayHours(d.key, 'open', e.target.value)}
-              className="input w-28" />
+              onChange={e => updateDayHours(d.key, 'open', e.target.value)} className="input w-28" />
             <span className="text-gray-400">–</span>
             <input type="time" value={openingHours[d.key].close}
-              onChange={e => updateDayHours(d.key, 'close', e.target.value)}
-              className="input w-28" />
+              onChange={e => updateDayHours(d.key, 'close', e.target.value)} className="input w-28" />
           </div>
         ))}
       </div>
@@ -249,53 +249,64 @@ export default function NewClinicPage() {
       {/* แผนกเฉพาะทาง */}
       <div className="card space-y-3">
         <h2 className="font-semibold text-gray-700">แผนกเฉพาะทาง</h2>
-        <div className="flex gap-2">
-          <input className="input flex-1" value={newSpecialty} onChange={e => setNewSpecialty(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && addSpecialty()}
-            placeholder="เช่น ฝังเข็ม, ศัลยกรรม, ทันตกรรม" />
-          <button onClick={addSpecialty} className="btn-secondary px-3">
-            <Plus className="w-4 h-4" />
-          </button>
-        </div>
-        {specialties.map((sp, si) => (
-          <div key={si} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-sm">{sp.name}</span>
-              <button onClick={() => removeSpecialty(si)} className="text-red-400 hover:text-red-600">
-                <Trash2 className="w-4 h-4" />
-              </button>
+        {specialtyTypes.length === 0 ? (
+          <p className="text-sm text-gray-400">ยังไม่มีแผนกในระบบ</p>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              {specialtyTypes.map(sp => {
+                const selected = selectedSpecialties.find(s => s.specialty_type_id === sp.id)
+                return (
+                  <button key={sp.id} onClick={() => toggleSpecialty(sp.id)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                      selected ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 text-gray-500 hover:border-primary-400'
+                    }`}>
+                    {sp.name_th}
+                  </button>
+                )
+              })}
             </div>
-            <p className="text-xs text-gray-500">เวลาเฉพาะแผนก (ถ้าต่างจากคลินิก)</p>
-            <div className="flex flex-wrap gap-1.5">
-              {DAYS.map(d => (
-                <button key={d.key} onClick={() => toggleSpecialtyDay(si, d.key)}
-                  className={`px-2 py-1 rounded text-xs font-medium border transition-colors ${
-                    sp.hours[d.key] ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 text-gray-500'
-                  }`}>
-                  {d.label}
-                </button>
-              ))}
-            </div>
-            {DAYS.filter(d => sp.hours[d.key]).map(d => (
-              <div key={d.key} className="flex items-center gap-2 text-xs">
-                <span className="w-14 text-gray-600 shrink-0">{d.label}</span>
-                <input type="time" value={sp.hours[d.key].open}
-                  onChange={e => updateSpecialtyHours(si, d.key, 'open', e.target.value)}
-                  className="input w-24 text-xs py-1" />
-                <span className="text-gray-400">–</span>
-                <input type="time" value={sp.hours[d.key].close}
-                  onChange={e => updateSpecialtyHours(si, d.key, 'close', e.target.value)}
-                  className="input w-24 text-xs py-1" />
-              </div>
-            ))}
+
+            {selectedSpecialties.map(sel => {
+              const sp = specialtyTypes.find(s => s.id === sel.specialty_type_id)
+              if (!sp) return null
+              return (
+                <div key={sel.specialty_type_id} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 space-y-2">
+                  <p className="font-medium text-sm">{sp.name_th} <span className="text-gray-400 text-xs">({sp.name_en})</span></p>
+                  <p className="text-xs text-gray-500">เวลาเฉพาะแผนก (ถ้าต่างจากคลินิก)</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {DAYS.map(d => (
+                      <button key={d.key} onClick={() => toggleSpecialtyDay(sel.specialty_type_id, d.key)}
+                        className={`px-2 py-1 rounded text-xs font-medium border transition-colors ${
+                          sel.hours[d.key] ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 text-gray-500'
+                        }`}>
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
+                  {DAYS.filter(d => sel.hours[d.key]).map(d => (
+                    <div key={d.key} className="flex items-center gap-2 text-xs">
+                      <span className="w-14 text-gray-600 shrink-0">{d.label}</span>
+                      <input type="time" value={sel.hours[d.key].open}
+                        onChange={e => updateSpecialtyHours(sel.specialty_type_id, d.key, 'open', e.target.value)}
+                        className="input w-24 text-xs py-1" />
+                      <span className="text-gray-400">–</span>
+                      <input type="time" value={sel.hours[d.key].close}
+                        onChange={e => updateSpecialtyHours(sel.specialty_type_id, d.key, 'close', e.target.value)}
+                        className="input w-24 text-xs py-1" />
+                    </div>
+                  ))}
+                </div>
+              )
+            })}
           </div>
-        ))}
+        )}
       </div>
 
       {/* ใบอนุญาต */}
       <div className="card space-y-3">
         <h2 className="font-semibold text-gray-700">ใบอนุญาตดำเนินการสถานพยาบาลสัตว์ *</h2>
-        <p className="text-xs text-gray-500">อัปโหลดไฟล์ภาพหรือ PDF ของใบอนุญาต เพื่อให้ Admin ตรวจสอบ</p>
+        <p className="text-xs text-gray-500">อัปโหลดไฟล์ภาพหรือ PDF เพื่อให้ Admin ตรวจสอบ</p>
         <input type="file" accept="image/*,.pdf"
           onChange={e => setLicenseFile(e.target.files?.[0] || null)}
           className="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-600 hover:file:bg-primary-100" />

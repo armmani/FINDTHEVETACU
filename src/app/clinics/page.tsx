@@ -16,7 +16,7 @@ interface Clinic {
   province: string
   district: string | null
   opening_hours: Record<string, { open: string; close: string }> | null
-  clinic_specialties: { name: string }[]
+  clinic_specialties: { specialty_types: { name_th: string; name_en: string } }[]
 }
 
 const DAY_NAMES: Record<string, string> = {
@@ -39,7 +39,7 @@ export default function ClinicsPage() {
     const load = async () => {
       const { data } = await supabase
         .from('clinics')
-        .select('id, name, name_en, type, phone, province, district, opening_hours, clinic_specialties(name)')
+        .select('id, name, name_en, type, phone, province, district, opening_hours, clinic_specialties(specialty_types(name_th, name_en))')
         .eq('status', 'approved')
         .order('name')
       setClinics((data as Clinic[]) || [])
@@ -57,7 +57,7 @@ export default function ClinicsPage() {
       c.name_en?.toLowerCase().includes(s) ||
       c.province.toLowerCase().includes(s) ||
       c.district?.toLowerCase().includes(s) ||
-      c.clinic_specialties.some(sp => sp.name.toLowerCase().includes(s))
+      c.clinic_specialties.some(sp => sp.specialty_types?.name_th.toLowerCase().includes(s) || sp.specialty_types?.name_en.toLowerCase().includes(s))
     const matchProvince = !provinceFilter || c.province === provinceFilter
     const matchType = !typeFilter || c.type === typeFilter
     return matchSearch && matchProvince && matchType
@@ -150,7 +150,7 @@ export default function ClinicsPage() {
                       <div className="flex flex-wrap gap-1 mt-1.5">
                         {clinic.clinic_specialties.map((sp, i) => (
                           <span key={i} className="text-xs bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-full">
-                            {sp.name}
+                            {lang === 'en' ? sp.specialty_types?.name_en : sp.specialty_types?.name_th}
                           </span>
                         ))}
                       </div>

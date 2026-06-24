@@ -10,8 +10,9 @@ import Link from 'next/link'
 
 interface Specialty {
   id: string
-  name: string
+  specialty_type_id: string
   opening_hours: Record<string, { open: string; close: string }> | null
+  specialty_types: { name_th: string; name_en: string }
 }
 
 interface VetInClinic {
@@ -77,7 +78,7 @@ export default function ClinicDetailPage() {
       const [{ data: c }, { data: schedules }] = await Promise.all([
         supabase
           .from('clinics')
-          .select('*, clinic_specialties(*)')
+          .select('*, clinic_specialties(*, specialty_types(name_th, name_en))')
           .eq('id', id)
           .eq('status', 'approved')
           .single(),
@@ -195,7 +196,9 @@ export default function ClinicDetailPage() {
           </div>
           {clinic.clinic_specialties.map(sp => (
             <div key={sp.id} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3">
-              <p className="font-medium text-sm">{sp.name}</p>
+              <p className="font-medium text-sm">
+                {lang === 'en' ? sp.specialty_types?.name_en : sp.specialty_types?.name_th}
+              </p>
               {sp.opening_hours && Object.keys(sp.opening_hours).length > 0 && (
                 <div className="mt-2">
                   <HoursTable hours={sp.opening_hours} lang={lang} />
