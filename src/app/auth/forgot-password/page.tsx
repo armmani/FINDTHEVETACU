@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
-import { Syringe, ArrowLeft } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
+import Image from 'next/image'
 import toast from 'react-hot-toast'
 
 export default function ForgotPasswordPage() {
@@ -30,10 +31,8 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
       <div className="card w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="flex justify-center mb-3">
-            <div className="bg-primary-100 p-3 rounded-full">
-              <Syringe className="w-8 h-8 text-primary-600" />
-            </div>
+          <div className="flex justify-center mb-4">
+            <Image src="/FindTheVet.png" alt="FindTheVet" width={160} height={48} className="h-10 w-auto" />
           </div>
           <h1 className="text-2xl font-bold">ลืมรหัสผ่าน</h1>
           <p className="text-gray-500 text-sm mt-1">ระบบจะส่งลิงก์รีเซ็ตไปที่อีเมลของคุณ</p>

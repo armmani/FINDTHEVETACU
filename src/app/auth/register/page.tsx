@@ -4,7 +4,8 @@ import { Suspense, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
-import { Syringe, PawPrint, Stethoscope, Mail } from 'lucide-react'
+import { PawPrint, Stethoscope, Mail } from 'lucide-react'
+import Image from 'next/image'
 import toast from 'react-hot-toast'
 import type { Role } from '@/lib/types'
 import { notifyAdmin } from '@/lib/telegram'
@@ -163,9 +164,7 @@ function RegisterForm() {
       <div className="card w-full max-w-sm">
         <div className="text-center mb-6">
           <div className="flex justify-center mb-3">
-            <div className="bg-primary-100 p-3 rounded-full">
-              <Syringe className="w-8 h-8 text-primary-600" />
-            </div>
+            <Image src="/FindTheVet.png" alt="FindTheVet" width={160} height={48} className="h-10 w-auto" />
           </div>
           <h1 className="text-2xl font-bold">สมัครสมาชิก</h1>
         </div>
