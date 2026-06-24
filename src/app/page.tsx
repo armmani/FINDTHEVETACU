@@ -9,7 +9,7 @@ export default function LandingPage() {
       <section className="bg-gradient-to-br from-primary-600 to-primary-700 text-white">
         <div className="max-w-5xl mx-auto px-4 py-20 text-center">
           <div className="flex justify-center mb-8">
-            <Image src="/FindTheVet.png" alt="FindTheVet" width={280} height={100} className="h-16 w-auto brightness-0 invert" priority />
+            <Image src="/FindTheVet.png" alt="FindTheVet" width={280} height={100} className="h-24 w-auto brightness-0 invert" priority />
           </div>
           <p className="text-xl md:text-2xl text-primary-100 mb-2">
             ค้นหาสัตวแพทย์ฝังเข็ม ใกล้บ้านคุณ
