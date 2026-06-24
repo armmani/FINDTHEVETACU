@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { ShieldCheck, ExternalLink, MapPin, Calendar, ArrowLeft, Phone, Clock } from 'lucide-react'
+import { ShieldCheck, ExternalLink, MapPin, Calendar, ArrowLeft, Phone, Clock, Stethoscope } from 'lucide-react'
 import { useLang } from '@/contexts/LanguageContext'
 import { toProvinceEn } from '@/lib/provinces'
 
@@ -38,6 +38,7 @@ interface VetDetail {
   avatar_url: string | null
   phone: string | null
   schedules: VetSchedule[]
+  specialties: { name_th: string; name_en: string }[]
 }
 
 const DAY_NAMES = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์']
@@ -64,7 +65,7 @@ export default function VetDetailPage() {
 
   useEffect(() => {
     const load = async () => {
-      const [{ data: vp }, { data: schedules }] = await Promise.all([
+      const [{ data: vp }, { data: schedules }, { data: vetSp }] = await Promise.all([
         supabase
           .from('vet_profiles')
           .select(`
@@ -75,6 +76,7 @@ export default function VetDetailPage() {
           .eq('user_id', id)
           .single(),
         supabase.from('vet_schedules').select('*').eq('vet_id', id).order('created_at'),
+        supabase.from('vet_specialties').select('specialty_types(name_th, name_en)').eq('vet_id', id),
       ])
 
       if (!vp) { setLoading(false); return }
@@ -84,6 +86,7 @@ export default function VetDetailPage() {
         avatar_url: (vp as any).profiles?.avatar_url || null,
         phone: (vp as any).profiles?.phone || null,
         schedules: (schedules as VetSchedule[]) || [],
+        specialties: (vetSp || []).map((s: any) => s.specialty_types).filter(Boolean),
       })
       setLoading(false)
     }
@@ -162,6 +165,25 @@ export default function VetDetailPage() {
         <div className="card">
           <p className="text-sm font-semibold text-gray-500 mb-1">{t.vetDetail.about}</p>
           <p className="text-sm leading-relaxed">{vet.bio}</p>
+        </div>
+      )}
+
+      {/* ความเชี่ยวชาญเฉพาะทาง */}
+      {vet.specialties?.length > 0 && (
+        <div className="card">
+          <div className="flex items-center gap-2 mb-2">
+            <Stethoscope className="w-4 h-4 text-primary-500" />
+            <p className="text-sm font-semibold text-gray-500">
+              {lang === 'en' ? 'Specialties' : 'ความเชี่ยวชาญเฉพาะทาง'}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {vet.specialties.map((sp, i) => (
+              <span key={i} className="text-xs bg-primary-50 text-primary-700 border border-primary-100 px-2.5 py-1 rounded-full">
+                {lang === 'en' ? sp.name_en : sp.name_th}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 

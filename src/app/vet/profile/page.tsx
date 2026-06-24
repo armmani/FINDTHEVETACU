@@ -81,6 +81,8 @@ export default function VetProfilePage() {
   const [university, setUniversity] = useState('')
   const [graduationYear, setGraduationYear] = useState('')
   const [additionalEdu, setAdditionalEdu] = useState<string[]>([])
+  const [specialtyTypes, setSpecialtyTypes] = useState<{ id: string; name_th: string; name_en: string }[]>([])
+  const [vetSpecialties, setVetSpecialties] = useState<string[]>([])
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [telegramChatId, setTelegramChatId] = useState('')
   const [testingTelegram, setTestingTelegram] = useState(false)
@@ -117,10 +119,14 @@ export default function VetProfilePage() {
     if (!user) return
     setUserId(user.id)
 
-    const [{ data }, { data: profile }] = await Promise.all([
+    const [{ data }, { data: profile }, { data: spTypes }, { data: vetSp }] = await Promise.all([
       supabase.from('vet_profiles').select('*').eq('user_id', user.id).single(),
       supabase.from('profiles').select('full_name, telegram_chat_id, avatar_url').eq('id', user.id).single(),
+      supabase.from('specialty_types').select('*').order('name_th'),
+      supabase.from('vet_specialties').select('specialty_type_id').eq('vet_id', user.id),
     ])
+    setSpecialtyTypes((spTypes || []) as any)
+    setVetSpecialties((vetSp || []).map((s: any) => s.specialty_type_id))
     if (data) {
       setTitle(data.title || '')
       setFullNameEn(data.full_name_en || '')
@@ -259,6 +265,14 @@ export default function VetProfilePage() {
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
+
+    // บันทึก specialties — ลบเก่าแล้ว insert ใหม่
+    await supabase.from('vet_specialties').delete().eq('vet_id', user.id)
+    if (vetSpecialties.length > 0) {
+      await supabase.from('vet_specialties').insert(
+        vetSpecialties.map(id => ({ vet_id: user.id, specialty_type_id: id }))
+      )
+    }
 
     await Promise.all([
       supabase.from('vet_profiles').upsert({
@@ -428,6 +442,32 @@ export default function VetProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* ความเชี่ยวชาญเฉพาะทาง */}
+        {specialtyTypes.length > 0 && (
+          <div className="card">
+            <h2 className="font-semibold text-gray-800 mb-3">ความเชี่ยวชาญเฉพาะทาง</h2>
+            <div className="flex flex-wrap gap-2">
+              {specialtyTypes.map(sp => {
+                const selected = vetSpecialties.includes(sp.id)
+                return (
+                  <button key={sp.id} type="button"
+                    onClick={() => setVetSpecialties(prev =>
+                      selected ? prev.filter(id => id !== sp.id) : [...prev, sp.id]
+                    )}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                      selected
+                        ? 'bg-primary-600 text-white border-primary-600'
+                        : 'border-gray-300 text-gray-600 hover:border-primary-400'
+                    }`}>
+                    {sp.name_th}
+                    <span className="text-xs ml-1 opacity-70">/ {sp.name_en}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ค่าบริการ */}
         <div className="card">
