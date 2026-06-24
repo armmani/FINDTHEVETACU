@@ -12,7 +12,7 @@ export default function LandingPage() {
               <Syringe className="w-12 h-12" />
             </div>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">THacuPETure</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">Thai acuPETure</h1>
           <p className="text-xl md:text-2xl text-primary-100 mb-2">
             ค้นหาสัตวแพทย์ฝังเข็ม ใกล้บ้านคุณ
           </p>
@@ -76,7 +76,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t border-gray-200 py-8 text-center text-sm text-gray-500">
-        © 2026 THacuPETure — แพลตฟอร์มค้นหาสัตวแพทย์ฝังเข็ม
+        © 2026 Thai acuPETure — แพลตฟอร์มค้นหาสัตวแพทย์ฝังเข็ม
       </footer>
     </main>
   )

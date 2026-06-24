@@ -8,7 +8,7 @@ import { LanguageProvider } from '@/contexts/LanguageContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'THacuPETure — หมอฝังเข็มสัตว์ถึงบ้าน',
+  title: 'Thai acuPETure — หมอฝังเข็มสัตว์ถึงบ้าน',
   description: 'หาสัตวแพทย์ฝังเข็มที่พร้อมให้บริการ ง่าย รวดเร็ว ถึงบ้าน',
 }
 

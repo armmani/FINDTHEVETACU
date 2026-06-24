@@ -11,7 +11,7 @@ const t = {
     },
     vets: {
       title: 'รายชื่อสัตวแพทย์',
-      subtitle: 'สัตวแพทย์ฝังเข็มที่ลงทะเบียนในระบบ THacuPETure',
+      subtitle: 'สัตวแพทย์ฝังเข็มที่ลงทะเบียนในระบบ Thai acuPETure',
       verifyTitle: 'วิธีตรวจสอบใบอนุญาตประกอบวิชาชีพ',
       verifyDesc: 'พิมพ์ชื่อหรือนามสกุลของหมอที่เว็บสัตวแพทยสภา เพื่อยืนยันว่าเป็นสัตวแพทย์จริง',
       verifyLink: 'ไปที่เว็บสัตวแพทยสภา',
@@ -88,7 +88,7 @@ const t = {
     },
     vets: {
       title: 'Veterinarians',
-      subtitle: 'Acupuncture veterinarians registered on THacuPETure',
+      subtitle: 'Acupuncture veterinarians registered on Thai acuPETure',
       verifyTitle: 'How to verify a license',
       verifyDesc: 'Search the vet\'s name on the Veterinary Council of Thailand website to confirm their credentials.',
       verifyLink: 'Visit Veterinary Council',

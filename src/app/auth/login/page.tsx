@@ -56,7 +56,7 @@ export default function LoginPage() {
             </div>
           </div>
           <h1 className="text-2xl font-bold">เข้าสู่ระบบ</h1>
-          <p className="text-gray-500 text-sm mt-1">THacuPETure — หมอฝังเข็มสัตว์</p>
+          <p className="text-gray-500 text-sm mt-1">Thai acuPETure — หมอฝังเข็มสัตว์</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
