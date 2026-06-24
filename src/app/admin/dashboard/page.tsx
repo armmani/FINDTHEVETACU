@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Users, Stethoscope, CalendarCheck, Banknote, TrendingUp, Clock, XCircle, CheckCircle, ShieldCheck, ShieldX, Building2, ExternalLink, Plus, Trash2 } from 'lucide-react'
+import { Users, Stethoscope, CalendarCheck, Banknote, TrendingUp, Clock, XCircle, CheckCircle, ShieldCheck, ShieldX, Building2, ExternalLink, Plus, Trash2, Eye } from 'lucide-react'
+import Link from 'next/link'
 
 interface Stats {
   totalOwners: number
@@ -337,7 +338,11 @@ export default function AdminDashboard() {
                       />
                     </div>
                   </div>
-                  <div className="flex gap-2 shrink-0">
+                  <div className="flex gap-2 shrink-0 flex-col sm:flex-row">
+                    <Link href={`/admin/clinic/${clinic.id}`}
+                      className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium transition-colors">
+                      <Eye className="w-4 h-4" /> ดูรายละเอียด
+                    </Link>
                     <button
                       onClick={() => handleClinicApprove(clinic.id, true)}
                       disabled={approvingClinic === clinic.id}
