@@ -47,7 +47,7 @@ export async function GET(request: Request) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               chat_id: process.env.NEXT_PUBLIC_ADMIN_TELEGRAM_CHAT_ID,
-              text: `🩺 TH AcuPETure — หมอใหม่รอยืนยัน!\n\n${name} สมัครด้วย Google\nกรุณาตรวจสอบใบอนุญาตและยืนยันตัวตนใน Admin Dashboard`,
+              text: `🩺 THacuPETure — หมอใหม่รอยืนยัน!\n\n${name} สมัครด้วย Google\nกรุณาตรวจสอบใบอนุญาตและยืนยันตัวตนใน Admin Dashboard`,
               parse_mode: 'HTML',
             }),
           }).catch(() => {})

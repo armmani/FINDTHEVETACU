@@ -46,7 +46,7 @@ export default function PaymentModal({ booking, petName, onClose, onSuccess }: P
       .eq('id', booking.appointment_id)
 
     // แจ้งเตือนหมอ
-    notifyUser(booking.vet_id, `💰 <b>TH AcuPETure — ชำระมัดจำแล้ว!</b>\n\nเจ้าของชำระมัดจำสำหรับ <b>${petName || 'สัตว์เลี้ยง'}</b> แล้ว ${booking.deposit_amount.toLocaleString()} บาท\nการนัดหมายได้รับการยืนยัน`)
+    notifyUser(booking.vet_id, `💰 <b>THacuPETure — ชำระมัดจำแล้ว!</b>\n\nเจ้าของชำระมัดจำสำหรับ <b>${petName || 'สัตว์เลี้ยง'}</b> แล้ว ${booking.deposit_amount.toLocaleString()} บาท\nการนัดหมายได้รับการยืนยัน`)
 
     setPaid(true)
     setLoading(false)
