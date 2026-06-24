@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { ArrowLeft, CheckCircle, XCircle, ExternalLink, MapPin, Phone, Clock, Building2, Globe, Save } from 'lucide-react'
+import { ArrowLeft, CheckCircle, XCircle, ExternalLink, MapPin, Phone, Clock, Building2, Globe, Save, PlayCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { notifyAdmin } from '@/lib/telegram'
 
 const DAY_TH = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์']
 
@@ -38,7 +39,9 @@ export default function AdminClinicDetailPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [approving, setApproving] = useState(false)
+  const [reviewing, setReviewing] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
+  const [ownerId, setOwnerId] = useState<string | null>(null)
 
   // editable fields
   const [name, setName] = useState('')
@@ -67,6 +70,7 @@ export default function AdminClinicDetailPage() {
       if (data) {
         const c = data as any
         setClinic(c)
+        setOwnerId(c.owner_vet_id)
         setName(c.name || '')
         setNameEn(c.name_en || '')
         setPhone(c.phone || '')
@@ -103,6 +107,27 @@ export default function AdminClinicDetailPage() {
     setSaving(false)
   }
 
+  const notifyOwner = async (message: string) => {
+    if (!ownerId) return
+    const { data } = await supabase.from('profiles').select('telegram_chat_id').eq('id', ownerId).single()
+    const chatId = (data as any)?.telegram_chat_id
+    if (!chatId) return
+    await fetch('/api/notify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, message }),
+    })
+  }
+
+  const handleStartReview = async () => {
+    setReviewing(true)
+    await supabase.from('clinics').update({ status: 'reviewing' }).eq('id', id)
+    await notifyOwner(`🔍 <b>FindTheVet — Admin รับเรื่องแล้ว</b>\n\n<b>${clinic?.name}</b> กำลังถูกตรวจสอบโดย Admin\nกรุณารอผลการตรวจสอบ ระหว่างนี้จะยังแก้ไขข้อมูลไม่ได้`)
+    toast.success('เปลี่ยนสถานะเป็นกำลังตรวจสอบแล้ว')
+    setClinic(prev => prev ? { ...prev, status: 'reviewing' } : prev)
+    setReviewing(false)
+  }
+
   const handleApprove = async (approve: boolean) => {
     if (!approve && !rejectReason.trim()) {
       toast.error('กรุณาระบุเหตุผลที่ไม่อนุมัติ')
@@ -113,6 +138,13 @@ export default function AdminClinicDetailPage() {
       status: approve ? 'approved' : 'rejected',
       reject_reason: approve ? null : rejectReason.trim(),
     }).eq('id', id)
+
+    if (approve) {
+      await notifyOwner(`✅ <b>FindTheVet — คลินิกได้รับการยืนยัน!</b>\n\n<b>${clinic?.name}</b> ผ่านการตรวจสอบแล้ว\nตอนนี้คลินิกของคุณแสดงในระบบ FindTheVet แล้วครับ`)
+    } else {
+      await notifyOwner(`❌ <b>FindTheVet — คลินิกไม่ผ่านการตรวจสอบ</b>\n\n<b>${clinic?.name}</b>\n\n<b>เหตุผล:</b> ${rejectReason.trim()}\n\nกรุณาแก้ไขข้อมูลแล้วส่งใหม่ได้เลยครับ`)
+    }
+
     toast.success(approve ? 'อนุมัติคลินิกแล้ว' : 'ปฏิเสธคลินิกแล้ว')
     router.push('/admin/dashboard')
   }
@@ -263,24 +295,36 @@ export default function AdminClinicDetailPage() {
         </div>
       )}
 
-      {/* Approve / Reject */}
+      {/* Status actions */}
       <div className="card border-2 border-dashed border-gray-200 space-y-3">
         <h2 className="font-semibold">ผลการตรวจสอบ</h2>
-        <div>
-          <label className="label">เหตุผลหากไม่อนุมัติ</label>
-          <input value={rejectReason} onChange={e => setRejectReason(e.target.value)}
-            className="input" placeholder="เช่น ใบอนุญาตไม่ถูกต้อง / ข้อมูลไม่ครบ" />
-        </div>
-        <div className="flex gap-3">
-          <button onClick={() => handleApprove(true)} disabled={approving}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-semibold transition-colors">
-            <CheckCircle className="w-4 h-4" /> อนุมัติ
+
+        {clinic.status === 'pending' && (
+          <button onClick={handleStartReview} disabled={reviewing}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-semibold transition-colors">
+            <PlayCircle className="w-4 h-4" /> {reviewing ? 'กำลังอัปเดต...' : 'รับเรื่อง — เริ่มตรวจสอบ'}
           </button>
-          <button onClick={() => handleApprove(false)} disabled={approving}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold transition-colors">
-            <XCircle className="w-4 h-4" /> ไม่อนุมัติ
-          </button>
-        </div>
+        )}
+
+        {(clinic.status === 'reviewing' || clinic.status === 'approved' || clinic.status === 'rejected') && (
+          <>
+            <div>
+              <label className="label">เหตุผลหากไม่อนุมัติ</label>
+              <input value={rejectReason} onChange={e => setRejectReason(e.target.value)}
+                className="input" placeholder="เช่น ใบอนุญาตไม่ถูกต้อง / ข้อมูลไม่ครบ" />
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => handleApprove(true)} disabled={approving}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-semibold transition-colors">
+                <CheckCircle className="w-4 h-4" /> ยืนยัน
+              </button>
+              <button onClick={() => handleApprove(false)} disabled={approving}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold transition-colors">
+                <XCircle className="w-4 h-4" /> ไม่ผ่าน
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

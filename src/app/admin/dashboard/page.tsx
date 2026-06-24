@@ -280,14 +280,20 @@ export default function AdminDashboard() {
                 ? 'border-l-primary-400 bg-primary-50/30'
                 : clinic.status === 'rejected'
                 ? 'border-l-red-400 bg-red-50/30'
+                : clinic.status === 'reviewing'
+                ? 'border-l-blue-400 bg-blue-50/30'
                 : 'border-l-amber-400 bg-amber-50/30'
               const statusBadge = clinic.status === 'approved'
                 ? 'bg-green-100 text-green-700'
                 : clinic.status === 'rejected'
                 ? 'bg-red-100 text-red-600'
+                : clinic.status === 'reviewing'
+                ? 'bg-blue-100 text-blue-700'
                 : 'bg-amber-100 text-amber-700'
-              const statusLabel = clinic.status === 'approved' ? 'อนุมัติแล้ว'
-                : clinic.status === 'rejected' ? 'ไม่อนุมัติ' : 'รอตรวจสอบ'
+              const statusLabel = clinic.status === 'approved' ? 'ยืนยันแล้ว'
+                : clinic.status === 'rejected' ? 'ไม่ผ่าน'
+                : clinic.status === 'reviewing' ? 'กำลังตรวจสอบ'
+                : 'รอตรวจสอบ'
               return (
                 <div key={clinic.id} className={`card border-l-4 ${statusColor}`}>
                   <div className="flex items-center justify-between gap-4 flex-wrap">

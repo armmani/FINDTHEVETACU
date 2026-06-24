@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Building2, Plus, Clock, CheckCircle, XCircle, AlertCircle, ChevronRight } from 'lucide-react'
+import { Building2, Plus, Clock, CheckCircle, XCircle, AlertCircle, ChevronRight, Eye } from 'lucide-react'
 import Link from 'next/link'
 
 interface Clinic {
@@ -10,15 +10,16 @@ interface Clinic {
   name: string
   type: 'clinic' | 'hospital'
   province: string
-  status: 'pending' | 'approved' | 'rejected'
+  status: 'pending' | 'reviewing' | 'approved' | 'rejected'
   reject_reason: string | null
   created_at: string
 }
 
 const STATUS_CONFIG = {
-  pending: { label: 'รอตรวจสอบ', icon: Clock, color: 'text-amber-600 bg-amber-50' },
-  approved: { label: 'อนุมัติแล้ว', icon: CheckCircle, color: 'text-green-600 bg-green-50' },
-  rejected: { label: 'ไม่ผ่าน', icon: XCircle, color: 'text-red-500 bg-red-50' },
+  pending:   { label: 'รอตรวจสอบ',     icon: Clock,         color: 'text-amber-600 bg-amber-50' },
+  reviewing: { label: 'กำลังตรวจสอบ',  icon: AlertCircle,   color: 'text-blue-600 bg-blue-50' },
+  approved:  { label: 'ยืนยันแล้ว',     icon: CheckCircle,   color: 'text-green-600 bg-green-50' },
+  rejected:  { label: 'ไม่ผ่าน',        icon: XCircle,       color: 'text-red-500 bg-red-50' },
 }
 
 const TYPE_LABELS = { clinic: 'คลินิก', hospital: 'โรงพยาบาลสัตว์' }
@@ -95,7 +96,10 @@ export default function ManageClinicsPage() {
                   </div>
                   <Link href={`/clinic/manage/${clinic.id}`}
                     className="flex items-center gap-1 text-xs text-primary-600 hover:underline shrink-0">
-                    แก้ไข <ChevronRight className="w-3.5 h-3.5" />
+                    {clinic.status === 'reviewing' || clinic.status === 'approved'
+                      ? <><Eye className="w-3.5 h-3.5" /> ดู</>
+                      : <>แก้ไข <ChevronRight className="w-3.5 h-3.5" /></>
+                    }
                   </Link>
                 </div>
               </div>
