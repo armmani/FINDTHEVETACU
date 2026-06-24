@@ -1,0 +1,310 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase'
+import toast from 'react-hot-toast'
+import { getProvinces, getDistricts, getSubDistricts } from '@/lib/thaiAddress'
+import { Plus, Trash2, ArrowLeft } from 'lucide-react'
+
+const DAYS = [
+  { key: '1', label: 'จันทร์' }, { key: '2', label: 'อังคาร' },
+  { key: '3', label: 'พุธ' }, { key: '4', label: 'พฤหัสบดี' },
+  { key: '5', label: 'ศุกร์' }, { key: '6', label: 'เสาร์' },
+  { key: '0', label: 'อาทิตย์' },
+]
+
+interface DayHours { open: string; close: string }
+interface Specialty { name: string; hours: Record<string, DayHours> }
+
+export default function NewClinicPage() {
+  const router = useRouter()
+  const supabase = createClient()
+  const [saving, setSaving] = useState(false)
+
+  const [name, setName] = useState('')
+  const [nameEn, setNameEn] = useState('')
+  const [type, setType] = useState<'clinic' | 'hospital'>('clinic')
+  const [phone, setPhone] = useState('')
+  const [lineId, setLineId] = useState('')
+  const [facebook, setFacebook] = useState('')
+  const [website, setWebsite] = useState('')
+  const [province, setProvince] = useState('')
+  const [district, setDistrict] = useState('')
+  const [subDistrict, setSubDistrict] = useState('')
+  const [addressDetail, setAddressDetail] = useState('')
+  const [openingHours, setOpeningHours] = useState<Record<string, DayHours>>({})
+  const [specialties, setSpecialties] = useState<Specialty[]>([])
+  const [licenseFile, setLicenseFile] = useState<File | null>(null)
+  const [newSpecialty, setNewSpecialty] = useState('')
+
+  const toggleDay = (day: string) => {
+    setOpeningHours(prev => {
+      if (prev[day]) { const n = { ...prev }; delete n[day]; return n }
+      return { ...prev, [day]: { open: '08:00', close: '17:00' } }
+    })
+  }
+
+  const updateDayHours = (day: string, field: 'open' | 'close', val: string) => {
+    setOpeningHours(prev => ({ ...prev, [day]: { ...prev[day], [field]: val } }))
+  }
+
+  const addSpecialty = () => {
+    if (!newSpecialty.trim()) return
+    setSpecialties(prev => [...prev, { name: newSpecialty.trim(), hours: {} }])
+    setNewSpecialty('')
+  }
+
+  const removeSpecialty = (i: number) => setSpecialties(prev => prev.filter((_, idx) => idx !== i))
+
+  const toggleSpecialtyDay = (si: number, day: string) => {
+    setSpecialties(prev => prev.map((sp, i) => {
+      if (i !== si) return sp
+      const h = { ...sp.hours }
+      if (h[day]) { delete h[day] } else { h[day] = { open: '08:00', close: '17:00' } }
+      return { ...sp, hours: h }
+    }))
+  }
+
+  const updateSpecialtyHours = (si: number, day: string, field: 'open' | 'close', val: string) => {
+    setSpecialties(prev => prev.map((sp, i) => {
+      if (i !== si) return sp
+      return { ...sp, hours: { ...sp.hours, [day]: { ...sp.hours[day], [field]: val } } }
+    }))
+  }
+
+  const handleSave = async () => {
+    if (!name.trim()) { toast.error('กรุณากรอกชื่อคลินิก'); return }
+    if (!province) { toast.error('กรุณาเลือกจังหวัด'); return }
+    if (!licenseFile) { toast.error('กรุณาแนบใบอนุญาตดำเนินการสถานพยาบาลสัตว์'); return }
+
+    setSaving(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    let licenseUrl = ''
+    const ext = licenseFile.name.split('.').pop()
+    const path = `clinic-licenses/${user.id}-${Date.now()}.${ext}`
+    const { error: uploadErr } = await supabase.storage.from('clinic-docs').upload(path, licenseFile)
+    if (uploadErr) { toast.error('อัปโหลดไฟล์ไม่สำเร็จ'); setSaving(false); return }
+    const { data: urlData } = supabase.storage.from('clinic-docs').getPublicUrl(path)
+    licenseUrl = urlData.publicUrl
+
+    const { data: clinic, error } = await supabase.from('clinics').insert({
+      name: name.trim(),
+      name_en: nameEn.trim() || null,
+      type,
+      phone: phone.trim() || null,
+      line_id: lineId.trim() || null,
+      facebook: facebook.trim() || null,
+      website: website.trim() || null,
+      province,
+      district: district || null,
+      sub_district: subDistrict || null,
+      address_detail: addressDetail.trim() || null,
+      opening_hours: openingHours,
+      license_doc_url: licenseUrl,
+      owner_vet_id: user.id,
+    }).select().single()
+
+    if (error || !clinic) { toast.error('บันทึกไม่สำเร็จ'); setSaving(false); return }
+
+    if (specialties.length > 0) {
+      await supabase.from('clinic_specialties').insert(
+        specialties.map(sp => ({
+          clinic_id: clinic.id,
+          name: sp.name,
+          opening_hours: sp.hours,
+        }))
+      )
+    }
+
+    toast.success('ส่งข้อมูลแล้ว รอ Admin ตรวจสอบ')
+    router.push('/clinic/manage')
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div className="flex items-center gap-3">
+        <button onClick={() => router.back()} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800">
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <h1 className="text-xl font-bold">เพิ่มคลินิก / โรงพยาบาลสัตว์</h1>
+      </div>
+
+      <div className="card bg-amber-50 border border-amber-100 text-sm text-amber-700 py-3 px-4">
+        หลังบันทึก Admin จะตรวจสอบใบอนุญาตก่อนเปิดให้แสดงในระบบ (1-2 วันทำการ)
+      </div>
+
+      {/* ข้อมูลพื้นฐาน */}
+      <div className="card space-y-4">
+        <h2 className="font-semibold text-gray-700">ข้อมูลพื้นฐาน</h2>
+
+        <div>
+          <label className="label">ประเภท</label>
+          <div className="flex gap-2">
+            {[{ v: 'clinic', l: 'คลินิก' }, { v: 'hospital', l: 'โรงพยาบาลสัตว์' }].map(t => (
+              <button key={t.v} onClick={() => setType(t.v as any)}
+                className={`flex-1 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                  type === t.v ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 text-gray-600 hover:border-primary-400'
+                }`}>
+                {t.l}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="label">ชื่อ (ภาษาไทย) *</label>
+          <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="เช่น คลินิกสัตว์เลี้ยงสุขใจ" />
+        </div>
+        <div>
+          <label className="label">ชื่อ (ภาษาอังกฤษ)</label>
+          <input className="input" value={nameEn} onChange={e => setNameEn(e.target.value)} placeholder="e.g. Happy Pet Clinic" />
+        </div>
+      </div>
+
+      {/* ช่องทางติดต่อ */}
+      <div className="card space-y-4">
+        <h2 className="font-semibold text-gray-700">ช่องทางติดต่อ</h2>
+        <div>
+          <label className="label">เบอร์โทรศัพท์</label>
+          <input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="02-xxx-xxxx" />
+        </div>
+        <div>
+          <label className="label">LINE ID</label>
+          <input className="input" value={lineId} onChange={e => setLineId(e.target.value)} placeholder="@clinicline" />
+        </div>
+        <div>
+          <label className="label">Facebook</label>
+          <input className="input" value={facebook} onChange={e => setFacebook(e.target.value)} placeholder="https://facebook.com/..." />
+        </div>
+        <div>
+          <label className="label">Website</label>
+          <input className="input" value={website} onChange={e => setWebsite(e.target.value)} placeholder="https://..." />
+        </div>
+      </div>
+
+      {/* ที่อยู่ */}
+      <div className="card space-y-4">
+        <h2 className="font-semibold text-gray-700">ที่อยู่</h2>
+        <div>
+          <label className="label">จังหวัด *</label>
+          <select className="input" value={province} onChange={e => { setProvince(e.target.value); setDistrict(''); setSubDistrict('') }}>
+            <option value="">-- เลือกจังหวัด --</option>
+            {getProvinces().map(p => <option key={p} value={p}>{p}</option>)}
+          </select>
+        </div>
+        {province && (
+          <div>
+            <label className="label">อำเภอ/เขต</label>
+            <select className="input" value={district} onChange={e => { setDistrict(e.target.value); setSubDistrict('') }}>
+              <option value="">-- เลือกอำเภอ --</option>
+              {getDistricts(province).map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+        )}
+        {district && (
+          <div>
+            <label className="label">ตำบล/แขวง</label>
+            <select className="input" value={subDistrict} onChange={e => setSubDistrict(e.target.value)}>
+              <option value="">-- เลือกตำบล --</option>
+              {getSubDistricts(province, district).map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+        )}
+        <div>
+          <label className="label">รายละเอียดที่อยู่</label>
+          <input className="input" value={addressDetail} onChange={e => setAddressDetail(e.target.value)} placeholder="เลขที่, ซอย, ถนน" />
+        </div>
+      </div>
+
+      {/* เวลาเปิด-ปิด */}
+      <div className="card space-y-3">
+        <h2 className="font-semibold text-gray-700">เวลาเปิด-ปิด</h2>
+        <div className="flex flex-wrap gap-2">
+          {DAYS.map(d => (
+            <button key={d.key} onClick={() => toggleDay(d.key)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                openingHours[d.key] ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 text-gray-500'
+              }`}>
+              {d.label}
+            </button>
+          ))}
+        </div>
+        {DAYS.filter(d => openingHours[d.key]).map(d => (
+          <div key={d.key} className="flex items-center gap-2 text-sm">
+            <span className="w-16 text-gray-600 shrink-0">{d.label}</span>
+            <input type="time" value={openingHours[d.key].open}
+              onChange={e => updateDayHours(d.key, 'open', e.target.value)}
+              className="input w-28" />
+            <span className="text-gray-400">–</span>
+            <input type="time" value={openingHours[d.key].close}
+              onChange={e => updateDayHours(d.key, 'close', e.target.value)}
+              className="input w-28" />
+          </div>
+        ))}
+      </div>
+
+      {/* แผนกเฉพาะทาง */}
+      <div className="card space-y-3">
+        <h2 className="font-semibold text-gray-700">แผนกเฉพาะทาง</h2>
+        <div className="flex gap-2">
+          <input className="input flex-1" value={newSpecialty} onChange={e => setNewSpecialty(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && addSpecialty()}
+            placeholder="เช่น ฝังเข็ม, ศัลยกรรม, ทันตกรรม" />
+          <button onClick={addSpecialty} className="btn-secondary px-3">
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+        {specialties.map((sp, si) => (
+          <div key={si} className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-sm">{sp.name}</span>
+              <button onClick={() => removeSpecialty(si)} className="text-red-400 hover:text-red-600">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-gray-500">เวลาเฉพาะแผนก (ถ้าต่างจากคลินิก)</p>
+            <div className="flex flex-wrap gap-1.5">
+              {DAYS.map(d => (
+                <button key={d.key} onClick={() => toggleSpecialtyDay(si, d.key)}
+                  className={`px-2 py-1 rounded text-xs font-medium border transition-colors ${
+                    sp.hours[d.key] ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 text-gray-500'
+                  }`}>
+                  {d.label}
+                </button>
+              ))}
+            </div>
+            {DAYS.filter(d => sp.hours[d.key]).map(d => (
+              <div key={d.key} className="flex items-center gap-2 text-xs">
+                <span className="w-14 text-gray-600 shrink-0">{d.label}</span>
+                <input type="time" value={sp.hours[d.key].open}
+                  onChange={e => updateSpecialtyHours(si, d.key, 'open', e.target.value)}
+                  className="input w-24 text-xs py-1" />
+                <span className="text-gray-400">–</span>
+                <input type="time" value={sp.hours[d.key].close}
+                  onChange={e => updateSpecialtyHours(si, d.key, 'close', e.target.value)}
+                  className="input w-24 text-xs py-1" />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* ใบอนุญาต */}
+      <div className="card space-y-3">
+        <h2 className="font-semibold text-gray-700">ใบอนุญาตดำเนินการสถานพยาบาลสัตว์ *</h2>
+        <p className="text-xs text-gray-500">อัปโหลดไฟล์ภาพหรือ PDF ของใบอนุญาต เพื่อให้ Admin ตรวจสอบ</p>
+        <input type="file" accept="image/*,.pdf"
+          onChange={e => setLicenseFile(e.target.files?.[0] || null)}
+          className="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-600 hover:file:bg-primary-100" />
+        {licenseFile && <p className="text-xs text-green-600">✓ {licenseFile.name}</p>}
+      </div>
+
+      <button onClick={handleSave} disabled={saving} className="btn-primary w-full">
+        {saving ? 'กำลังส่ง...' : 'ส่งข้อมูลเพื่อรอการอนุมัติ'}
+      </button>
+    </div>
+  )
+}

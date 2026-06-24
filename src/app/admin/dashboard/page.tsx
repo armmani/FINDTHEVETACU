@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Users, Stethoscope, CalendarCheck, Banknote, TrendingUp, Clock, XCircle, CheckCircle, ShieldCheck, ShieldX } from 'lucide-react'
+import { Users, Stethoscope, CalendarCheck, Banknote, TrendingUp, Clock, XCircle, CheckCircle, ShieldCheck, ShieldX, Building2, ExternalLink } from 'lucide-react'
 
 interface Stats {
   totalOwners: number
@@ -38,6 +38,18 @@ interface VetRow {
   avatar_url: string | null
 }
 
+interface ClinicRow {
+  id: string
+  name: string
+  type: string
+  province: string
+  phone: string | null
+  status: string
+  license_doc_url: string | null
+  created_at: string
+  owner: { full_name: string } | null
+}
+
 interface BookingRow {
   id: string
   status: string
@@ -62,9 +74,23 @@ export default function AdminDashboard() {
   const [bookings, setBookings] = useState<BookingRow[]>([])
   const [vets, setVets] = useState<VetRow[]>([])
   const [owners, setOwners] = useState<OwnerRow[]>([])
+  const [clinics, setClinics] = useState<ClinicRow[]>([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [verifying, setVerifying] = useState<string | null>(null)
+  const [approvingClinic, setApprovingClinic] = useState<string | null>(null)
+  const [rejectReason, setRejectReason] = useState<Record<string, string>>({})
+
+  const handleClinicApprove = async (clinicId: string, approve: boolean) => {
+    setApprovingClinic(clinicId)
+    const reason = rejectReason[clinicId] || ''
+    await supabase.from('clinics').update({
+      status: approve ? 'approved' : 'rejected',
+      reject_reason: approve ? null : reason,
+    }).eq('id', clinicId)
+    setClinics(prev => prev.filter(c => c.id !== clinicId))
+    setApprovingClinic(null)
+  }
 
   const handleVerify = async (vetId: string, currentVal: boolean) => {
     setVerifying(vetId)
@@ -81,6 +107,7 @@ export default function AdminDashboard() {
       { count: vetCount },
       { data: allBookings },
       { data: vetData },
+      { data: clinicData },
     ] = await Promise.all([
       supabase.from('profiles').select('id, full_name, phone, avatar_url, created_at', { count: 'exact' }).eq('role', 'owner').order('created_at', { ascending: false }),
       supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'vet'),
@@ -93,6 +120,10 @@ export default function AdminDashboard() {
         user_id, university, graduation_year, additional_education, is_available, is_verified, license_number,
         profiles!inner(full_name, avatar_url)
       `).order('is_verified', { ascending: true }),
+      supabase.from('clinics').select(`
+        id, name, type, province, phone, status, license_doc_url, created_at,
+        owner:profiles!clinics_owner_vet_id_fkey(full_name)
+      `).eq('status', 'pending').order('created_at'),
     ])
 
     const mappedVets = (vetData || []).map((v: any) => ({
@@ -111,6 +142,7 @@ export default function AdminDashboard() {
     const totalPayout = completed.reduce((s, b) => s + (b.vet_payout || 0), 0)
 
     setOwners((ownerData || []) as OwnerRow[])
+    setClinics((clinicData || []).map((c: any) => ({ ...c, owner: c.owner })) as ClinicRow[])
 
     setStats({
       totalOwners: ownerCount || 0,
@@ -215,6 +247,62 @@ export default function AdminDashboard() {
           </button>
         ))}
       </div>
+
+      {/* Pending Clinics */}
+      {clinics.length > 0 && (
+        <div>
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-amber-500" />
+            คลินิกรอตรวจสอบ ({clinics.length})
+          </h2>
+          <div className="space-y-3">
+            {clinics.map(clinic => (
+              <div key={clinic.id} className="card border-l-4 border-amber-400">
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold">{clinic.name}</span>
+                      <span className="text-xs bg-primary-50 text-primary-600 px-2 py-0.5 rounded-full">
+                        {clinic.type === 'clinic' ? 'คลินิก' : 'โรงพยาบาลสัตว์'}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-0.5">{clinic.province} · ส่งโดย {(clinic.owner as any)?.full_name || '-'}</p>
+                    {clinic.phone && <p className="text-xs text-gray-400">📞 {clinic.phone}</p>}
+                    {clinic.license_doc_url && (
+                      <a href={clinic.license_doc_url} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-blue-500 hover:underline mt-1">
+                        <ExternalLink className="w-3 h-3" /> ดูใบอนุญาต
+                      </a>
+                    )}
+                    <div className="mt-2">
+                      <input
+                        value={rejectReason[clinic.id] || ''}
+                        onChange={e => setRejectReason(prev => ({ ...prev, [clinic.id]: e.target.value }))}
+                        placeholder="เหตุผลหากไม่อนุมัติ (ไม่บังคับ)"
+                        className="input text-sm py-1.5"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => handleClinicApprove(clinic.id, true)}
+                      disabled={approvingClinic === clinic.id}
+                      className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-green-100 text-green-700 hover:bg-green-200 font-medium transition-colors">
+                      <CheckCircle className="w-4 h-4" /> อนุมัติ
+                    </button>
+                    <button
+                      onClick={() => handleClinicApprove(clinic.id, false)}
+                      disabled={approvingClinic === clinic.id}
+                      className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 font-medium transition-colors">
+                      <XCircle className="w-4 h-4" /> ไม่อนุมัติ
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Vet profiles */}
       {vets.length > 0 && (

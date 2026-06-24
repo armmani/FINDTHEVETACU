@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
 import { useLang } from '@/contexts/LanguageContext'
-import { Syringe, LogOut, User, History, Stethoscope, Home, Sun, Moon } from 'lucide-react'
+import { Syringe, LogOut, User, Stethoscope, Home, Sun, Moon, Building2 } from 'lucide-react'
 import type { Profile } from '@/lib/types'
 
 interface NavbarProps {
@@ -40,6 +40,10 @@ export default function Navbar({ profile, fullNameEn }: NavbarProps) {
                 <Stethoscope className="w-4 h-4" />
                 <span className="hidden sm:block">{t.nav.findVet}</span>
               </Link>
+              <Link href="/clinics" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+                <Building2 className="w-4 h-4" />
+                <span className="hidden sm:block">{t.nav.clinics}</span>
+              </Link>
               <Link href="/vet/dashboard" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
                 <Home className="w-4 h-4" />
                 <span className="hidden sm:block">{t.nav.dashboard}</span>
@@ -55,6 +59,10 @@ export default function Navbar({ profile, fullNameEn }: NavbarProps) {
               <Link href="/vets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
                 <Stethoscope className="w-4 h-4" />
                 <span className="hidden sm:block">{t.nav.findVet}</span>
+              </Link>
+              <Link href="/clinics" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+                <Building2 className="w-4 h-4" />
+                <span className="hidden sm:block">{t.nav.clinics}</span>
               </Link>
               <Link href="/owner/settings" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
                 <User className="w-4 h-4" />
