@@ -386,20 +386,7 @@ export default function VetProfilePage() {
         </div>
       )}
 
-      {/* สถานะรับงาน */}
-      <div className={`card mb-4 flex items-center justify-between ${!isVerified ? 'opacity-50' : ''}`}>
-        <div>
-          <p className="font-semibold">สถานะรับงาน</p>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {!isVerified ? '🔒 ต้องยืนยันตัวตนก่อน' : isAvailable ? '🟢 พร้อมรับงานอยู่' : '🔴 ปิดรับงานอยู่'}
-          </p>
-        </div>
-        <button type="button"
-          onClick={isVerified ? handleToggleAvailable : () => toast.error('กรุณารอ Admin ยืนยันตัวตนก่อน')}
-          className={`relative inline-flex w-12 h-6 rounded-full transition-colors focus:outline-none overflow-hidden shrink-0 ${isAvailable && isVerified ? 'bg-primary-500' : 'bg-gray-300'}`}>
-          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${isAvailable && isVerified ? 'translate-x-6' : 'translate-x-0'}`} />
-        </button>
-      </div>
+      {/* สถานะรับงาน — ซ่อนไว้ก่อน */}
 
       <form onSubmit={handleSave} className="space-y-5">
 
