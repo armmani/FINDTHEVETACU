@@ -37,6 +37,7 @@ interface VetRow {
   license_number: string | null
   full_name: string
   avatar_url: string | null
+  status: string
 }
 
 interface ClinicRow {
@@ -137,9 +138,9 @@ export default function AdminDashboard() {
         vet_profile:profiles!bookings_vet_id_fkey(full_name)
       `).order('created_at', { ascending: false }),
       supabase.from('vet_profiles').select(`
-        user_id, university, graduation_year, additional_education, is_available, is_verified, license_number,
+        user_id, university, graduation_year, additional_education, is_available, is_verified, license_number, status, reject_reason,
         profiles!inner(full_name, avatar_url)
-      `).order('is_verified', { ascending: true }),
+      `).order('created_at', { ascending: false }),
       supabase.from('specialty_types').select('*').order('name_th'),
       supabase.from('clinics').select(`
         id, name, type, province, phone, status, license_doc_url, created_at,
@@ -152,6 +153,7 @@ export default function AdminDashboard() {
       full_name: v.profiles?.full_name || '',
       avatar_url: v.profiles?.avatar_url || null,
       is_verified: v.is_verified || false,
+      status: v.status || 'pending',
     }))
     setVets(mappedVets)
 
@@ -346,26 +348,24 @@ export default function AdminDashboard() {
                       <span className={`text-xs px-2 py-0.5 rounded-full ${vet.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                         {vet.is_available ? 'รับงาน' : 'ปิดรับ'}
                       </span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${vet.is_verified ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'}`}>
-                        {vet.is_verified ? <ShieldCheck className="w-3 h-3" /> : <ShieldX className="w-3 h-3" />}
-                        {vet.is_verified ? 'ยืนยันแล้ว' : 'รอยืนยัน'}
+                      <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                        vet.status === 'approved' ? 'bg-green-100 text-green-700'
+                        : vet.status === 'reviewing' ? 'bg-blue-100 text-blue-700'
+                        : vet.status === 'rejected' ? 'bg-red-100 text-red-500'
+                        : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {vet.status === 'approved' ? <ShieldCheck className="w-3 h-3" /> : <ShieldX className="w-3 h-3" />}
+                        {vet.status === 'approved' ? 'ยืนยันแล้ว' : vet.status === 'reviewing' ? 'กำลังตรวจสอบ' : vet.status === 'rejected' ? 'ไม่ผ่าน' : 'รอตรวจสอบ'}
                       </span>
                       {vet.license_number && (
                         <span className="text-xs text-gray-400">ใบอนุญาต: {vet.license_number}</span>
                       )}
                     </div>
                   </div>
-                  <button
-                    onClick={() => handleVerify(vet.user_id, vet.is_verified)}
-                    disabled={verifying === vet.user_id}
-                    className={`text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors shrink-0 ${
-                      vet.is_verified
-                        ? 'border-red-200 text-red-500 hover:bg-red-50'
-                        : 'border-blue-300 text-blue-600 hover:bg-blue-50'
-                    }`}
-                  >
-                    {verifying === vet.user_id ? '...' : vet.is_verified ? 'ยกเลิก' : '✓ ยืนยัน'}
-                  </button>
+                  <Link href={`/admin/vet/${vet.user_id}`}
+                    className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium transition-colors shrink-0 flex items-center gap-1">
+                    <Eye className="w-3.5 h-3.5" /> ดู
+                  </Link>
                     {(vet.university || vet.graduation_year) && (
                       <p className="text-sm text-gray-600 mt-0.5">
                         {vet.university || ''}

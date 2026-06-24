@@ -91,6 +91,10 @@ export default function VetProfilePage() {
   const [locationLng, setLocationLng] = useState<number | null>(null)
   const [isAvailable, setIsAvailable] = useState(true)
   const [isVerified, setIsVerified] = useState(false)
+  const [vetStatus, setVetStatus] = useState<'pending' | 'reviewing' | 'approved' | 'rejected'>('pending')
+  const [rejectReason, setRejectReason] = useState<string | null>(null)
+  const [licenseDocUrl, setLicenseDocUrl] = useState<string | null>(null)
+  const [licenseFile, setLicenseFile] = useState<File | null>(null)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [changingPassword, setChangingPassword] = useState(false)
@@ -140,6 +144,9 @@ export default function VetProfilePage() {
       setLocationLng(data.location_lng)
       setIsAvailable(data.is_available)
       setIsVerified(data.is_verified || false)
+      setVetStatus(data.status || 'pending')
+      setRejectReason(data.reject_reason || null)
+      setLicenseDocUrl(data.license_doc_url || null)
     }
     setFullName((profile as any)?.full_name || '')
     setTelegramChatId((profile as any)?.telegram_chat_id || '')
@@ -262,9 +269,24 @@ export default function VetProfilePage() {
     e.preventDefault()
     if (licenseNumber.replace(/\D/g, '').length < 10) { toast.error('กรุณากรอกเลขใบอนุญาตให้ครบ (xx-xxxx/xxxx)'); return }
     if (!locationLat || !locationLng) { toast.error('กรุณากดปุ่ม "ค้นหาพิกัด" ก่อนบันทึก'); return }
+    if (!licenseDocUrl && !licenseFile) { toast.error('กรุณาแนบรูปใบประกอบวิชาชีพหรือบัตรประจำตัวสัตวแพทย์'); return }
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
+
+    // upload license doc ถ้ามีไฟล์ใหม่
+    let finalDocUrl = licenseDocUrl
+    if (licenseFile) {
+      const ext = licenseFile.name.split('.').pop()
+      const path = `vet-licenses/${user.id}-${Date.now()}.${ext}`
+      const { error: uploadErr } = await supabase.storage.from('clinic-docs').upload(path, licenseFile)
+      if (uploadErr) { toast.error('อัปโหลดไฟล์ไม่สำเร็จ'); setSaving(false); return }
+      const { data: urlData } = supabase.storage.from('clinic-docs').getPublicUrl(path)
+      finalDocUrl = urlData.publicUrl
+      setLicenseDocUrl(finalDocUrl)
+    }
+
+    const wasRejected = vetStatus === 'rejected'
 
     // บันทึก specialties — ลบเก่าแล้ว insert ใหม่
     await supabase.from('vet_specialties').delete().eq('vet_id', user.id)
@@ -282,6 +304,8 @@ export default function VetProfilePage() {
         acupuncture_fee: PLATFORM_ACUPUNCTURE_FEE, travel_rate: 8,
         location_name: locationName, location_lat: locationLat, location_lng: locationLng,
         is_available: isAvailable,
+        license_doc_url: finalDocUrl,
+        ...(wasRejected ? { status: 'pending', reject_reason: null } : {}),
       }, { onConflict: 'user_id' }),
       supabase.from('profiles').update({
         full_name: fullName.trim() || null,
@@ -289,6 +313,13 @@ export default function VetProfilePage() {
         avatar_url: avatarUrl || null,
       }).eq('id', user.id),
     ])
+
+    if (wasRejected) {
+      const { notifyAdmin } = await import('@/lib/telegram')
+      notifyAdmin(`🔄 <b>FindTheVet — หมอส่งข้อมูลใหม่</b>\n\n<b>${fullName}</b> แก้ไขและส่งข้อมูลใหม่อีกครั้ง\nกรุณาตรวจสอบใน Admin Dashboard`)
+      setVetStatus('pending')
+      setRejectReason(null)
+    }
 
     toast.success('บันทึกโปรไฟล์สำเร็จ!')
     router.push('/vet/dashboard')
@@ -315,20 +346,43 @@ export default function VetProfilePage() {
       </div>
 
       {/* สถานะการยืนยัน */}
-      <div className={`card mb-4 flex items-center gap-3 ${isVerified ? 'bg-green-50 border border-green-100' : 'bg-amber-50 border border-amber-100'}`}>
-        {isVerified
-          ? <ShieldCheck className="w-5 h-5 text-green-500 shrink-0" />
-          : <ShieldX className="w-5 h-5 text-amber-500 shrink-0" />
-        }
-        <div className="flex-1">
-          <p className={`font-semibold text-sm ${isVerified ? 'text-green-700' : 'text-amber-700'}`}>
-            {isVerified ? 'ยืนยันตัวตนแล้ว' : 'รอการยืนยันตัวตน'}
-          </p>
-          <p className={`text-xs mt-0.5 ${isVerified ? 'text-green-600' : 'text-amber-600'}`}>
-            {isVerified ? 'สามารถเปิดรับงานได้' : 'Admin กำลังตรวจสอบใบอนุญาต กรุณารอสักครู่'}
-          </p>
+      {vetStatus === 'approved' && (
+        <div className="card mb-4 flex items-center gap-3 bg-green-50 border border-green-100">
+          <ShieldCheck className="w-5 h-5 text-green-500 shrink-0" />
+          <div>
+            <p className="font-semibold text-sm text-green-700">ยืนยันตัวตนแล้ว</p>
+            <p className="text-xs mt-0.5 text-green-600">สามารถเปิดรับงานได้</p>
+          </div>
         </div>
-      </div>
+      )}
+      {vetStatus === 'reviewing' && (
+        <div className="card mb-4 flex items-center gap-3 bg-blue-50 border border-blue-200">
+          <Lock className="w-5 h-5 text-blue-500 shrink-0" />
+          <div>
+            <p className="font-semibold text-sm text-blue-700">Admin กำลังตรวจสอบอยู่</p>
+            <p className="text-xs mt-0.5 text-blue-600">ไม่สามารถแก้ไขข้อมูลได้ในขณะนี้ กรุณารอผล</p>
+          </div>
+        </div>
+      )}
+      {vetStatus === 'pending' && (
+        <div className="card mb-4 flex items-center gap-3 bg-amber-50 border border-amber-100">
+          <ShieldX className="w-5 h-5 text-amber-500 shrink-0" />
+          <div>
+            <p className="font-semibold text-sm text-amber-700">รอการยืนยันตัวตน</p>
+            <p className="text-xs mt-0.5 text-amber-600">Admin จะตรวจสอบเอกสารของคุณภายใน 1-2 วันทำการ</p>
+          </div>
+        </div>
+      )}
+      {vetStatus === 'rejected' && (
+        <div className="card mb-4 flex items-start gap-3 bg-red-50 border border-red-200">
+          <ShieldX className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-sm text-red-700">ไม่ผ่านการตรวจสอบ</p>
+            {rejectReason && <p className="text-xs mt-1 text-red-600">{rejectReason}</p>}
+            <p className="text-xs mt-1 text-red-500">แก้ไขข้อมูลแล้วกด "บันทึกและส่งใหม่" ได้เลย</p>
+          </div>
+        </div>
+      )}
 
       {/* สถานะรับงาน */}
       <div className={`card mb-4 flex items-center justify-between ${!isVerified ? 'opacity-50' : ''}`}>
@@ -547,9 +601,27 @@ export default function VetProfilePage() {
           </div>
         </div>
 
-        <button type="submit" disabled={saving} className="btn-primary w-full py-3 flex items-center justify-center gap-2">
+        {/* เอกสารยืนยันตัวตน */}
+        <div className="card space-y-3">
+          <h2 className="font-semibold text-gray-800">เอกสารยืนยันตัวตน *</h2>
+          <p className="text-xs text-gray-500">อัปโหลดรูปใบประกอบวิชาชีพ หรือบัตรประจำตัวสัตวแพทย์</p>
+          {licenseDocUrl && (
+            <a href={licenseDocUrl} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-blue-500 hover:underline">
+              ดูเอกสารที่อัปโหลดแล้ว →
+            </a>
+          )}
+          <input type="file" accept="image/*,.pdf"
+            disabled={vetStatus === 'reviewing'}
+            onChange={e => setLicenseFile(e.target.files?.[0] || null)}
+            className="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-600 hover:file:bg-primary-100 disabled:opacity-50" />
+          {licenseFile && <p className="text-xs text-green-600">✓ {licenseFile.name}</p>}
+        </div>
+
+        <button type="submit" disabled={saving || vetStatus === 'reviewing'}
+          className="btn-primary w-full py-3 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
           <Save className="w-4 h-4" />
-          {saving ? 'กำลังบันทึก...' : 'บันทึกโปรไฟล์'}
+          {saving ? 'กำลังบันทึก...' : vetStatus === 'reviewing' ? 'กำลังตรวจสอบ — ไม่สามารถแก้ไขได้' : vetStatus === 'rejected' ? 'บันทึกและส่งใหม่' : 'บันทึกโปรไฟล์'}
         </button>
       </form>
 
