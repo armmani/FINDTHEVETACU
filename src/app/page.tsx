@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Syringe, Clock, MapPin, Shield, Search } from 'lucide-react'
+import { Syringe, Phone, Shield, Search } from 'lucide-react'
 
 export default function LandingPage() {
   return (
@@ -17,7 +17,7 @@ export default function LandingPage() {
             ค้นหาสัตวแพทย์ฝังเข็ม ใกล้บ้านคุณ
           </p>
           <p className="text-primary-200 mb-10 max-w-xl mx-auto">
-            ดูตารางออกตรวจตามเขต/จังหวัด เลือกหมอที่ไว้ใจ — นัดออกตรวจถึงบ้าน หรือไปพบที่คลินิก ง่าย ปลอดภัย
+            ดูโปรไฟล์ ใบอนุญาต และตารางออกตรวจ — เลือกหมอที่ไว้ใจแล้วติดต่อได้เลย
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/auth/register?role=owner" className="bg-white text-primary-700 font-bold py-3 px-8 rounded-xl hover:bg-primary-50 transition-colors">
@@ -48,16 +48,16 @@ export default function LandingPage() {
               desc: 'ค้นหาสัตวแพทย์ฝังเข็มตามจังหวัดหรือเขต ดูโปรไฟล์และตารางออกตรวจของแต่ละหมอ',
             },
             {
-              icon: Clock,
+              icon: Shield,
               step: '2',
-              title: 'นัดหมายตามสะดวก',
-              desc: 'เลือกหมอที่ชอบแล้วส่งคำขอนัด — ให้หมอมาถึงบ้าน หรือไปพบที่คลินิกตามตาราง',
+              title: 'ตรวจสอบใบอนุญาต',
+              desc: 'หมอทุกคนแสดงเลขใบอนุญาต พร้อมลิงก์ตรวจสอบตรงจากเว็บสัตวแพทยสภา',
             },
             {
-              icon: Shield,
+              icon: Phone,
               step: '3',
-              title: 'ยืนยัน & ปลอดภัย',
-              desc: 'หมอทุกคนผ่านการตรวจสอบใบอนุญาต ชำระมัดจำหลังยืนยัน ส่วนที่เหลือชำระวันนัด',
+              title: 'ติดต่อหมอได้เลย',
+              desc: 'ดูเบอร์โทรและตารางออกตรวจ แล้วติดต่อนัดหมายกับหมอโดยตรง',
             },
           ].map(({ icon: Icon, step, title, desc }) => (
             <div key={step} className="text-center">
