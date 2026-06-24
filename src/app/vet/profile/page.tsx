@@ -277,9 +277,11 @@ export default function VetProfilePage() {
     // upload license doc ถ้ามีไฟล์ใหม่
     let finalDocUrl = licenseDocUrl
     if (licenseFile) {
-      const ext = licenseFile.name.split('.').pop()
-      const path = `vet-licenses/${user.id}-${Date.now()}.${ext}`
-      const { error: uploadErr } = await supabase.storage.from('clinic-docs').upload(path, licenseFile)
+      const { compressImage } = await import('@/lib/compressImage')
+      const compressed = await compressImage(licenseFile, { maxWidthPx: 1600, qualityJpeg: 0.8, maxSizeKB: 500 })
+      const isImg = compressed.type.startsWith('image/')
+      const path = `vet-licenses/${user.id}-${Date.now()}.${isImg ? 'jpg' : licenseFile.name.split('.').pop()}`
+      const { error: uploadErr } = await supabase.storage.from('clinic-docs').upload(path, compressed)
       if (uploadErr) { toast.error('อัปโหลดไฟล์ไม่สำเร็จ'); setSaving(false); return }
       const { data: urlData } = supabase.storage.from('clinic-docs').getPublicUrl(path)
       finalDocUrl = urlData.publicUrl

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 import { getProvinces, getDistricts, getSubDistricts } from '@/lib/thaiAddress'
 import { ArrowLeft } from 'lucide-react'
+import { compressImage } from '@/lib/compressImage'
 
 const DAYS = [
   { key: '1', label: 'จันทร์' }, { key: '2', label: 'อังคาร' },
@@ -88,9 +89,10 @@ export default function NewClinicPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const ext = licenseFile.name.split('.').pop()
-    const path = `clinic-licenses/${user.id}-${Date.now()}.${ext}`
-    const { error: uploadErr } = await supabase.storage.from('clinic-docs').upload(path, licenseFile)
+    const compressed = await compressImage(licenseFile, { maxWidthPx: 1600, qualityJpeg: 0.8, maxSizeKB: 500 })
+    const isImg = compressed.type.startsWith('image/')
+    const path = `clinic-licenses/${user.id}-${Date.now()}.${isImg ? 'jpg' : licenseFile.name.split('.').pop()}`
+    const { error: uploadErr } = await supabase.storage.from('clinic-docs').upload(path, compressed)
     if (uploadErr) { toast.error('อัปโหลดไฟล์ไม่สำเร็จ'); setSaving(false); return }
     const { data: urlData } = supabase.storage.from('clinic-docs').getPublicUrl(path)
 

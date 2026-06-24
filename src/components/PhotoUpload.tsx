@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Camera, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { compressImage } from '@/lib/compressImage'
 
 interface PhotoUploadProps {
   bucket: 'avatars' | 'pet-photos'
@@ -33,10 +34,10 @@ export default function PhotoUpload({
     if (file.size > 5 * 1024 * 1024) { toast.error('ไฟล์ใหญ่เกิน 5MB'); return }
 
     setUploading(true)
-    const ext = file.name.split('.').pop()
-    const path = `${userId}/${Date.now()}.${ext}`
+    const compressed = await compressImage(file, { maxWidthPx: 800, qualityJpeg: 0.75, maxSizeKB: 200 })
+    const path = `${userId}/${Date.now()}.jpg`
 
-    const { data, error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true })
+    const { data, error } = await supabase.storage.from(bucket).upload(path, compressed, { upsert: true, contentType: 'image/jpeg' })
     if (error) { toast.error('อัปโหลดไม่สำเร็จ'); setUploading(false); return }
 
     const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(data.path)
