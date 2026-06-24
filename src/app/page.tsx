@@ -4,7 +4,7 @@ import { Phone, Shield, Search } from 'lucide-react'
 
 export default function LandingPage() {
   return (
-    <main className="min-h-screen">
+    <main className="light min-h-screen bg-white text-gray-900">
       {/* Hero */}
       <section className="bg-gradient-to-br from-navy-700 to-navy-800 text-white">
         <div className="max-w-5xl mx-auto px-4 py-20 text-center">
