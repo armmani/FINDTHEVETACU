@@ -41,10 +41,12 @@
   }
 
   /* badge backgrounds — light tints are invisible on dark bg */
-  .dark .bg-primary-50 { background-color: rgb(5 46 22 / 0.6); }
-  .dark .bg-primary-100 { background-color: rgb(5 46 22 / 0.8); }
-  .dark .text-primary-600 { color: rgb(74 222 128); }
-  .dark .text-primary-700 { color: rgb(134 239 172); }
+  .dark .bg-primary-50 { background-color: rgb(10 70 68 / 0.5); }
+  .dark .bg-primary-100 { background-color: rgb(10 70 68 / 0.7); }
+  .dark .text-primary-600 { color: rgb(45 196 192); }
+  .dark .text-primary-700 { color: rgb(102 218 215); }
+  .dark .border-primary-100 { border-color: rgb(10 70 68 / 0.6); }
+  .dark .border-primary-200 { border-color: rgb(10 70 68 / 0.8); }
 
   .dark .bg-blue-50 { background-color: rgb(23 37 84 / 0.6); }
   .dark .bg-blue-100 { background-color: rgb(23 37 84 / 0.8); }

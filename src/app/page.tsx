@@ -6,7 +6,7 @@ export default function LandingPage() {
   return (
     <main className="min-h-screen">
       {/* Hero */}
-      <section className="bg-gradient-to-br from-primary-600 to-primary-700 text-white">
+      <section className="bg-gradient-to-br from-navy-700 to-navy-800 text-white">
         <div className="max-w-5xl mx-auto px-4 py-20 text-center">
           <div className="flex justify-center mb-8">
             <Image src="/FindTheVet.png" alt="FindTheVet" width={280} height={100} className="h-32 w-auto brightness-0 invert" priority />
@@ -18,14 +18,14 @@ export default function LandingPage() {
             ดูโปรไฟล์ ใบอนุญาต และตารางออกตรวจ — เลือกหมอที่ไว้ใจแล้วติดต่อได้เลย
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/auth/register?role=owner" className="bg-white text-primary-700 font-bold py-3 px-8 rounded-xl hover:bg-primary-50 transition-colors">
+            <Link href="/auth/register?role=owner" className="bg-white text-navy-700 font-bold py-3 px-8 rounded-xl hover:bg-gray-100 transition-colors">
               ฉันเป็นเจ้าของสัตว์
             </Link>
             <Link href="/auth/register?role=vet" className="bg-primary-500 text-white font-bold py-3 px-8 rounded-xl border-2 border-white/30 hover:bg-primary-400 transition-colors">
               ฉันเป็นสัตวแพทย์
             </Link>
           </div>
-          <p className="mt-6 text-primary-200 text-sm">
+          <p className="mt-6 text-gray-300 text-sm">
             มีบัญชีแล้ว?{' '}
             <Link href="/auth/login" className="underline hover:text-white">
               เข้าสู่ระบบ
