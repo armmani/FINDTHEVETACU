@@ -16,7 +16,7 @@ interface Clinic {
   province: string
   district: string | null
   opening_hours: Record<string, { open: string; close: string }> | null
-  clinic_specialties: { specialty_types: { name_th: string; name_en: string } }[]
+  clinic_specialties: { specialty_types: { name_th: string; name_en: string } | null }[]
 }
 
 const DAY_NAMES: Record<string, string> = {
@@ -42,7 +42,7 @@ export default function ClinicsPage() {
         .select('id, name, name_en, type, phone, province, district, opening_hours, clinic_specialties(specialty_types(name_th, name_en))')
         .eq('status', 'approved')
         .order('name')
-      setClinics((data as Clinic[]) || [])
+      setClinics((data as unknown as Clinic[]) || [])
       setLoading(false)
     }
     load()

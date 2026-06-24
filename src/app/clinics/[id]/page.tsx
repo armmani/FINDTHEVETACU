@@ -12,7 +12,7 @@ interface Specialty {
   id: string
   specialty_type_id: string
   opening_hours: Record<string, { open: string; close: string }> | null
-  specialty_types: { name_th: string; name_en: string }
+  specialty_types: { name_th: string; name_en: string } | null
 }
 
 interface VetInClinic {
