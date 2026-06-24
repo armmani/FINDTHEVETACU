@@ -16,12 +16,12 @@ export default function HomePage() {
       </div>
 
       <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">
-        {lang === 'en' ? 'Find acupuncture vets for your pet' : 'ค้นหาสัตวแพทย์ฝังเข็มสำหรับสัตว์เลี้ยงของคุณ'}
+        {lang === 'en' ? 'Find the right vet for your pet' : 'สัตวแพทย์ไหนดี? เราช่วยคุณหาได้'}
       </p>
       <p className="text-gray-400 text-sm mb-10 max-w-sm">
         {lang === 'en'
-          ? 'Browse verified vets or find nearby clinics and hospitals with acupuncture services'
-          : 'ดูโปรไฟล์หมอที่ยืนยันแล้ว หรือค้นหาคลินิกและโรงพยาบาลสัตว์ที่มีบริการฝังเข็มใกล้คุณ'}
+          ? 'Browse verified vet profiles or find clinics and animal hospitals near you'
+          : 'ดูโปรไฟล์หมอที่ยืนยันแล้ว หรือค้นหาคลินิกและโรงพยาบาลสัตว์ใกล้คุณ'}
       </p>
 
       {/* 2 Big Buttons */}

@@ -8,8 +8,8 @@ import { LanguageProvider } from '@/contexts/LanguageContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'FindTheVet — หมอฝังเข็มสัตว์ถึงบ้าน',
-  description: 'หาสัตวแพทย์ฝังเข็มที่พร้อมให้บริการ ง่าย รวดเร็ว ถึงบ้าน',
+  title: 'FindTheVet — สัตวแพทย์ไหนดี',
+  description: 'ค้นหาสัตวแพทย์และคลินิกสัตว์ใกล้คุณ ดูโปรไฟล์ ใบอนุญาต และตารางออกตรวจได้เลย',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
