@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { Search, Building2, Syringe } from 'lucide-react'
+import Image from 'next/image'
+import { Search, Building2 } from 'lucide-react'
 import { useLang } from '@/contexts/LanguageContext'
 
 export default function HomePage() {
@@ -10,11 +11,10 @@ export default function HomePage() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] text-center px-4">
       {/* Logo */}
-      <div className="bg-primary-100 dark:bg-primary-900/40 p-5 rounded-full mb-6">
-        <Syringe className="w-12 h-12 text-primary-600" />
+      <div className="mb-6">
+        <Image src="/FindTheVet.png" alt="FindTheVet" width={220} height={80} className="h-16 w-auto" priority />
       </div>
 
-      <h1 className="text-3xl font-bold mb-2">Thai acuPETure</h1>
       <p className="text-gray-500 dark:text-gray-400 text-lg mb-2">
         {lang === 'en' ? 'Find acupuncture vets for your pet' : 'ค้นหาสัตวแพทย์ฝังเข็มสำหรับสัตว์เลี้ยงของคุณ'}
       </p>

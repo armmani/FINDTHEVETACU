@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
 import { useLang } from '@/contexts/LanguageContext'
-import { Syringe, LogOut, User, Stethoscope, Home, Sun, Moon, Building2 } from 'lucide-react'
+import { LogOut, User, Stethoscope, Home, Sun, Moon, Building2 } from 'lucide-react'
+import Image from 'next/image'
 import type { Profile } from '@/lib/types'
 
 interface NavbarProps {
@@ -28,9 +29,8 @@ export default function Navbar({ profile, fullNameEn }: NavbarProps) {
   return (
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href="/home" className="flex items-center gap-2 font-bold text-primary-600">
-          <Syringe className="w-5 h-5" />
-          Thai acuPETure
+        <Link href="/home">
+          <Image src="/FindTheVet.png" alt="FindTheVet" width={120} height={40} className="h-8 w-auto" priority />
         </Link>
 
         <div className="flex items-center gap-4">
