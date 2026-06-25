@@ -295,14 +295,14 @@ export default function AdminDashboard() {
           <p className="text-sm text-gray-500">เจ้าของสัตว์</p>
         </div>
         <div className="card text-center">
-          <Stethoscope className="w-8 h-8 text-primary-500 mx-auto mb-2" />
-          <p className="text-3xl font-bold">{stats?.totalVets}</p>
-          <p className="text-sm text-gray-500">สัตวแพทย์</p>
-        </div>
-        <div className="card text-center">
           <Building2 className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
           <p className="text-3xl font-bold">{(stats?.totalClinics ?? 0) + (stats?.totalHospitals ?? 0)}</p>
           <p className="text-sm text-gray-500">สถานพยาบาลสัตว์</p>
+        </div>
+        <div className="card text-center">
+          <Stethoscope className="w-8 h-8 text-primary-500 mx-auto mb-2" />
+          <p className="text-3xl font-bold">{stats?.totalVets}</p>
+          <p className="text-sm text-gray-500">สัตวแพทย์</p>
         </div>
       </div>
 
