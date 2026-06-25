@@ -14,10 +14,10 @@ export default async function ClinicsLayout({ children }: { children: React.Reac
     .eq('id', user.id)
     .single()
 
-  if (!profile || (profile.role !== 'owner' && profile.role !== 'vet')) redirect('/auth/login')
+  if (!profile || !['owner', 'vet', 'admin'].includes(profile.role)) redirect('/auth/login')
 
   let fullNameEn: string | null = null
-  if (profile.role === 'vet') {
+  if (profile.role === 'vet' || profile.role === 'admin') {
     const { data: vp } = await supabase
       .from('vet_profiles')
       .select('full_name_en')

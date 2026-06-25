@@ -14,7 +14,7 @@ export default async function ClinicLayout({ children }: { children: React.React
     .eq('id', user.id)
     .single()
 
-  if (!profile || profile.role !== 'vet') redirect('/vets')
+  if (!profile || !['vet', 'admin'].includes(profile.role)) redirect('/vets')
 
   const { data: vp } = await supabase
     .from('vet_profiles')

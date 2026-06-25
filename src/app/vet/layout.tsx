@@ -15,7 +15,7 @@ export default async function VetLayout({ children }: { children: React.ReactNod
     .eq('id', user.id)
     .single()
 
-  if (!profile || profile.role !== 'vet') redirect('/owner/dashboard')
+  if (!profile || !['vet', 'admin'].includes(profile.role)) redirect('/owner/dashboard')
 
   const { data: vp } = await supabase
     .from('vet_profiles')
