@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { ArrowLeft, CheckCircle, XCircle, ExternalLink, PlayCircle, ShieldCheck, ShieldX } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { AdminDetailSkeleton } from '@/components/AdminSkeleton'
 
 const STATUS_CONFIG = {
   pending:   { label: 'รอตรวจสอบ',     color: 'text-amber-600 bg-amber-50 border-amber-200' },
@@ -106,7 +107,7 @@ export default function AdminVetDetailPage() {
     router.push('/admin/dashboard')
   }
 
-  if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
+  if (loading) return <AdminDetailSkeleton />
   if (!vet) return <div className="text-center py-20 text-gray-400">ไม่พบข้อมูล</div>
 
   const cfg = STATUS_CONFIG[vet.status as keyof typeof STATUS_CONFIG]

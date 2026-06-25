@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Users, Stethoscope, CalendarCheck, XCircle, CheckCircle, ShieldCheck, ShieldX, Building2, Plus, Trash2, Eye, FileText, ChevronDown, ChevronUp, UserCog } from 'lucide-react'
 import Link from 'next/link'
+import { AdminDashboardSkeleton } from '@/components/AdminSkeleton'
 
 interface Stats {
   totalOwners: number
@@ -272,7 +273,7 @@ export default function AdminDashboard() {
 
   const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter)
 
-  if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
+  if (loading) return <AdminDashboardSkeleton />
 
   return (
     <div className="space-y-8">

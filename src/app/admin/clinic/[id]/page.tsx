@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { ArrowLeft, CheckCircle, XCircle, ExternalLink, MapPin, Phone, Clock, Building2, Globe, Save, PlayCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { notifyAdmin } from '@/lib/telegram'
+import { AdminDetailSkeleton } from '@/components/AdminSkeleton'
 
 const DAY_TH = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์']
 
@@ -173,7 +174,7 @@ export default function AdminClinicDetailPage() {
     router.push('/admin/dashboard')
   }
 
-  if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
+  if (loading) return <AdminDetailSkeleton />
   if (!clinic) return <div className="text-center py-20 text-gray-400">ไม่พบข้อมูลคลินิก</div>
 
   const statusColor = clinic.status === 'approved' ? 'bg-green-100 text-green-700'

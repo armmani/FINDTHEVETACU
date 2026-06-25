@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { CheckCircle, XCircle, FileText, ChevronDown, ChevronUp, Eye, ShieldX } from 'lucide-react'
 import Link from 'next/link'
+import { AdminDashboardSkeleton } from '@/components/AdminSkeleton'
 
 interface PendingClinic {
   id: string
@@ -109,7 +110,7 @@ export default function AdminVerifyPage() {
     setBusy(null)
   }
 
-  if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
+  if (loading) return <AdminDashboardSkeleton />
 
   const totalPending = clinics.length + vets.length
 
