@@ -146,12 +146,13 @@ export default function AdminClinicDetailPage() {
   }
 
   const handleApprove = async (approve: boolean) => {
+    const newStatus = approve ? 'approved' : (clinic?.status === 'approved' ? 'suspended' : 'rejected')
     if (!approve && !rejectReason.trim()) {
-      toast.error('กรุณาระบุเหตุผลที่ไม่อนุมัติ')
+      toast.error(clinic?.status === 'approved' ? 'กรุณาระบุเหตุผลการระงับ' : 'กรุณาระบุเหตุผลที่ไม่อนุมัติ')
       return
     }
     setApproving(true)
-    const ok = await adminUpdate(approve ? 'approved' : 'rejected', rejectReason.trim())
+    const ok = await adminUpdate(newStatus, approve ? undefined : rejectReason.trim())
     if (!ok) { setApproving(false); return }
 
     if (approve) {
@@ -316,6 +317,7 @@ export default function AdminClinicDetailPage() {
       <div className="card border-2 border-dashed border-gray-200 space-y-3">
         <h2 className="font-semibold">ผลการตรวจสอบ</h2>
 
+        {/* pending → เริ่มตรวจสอบ */}
         {clinic.status === 'pending' && (
           <button onClick={handleStartReview} disabled={reviewing}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-semibold transition-colors">
@@ -323,7 +325,8 @@ export default function AdminClinicDetailPage() {
           </button>
         )}
 
-        {(clinic.status === 'reviewing' || clinic.status === 'approved' || clinic.status === 'rejected') && (
+        {/* reviewing → ยืนยัน หรือ ปฏิเสธ */}
+        {clinic.status === 'reviewing' && (
           <>
             <div>
               <label className="label">เหตุผลหากไม่อนุมัติ</label>
@@ -337,10 +340,52 @@ export default function AdminClinicDetailPage() {
               </button>
               <button onClick={() => handleApprove(false)} disabled={approving}
                 className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold transition-colors">
-                <XCircle className="w-4 h-4" /> ไม่ผ่าน
+                <XCircle className="w-4 h-4" /> ปฏิเสธ
               </button>
             </div>
           </>
+        )}
+
+        {/* approved → ระงับชั่วคราวได้ */}
+        {clinic.status === 'approved' && (
+          <div className="space-y-2">
+            <p className="text-sm text-green-600 font-medium flex items-center gap-1">
+              <CheckCircle className="w-4 h-4" /> คลินิกนี้ผ่านการยืนยันแล้ว
+            </p>
+            <button onClick={() => handleApprove(false)} disabled={approving}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-medium transition-colors text-sm">
+              <XCircle className="w-4 h-4" /> ระงับชั่วคราว
+            </button>
+            <input value={rejectReason} onChange={e => setRejectReason(e.target.value)}
+              className="input text-sm" placeholder="ระบุเหตุผลการระงับ (จำเป็น)" />
+          </div>
+        )}
+
+        {/* rejected → เปิดใหม่ได้ */}
+        {clinic.status === 'rejected' && (
+          <div className="space-y-2">
+            {clinic.reject_reason && (
+              <p className="text-sm text-red-500">เหตุผล: {clinic.reject_reason}</p>
+            )}
+            <button onClick={() => handleApprove(true)} disabled={approving}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white font-medium transition-colors text-sm">
+              <CheckCircle className="w-4 h-4" /> อนุมัติใหม่
+            </button>
+          </div>
+        )}
+
+        {/* suspended → อนุมัติใหม่ได้ */}
+        {clinic.status === 'suspended' && (
+          <div className="space-y-2">
+            <p className="text-sm text-orange-600 font-medium">คลินิกถูกระงับชั่วคราว</p>
+            {clinic.reject_reason && (
+              <p className="text-sm text-gray-500">เหตุผล: {clinic.reject_reason}</p>
+            )}
+            <button onClick={() => handleApprove(true)} disabled={approving}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-green-500 hover:bg-green-600 text-white font-medium transition-colors text-sm">
+              <CheckCircle className="w-4 h-4" /> คืนสถานะ — อนุมัติใหม่
+            </button>
+          </div>
         )}
       </div>
     </div>
