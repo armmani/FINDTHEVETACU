@@ -15,7 +15,9 @@ export default async function HomeLayout({ children }: { children: React.ReactNo
     .eq('id', user.id)
     .single()
 
-  if (!profile || (profile.role !== 'owner' && profile.role !== 'vet')) redirect('/auth/login')
+  if (!profile) redirect('/auth/login')
+  if (profile.role === 'admin') redirect('/admin/dashboard')
+  if (profile.role !== 'owner' && profile.role !== 'vet') redirect('/auth/login')
 
   let fullNameEn: string | null = null
   if (profile.role === 'vet') {

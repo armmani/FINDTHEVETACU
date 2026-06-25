@@ -9,9 +9,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/auth/login?error=oauth`)
   }
 
-  // สร้าง redirect response ก่อน แล้วค่อย set cookies ลงไปตรงๆ
-  // เพื่อให้ cookies ถูกส่งกลับ browser พร้อมกับ redirect
-  const redirectResponse = NextResponse.redirect(`${origin}/home`)
+  // เก็บ session cookies ที่ Supabase set ระหว่าง exchangeCodeForSession
+  const sessionCookies: { name: string; value: string; options?: any }[] = []
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,9 +19,7 @@ export async function GET(request: NextRequest) {
       cookies: {
         getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            redirectResponse.cookies.set(name, value, options)
-          })
+          cookiesToSet.forEach((c: { name: string; value: string; options?: any }) => sessionCookies.push(c))
         },
       },
     }
@@ -35,12 +32,16 @@ export async function GET(request: NextRequest) {
 
   const user = data.user
 
-  // ถ้ามี pending_oauth_role cookie (มาจากหน้าสมัคร) ให้ใช้ role นั้น
+  // helper: สร้าง redirect พร้อม session cookies
+  const makeRedirect = (url: string) => {
+    const res = NextResponse.redirect(url)
+    sessionCookies.forEach(({ name, value, options }) => res.cookies.set(name, value, options))
+    return res
+  }
+
+  // ถ้ามี pending_oauth_role cookie (มาจากหน้าสมัคร)
   const pendingRole = request.cookies.get('pending_oauth_role')?.value
-
   if (pendingRole) {
-    redirectResponse.cookies.set('pending_oauth_role', '', { maxAge: 0, path: '/' })
-
     await supabase.from('profiles').update({ role: pendingRole }).eq('id', user.id)
     await supabase.auth.updateUser({ data: { role: pendingRole } })
 
@@ -56,12 +57,14 @@ export async function GET(request: NextRequest) {
           parse_mode: 'HTML',
         }),
       }).catch(() => {})
-      redirectResponse.headers.set('Location', `${origin}/vet/profile`)
-      return redirectResponse
+      const res = makeRedirect(`${origin}/vet/profile`)
+      res.cookies.set('pending_oauth_role', '', { maxAge: 0, path: '/' })
+      return res
     }
 
-    redirectResponse.headers.set('Location', `${origin}/home`)
-    return redirectResponse
+    const res = makeRedirect(`${origin}/home`)
+    res.cookies.set('pending_oauth_role', '', { maxAge: 0, path: '/' })
+    return res
   }
 
   // login ปกติ → ดู role จาก profiles
@@ -72,9 +75,7 @@ export async function GET(request: NextRequest) {
     .single()
 
   const role = profile?.role || user.user_metadata?.role
-  if (role === 'admin') {
-    redirectResponse.headers.set('Location', `${origin}/admin/dashboard`)
-  }
 
-  return redirectResponse
+  if (role === 'admin') return makeRedirect(`${origin}/admin/dashboard`)
+  return makeRedirect(`${origin}/home`)
 }
