@@ -168,18 +168,24 @@ export default function AdminDashboard() {
         appointments(pet_name, preferred_datetime, profiles:owner_id(full_name)),
         vet_profile:profiles!bookings_vet_id_fkey(full_name)
       `).order('created_at', { ascending: false }),
-      supabase.from('vet_profiles').select(`
-        user_id, university, graduation_year, additional_education, is_available, is_verified, license_number, license_doc_url, status, reject_reason,
-        profiles!inner(full_name, avatar_url)
-      `).order('created_at', { ascending: false }),
+      supabase.from('vet_profiles').select(
+        'user_id, university, graduation_year, additional_education, is_available, is_verified, license_number, license_doc_url, status, reject_reason'
+      ).order('created_at', { ascending: false }),
       supabase.from('specialty_types').select('*').order('name_th'),
       supabase.from('clinics').select('id, name, type, province, phone, status, license_doc_url, created_at, owner_vet_id').order('created_at', { ascending: false }),
     ])
 
+    // ดึง profiles ของ vet แยก
+    const vetIds = (vetData || []).map((v: any) => v.user_id)
+    let vetProfileMap: Record<string, { full_name: string; avatar_url: string | null }> = {}
+    if (vetIds.length > 0) {
+      const { data: vetProfiles } = await supabase.from('profiles').select('id, full_name, avatar_url').in('id', vetIds)
+      ;(vetProfiles || []).forEach((p: any) => { vetProfileMap[p.id] = p })
+    }
     const mappedVets = (vetData || []).map((v: any) => ({
       ...v,
-      full_name: v.profiles?.full_name || '',
-      avatar_url: v.profiles?.avatar_url || null,
+      full_name: vetProfileMap[v.user_id]?.full_name || '',
+      avatar_url: vetProfileMap[v.user_id]?.avatar_url || null,
       is_verified: v.is_verified || false,
       status: v.status || 'pending',
     }))
