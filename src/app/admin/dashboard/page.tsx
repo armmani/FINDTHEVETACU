@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Users, Stethoscope, CalendarCheck, XCircle, CheckCircle, ShieldCheck, ShieldX, Building2, Plus, Trash2, Eye, FileText, ChevronDown, ChevronUp } from 'lucide-react'
+import { Users, Stethoscope, CalendarCheck, XCircle, CheckCircle, ShieldCheck, ShieldX, Building2, Plus, Trash2, Eye, FileText, ChevronDown, ChevronUp, UserCog } from 'lucide-react'
 import Link from 'next/link'
 
 interface Stats {
@@ -93,6 +93,8 @@ export default function AdminDashboard() {
   const [expandedVet, setExpandedVet] = useState<string | null>(null)
   const [vetRejectReason, setVetRejectReason] = useState<Record<string, string>>({})
   const [approvingVet, setApprovingVet] = useState<string | null>(null)
+  const [togglingAdmin, setTogglingAdmin] = useState<string | null>(null)
+  const [vetRoles, setVetRoles] = useState<Record<string, string>>({})
 
   const handleAddSpecialty = async () => {
     if (!newSpTh.trim() || !newSpEn.trim()) { return }
@@ -140,6 +142,20 @@ export default function AdminDashboard() {
     setApprovingClinic(null)
   }
 
+  const handleToggleAdmin = async (vetId: string) => {
+    setTogglingAdmin(vetId)
+    const currentRole = vetRoles[vetId] || 'vet'
+    const newRole = currentRole === 'admin' ? 'vet' : 'admin'
+    const res = await fetch('/api/admin/update-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table: 'profiles', id: vetId, status: newRole }),
+    })
+    if (res.ok) setVetRoles(prev => ({ ...prev, [vetId]: newRole }))
+    else alert('เกิดข้อผิดพลาด')
+    setTogglingAdmin(null)
+  }
+
   const handleVerify = async (vetId: string, currentVal: boolean) => {
     setVerifying(vetId)
     await supabase.from('vet_profiles').update({ is_verified: !currentVal }).eq('user_id', vetId)
@@ -183,13 +199,16 @@ export default function AdminDashboard() {
       supabase.from('clinics').select('id, name, type, province, phone, status, license_doc_url, created_at, owner_vet_id').order('created_at', { ascending: false }),
     ])
 
-    // ดึง profiles ของ vet แยก
+    // ดึง profiles ของ vet แยก (รวม role สำหรับแสดง admin badge)
     const vetIds = (vetData || []).map((v: any) => v.user_id)
-    let vetProfileMap: Record<string, { full_name: string; avatar_url: string | null }> = {}
+    let vetProfileMap: Record<string, { full_name: string; avatar_url: string | null; role: string }> = {}
     if (vetIds.length > 0) {
-      const { data: vetProfiles } = await supabase.from('profiles').select('id, full_name, avatar_url').in('id', vetIds)
+      const { data: vetProfiles } = await supabase.from('profiles').select('id, full_name, avatar_url, role').in('id', vetIds)
       ;(vetProfiles || []).forEach((p: any) => { vetProfileMap[p.id] = p })
     }
+    const roleMap: Record<string, string> = {}
+    vetIds.forEach(id => { roleMap[id] = vetProfileMap[id]?.role || 'vet' })
+    setVetRoles(roleMap)
     const mappedVets = (vetData || []).map((v: any) => ({
       ...v,
       full_name: vetProfileMap[v.user_id]?.full_name || '',
@@ -506,6 +525,19 @@ export default function AdminDashboard() {
                           ตรวจสอบ
                         </button>
                       )}
+                      {/* super_admin: toggle admin role */}
+                      <button
+                        onClick={() => handleToggleAdmin(vet.user_id)}
+                        disabled={togglingAdmin === vet.user_id}
+                        title={vetRoles[vet.user_id] === 'admin' ? 'ถอด Admin' : 'แต่งตั้งเป็น Admin'}
+                        className={`flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 ${
+                          vetRoles[vet.user_id] === 'admin'
+                            ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                        }`}>
+                        <UserCog className="w-4 h-4" />
+                        <span className="hidden sm:block">{vetRoles[vet.user_id] === 'admin' ? 'Admin ✓' : 'Admin'}</span>
+                      </button>
                       <Link href={`/admin/vet/${vet.user_id}`}
                         className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium transition-colors">
                         <Eye className="w-4 h-4" /> รายละเอียด

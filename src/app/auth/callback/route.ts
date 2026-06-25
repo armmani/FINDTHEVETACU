@@ -76,6 +76,6 @@ export async function GET(request: NextRequest) {
 
   const role = profile?.role || user.user_metadata?.role
 
-  if (role === 'admin') return makeRedirect(`${origin}/admin/dashboard`)
+  if (role === 'super_admin') return makeRedirect(`${origin}/admin/dashboard`)
   return makeRedirect(`${origin}/home`)
 }

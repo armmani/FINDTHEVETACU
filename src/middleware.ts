@@ -28,7 +28,7 @@ export async function middleware(request: NextRequest) {
     const { data: profile } = await supabase
       .from('profiles').select('role').eq('id', user.id).single()
     const role = (profile as any)?.role
-    const redirectTo = role === 'admin' ? '/admin/dashboard' : '/home'
+    const redirectTo = role === 'super_admin' ? '/admin/dashboard' : '/home'
     return NextResponse.redirect(new URL(redirectTo, request.url))
   }
 

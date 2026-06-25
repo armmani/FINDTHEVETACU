@@ -19,18 +19,24 @@ export async function POST(request: NextRequest) {
 
   const { table, id, status, rejectReason } = await request.json()
 
-  if (!['clinics', 'vet_profiles'].includes(table)) {
+  if (!['clinics', 'vet_profiles', 'profiles'].includes(table)) {
     return NextResponse.json({ error: 'Invalid table' }, { status: 400 })
   }
 
-  const idField = table === 'clinics' ? 'id' : 'user_id'
-  const updates: Record<string, any> = { status }
+  let updates: Record<string, any> = {}
+  let idField = 'id'
 
-  if (table === 'clinics') {
-    updates.reject_reason = status === 'rejected' ? rejectReason : null
+  if (table === 'profiles') {
+    // super_admin เท่านั้นที่เปลี่ยน role ได้
+    const { data: callerProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+    if (callerProfile?.role !== 'super_admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    updates = { role: status } // status field ใช้ส่ง role ใหม่
+  } else if (table === 'clinics') {
+    idField = 'id'
+    updates = { status, reject_reason: status === 'rejected' || status === 'suspended' ? rejectReason : null }
   } else {
-    updates.reject_reason = status === 'rejected' ? rejectReason : null
-    updates.is_verified = status === 'approved'
+    idField = 'user_id'
+    updates = { status, reject_reason: status === 'rejected' ? rejectReason : null, is_verified: status === 'approved' }
   }
 
   const { error } = await adminSupabase.from(table).update(updates).eq(idField, id)

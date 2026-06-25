@@ -5,16 +5,17 @@ import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
 import { useLang } from '@/contexts/LanguageContext'
-import { LogOut, User, Stethoscope, Home, Sun, Moon, Building2 } from 'lucide-react'
+import { LogOut, User, Stethoscope, Home, Sun, Moon, Building2, ShieldCheck } from 'lucide-react'
 import Image from 'next/image'
 import type { Profile } from '@/lib/types'
 
 interface NavbarProps {
   profile: Profile
   fullNameEn?: string | null
+  pendingCount?: number
 }
 
-export default function Navbar({ profile, fullNameEn }: NavbarProps) {
+export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: NavbarProps) {
   const router = useRouter()
   const supabase = createClient()
   const { theme, setTheme } = useTheme()
@@ -34,6 +35,19 @@ export default function Navbar({ profile, fullNameEn }: NavbarProps) {
         </Link>
 
         <div className="flex items-center gap-4">
+          {/* admin badge — แสดงเฉพาะ role=admin */}
+          {profile.role === 'admin' && (
+            <Link href="/admin/verify"
+              className="relative flex items-center gap-1 text-sm text-orange-600 hover:text-orange-700 font-medium">
+              <ShieldCheck className="w-5 h-5" />
+              <span className="hidden sm:block">ตรวจสอบ</span>
+              {pendingCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                  {pendingCount > 9 ? '9+' : pendingCount}
+                </span>
+              )}
+            </Link>
+          )}
           {profile.role === 'vet' && (
             <>
               <Link href="/vets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
