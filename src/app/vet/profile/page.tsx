@@ -324,7 +324,7 @@ export default function VetProfilePage() {
     }
 
     toast.success('บันทึกโปรไฟล์สำเร็จ!')
-    router.push('/vet/dashboard')
+    router.push('/home')
     setSaving(false)
   }
 
