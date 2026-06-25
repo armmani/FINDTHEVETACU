@@ -8,6 +8,7 @@ import { getProvinces, getDistricts, getSubDistricts } from '@/lib/thaiAddress'
 import { ArrowLeft, Search, MapPin } from 'lucide-react'
 import { compressImage } from '@/lib/compressImage'
 import ClinicPhotoUpload from '@/components/ClinicPhotoUpload'
+import { formatPhone } from '@/lib/formatPhone'
 import { geocodeAddress } from '@/lib/distance'
 import dynamic from 'next/dynamic'
 
@@ -210,7 +211,7 @@ export default function NewClinicPage() {
         <h2 className="font-semibold text-gray-700">ช่องทางติดต่อ</h2>
         <div>
           <label className="label">เบอร์โทรศัพท์</label>
-          <input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="02-xxx-xxxx" />
+          <input className="input" value={phone} onChange={e => setPhone(formatPhone(e.target.value))} placeholder="02-xxx-xxxx" inputMode="numeric" />
         </div>
         <div>
           <label className="label">LINE ID</label>

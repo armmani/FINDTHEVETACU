@@ -7,6 +7,7 @@ import { ArrowLeft, CheckCircle, XCircle, ExternalLink, MapPin, Phone, Clock, Bu
 import toast from 'react-hot-toast'
 import { notifyAdmin } from '@/lib/telegram'
 import { AdminDetailSkeleton } from '@/components/AdminSkeleton'
+import { formatPhone } from '@/lib/formatPhone'
 
 const DAY_TH = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์']
 
@@ -77,7 +78,7 @@ export default function AdminClinicDetailPage() {
         setOwnerId(c.owner_vet_id)
         setName(c.name || '')
         setNameEn(c.name_en || '')
-        setPhone(c.phone || '')
+        setPhone(formatPhone(c.phone || ''))
         setLineId(c.line_id || '')
         setFacebook(c.facebook || '')
         setWebsite(c.website || '')
@@ -256,7 +257,7 @@ export default function AdminClinicDetailPage() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label">เบอร์โทร</label>
-            <input value={phone} onChange={e => setPhone(e.target.value)} className="input" />
+            <input value={phone} onChange={e => setPhone(formatPhone(e.target.value))} className="input" inputMode="numeric" placeholder="08x-xxx-xxxx" />
           </div>
           <div>
             <label className="label">LINE ID</label>

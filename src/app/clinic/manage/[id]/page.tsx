@@ -9,6 +9,7 @@ import { getProvinces, getDistricts, getSubDistricts } from '@/lib/thaiAddress'
 import { notifyAdmin } from '@/lib/telegram'
 import { compressImage } from '@/lib/compressImage'
 import ClinicPhotoUpload from '@/components/ClinicPhotoUpload'
+import { formatPhone } from '@/lib/formatPhone'
 
 const DAYS = [
   { key: '1', label: 'จันทร์' }, { key: '2', label: 'อังคาร' },
@@ -70,7 +71,7 @@ export default function EditClinicPage() {
       setName(data.name || '')
       setNameEn(data.name_en || '')
       setType(data.type || 'clinic')
-      setPhone(data.phone || '')
+      setPhone(formatPhone(data.phone || ''))
       setLineId(data.line_id || '')
       setFacebook(data.facebook || '')
       setWebsite(data.website || '')
@@ -259,8 +260,13 @@ export default function EditClinicPage() {
       {/* ช่องทางติดต่อ */}
       <div className="card space-y-4">
         <h2 className="font-semibold text-gray-700">ช่องทางติดต่อ</h2>
+        <div>
+          <label className="label">เบอร์โทรศัพท์</label>
+          <input disabled={isLocked} className="input disabled:opacity-60 disabled:cursor-not-allowed"
+            value={phone} onChange={e => setPhone(formatPhone(e.target.value))}
+            inputMode="numeric" placeholder="08x-xxx-xxxx" />
+        </div>
         {[
-          { label: 'เบอร์โทรศัพท์', val: phone, set: setPhone },
           { label: 'LINE ID', val: lineId, set: setLineId },
           { label: 'Facebook', val: facebook, set: setFacebook },
           { label: 'Website', val: website, set: setWebsite },

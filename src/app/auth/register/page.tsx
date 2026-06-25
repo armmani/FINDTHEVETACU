@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
 import { PawPrint, Stethoscope, Mail } from 'lucide-react'
+import { formatPhone } from '@/lib/formatPhone'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
 import type { Role } from '@/lib/types'
@@ -228,9 +229,10 @@ function RegisterForm() {
             <input
               type="tel"
               value={phone}
-              onChange={e => setPhone(e.target.value)}
+              onChange={e => setPhone(formatPhone(e.target.value))}
               className="input"
               placeholder="08x-xxx-xxxx"
+              inputMode="numeric"
             />
           </div>
           <div>

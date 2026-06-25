@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase'
 import { Save, Send, User, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
 import PhotoUpload from '@/components/PhotoUpload'
+import { formatPhone } from '@/lib/formatPhone'
 
 export default function OwnerSettingsPage() {
   const supabase = createClient()
@@ -34,7 +35,7 @@ export default function OwnerSettingsPage() {
         .eq('id', user.id).single()
       if (data) {
         setFullName((data as any).full_name || '')
-        setPhone((data as any).phone || '')
+        setPhone(formatPhone((data as any).phone || ''))
         setLineId((data as any).line_id || '')
         setAddress((data as any).address || '')
         setChatId((data as any).telegram_chat_id || '')
@@ -125,8 +126,8 @@ export default function OwnerSettingsPage() {
         </div>
         <div>
           <label className="label">เบอร์โทรศัพท์</label>
-          <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
-            className="input" placeholder="08x-xxx-xxxx" />
+          <input type="tel" value={phone} onChange={e => setPhone(formatPhone(e.target.value))}
+            className="input" placeholder="08x-xxx-xxxx" inputMode="numeric" />
         </div>
         <div>
           <label className="label">Line ID</label>
