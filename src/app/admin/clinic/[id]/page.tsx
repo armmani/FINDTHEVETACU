@@ -92,19 +92,26 @@ export default function AdminClinicDetailPage() {
 
   const handleSave = async () => {
     setSaving(true)
-    const { error } = await supabase.from('clinics').update({
-      name: name.trim(),
-      name_en: nameEn.trim() || null,
-      phone: phone.trim() || null,
-      line_id: lineId.trim() || null,
-      facebook: facebook.trim() || null,
-      website: website.trim() || null,
-      province: province.trim(),
-      district: district.trim() || null,
-      sub_district: subDistrict.trim() || null,
-      address_detail: address.trim() || null,
-    }).eq('id', id)
-    if (error) toast.error('บันทึกไม่สำเร็จ')
+    const res = await fetch('/api/clinic/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        clinicId: id,
+        updates: {
+          name: name.trim(),
+          name_en: nameEn.trim() || null,
+          phone: phone.trim() || null,
+          line_id: lineId.trim() || null,
+          facebook: facebook.trim() || null,
+          website: website.trim() || null,
+          province: province.trim(),
+          district: district.trim() || null,
+          sub_district: subDistrict.trim() || null,
+          address_detail: address.trim() || null,
+        },
+      }),
+    })
+    if (!res.ok) toast.error('บันทึกไม่สำเร็จ')
     else toast.success('บันทึกแล้ว')
     setSaving(false)
   }

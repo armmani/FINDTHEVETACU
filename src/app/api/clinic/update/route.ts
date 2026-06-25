@@ -16,15 +16,26 @@ export async function POST(request: NextRequest) {
   const body = await request.json()
   const { clinicId, updates } = body
 
-  // ตรวจสอบว่า user เป็นเจ้าของคลินิก
-  const { data: clinic } = await adminSupabase
-    .from('clinics')
-    .select('owner_vet_id')
-    .eq('id', clinicId)
+  // ตรวจสอบ role ของ caller
+  const { data: callerProfile } = await adminSupabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
     .single()
 
-  if (!clinic || clinic.owner_vet_id !== user.id) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const isAdmin = ['admin', 'super_admin'].includes(callerProfile?.role ?? '')
+
+  if (!isAdmin) {
+    // owner ต้องเป็นเจ้าของคลินิกนั้น
+    const { data: clinic } = await adminSupabase
+      .from('clinics')
+      .select('owner_vet_id')
+      .eq('id', clinicId)
+      .single()
+
+    if (!clinic || clinic.owner_vet_id !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
   }
 
   const { error } = await adminSupabase.from('clinics').update(updates).eq('id', clinicId)
