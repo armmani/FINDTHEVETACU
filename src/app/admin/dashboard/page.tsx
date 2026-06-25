@@ -108,10 +108,24 @@ export default function AdminDashboard() {
     setSpecialtyTypes(prev => prev.filter(s => s.id !== id))
   }
 
+  const adminUpdate = async (table: string, id: string, status: string, rejectReason?: string) => {
+    const res = await fetch('/api/admin/update-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table, id, status, rejectReason }),
+    })
+    if (!res.ok) {
+      const { error } = await res.json()
+      alert('Error: ' + error)
+      return false
+    }
+    return true
+  }
+
   const handleStartReview = async (clinicId: string) => {
     setApprovingClinic(clinicId)
-    const { error } = await supabase.from('clinics').update({ status: 'reviewing' }).eq('id', clinicId)
-    if (error) { console.error('START_REVIEW_ERROR', error); alert('Error: ' + error.message); setApprovingClinic(null); return }
+    const ok = await adminUpdate('clinics', clinicId, 'reviewing')
+    if (!ok) { setApprovingClinic(null); return }
     setClinics(prev => prev.map(c => c.id === clinicId ? { ...c, status: 'reviewing' } : c))
     setExpandedClinic(clinicId)
     setApprovingClinic(null)
@@ -119,12 +133,8 @@ export default function AdminDashboard() {
 
   const handleClinicApprove = async (clinicId: string, approve: boolean) => {
     setApprovingClinic(clinicId)
-    const reason = rejectReason[clinicId] || ''
-    const { error } = await supabase.from('clinics').update({
-      status: approve ? 'approved' : 'rejected',
-      reject_reason: approve ? null : reason,
-    }).eq('id', clinicId)
-    if (error) { console.error('CLINIC_APPROVE_ERROR', error); alert('Error: ' + error.message); setApprovingClinic(null); return }
+    const ok = await adminUpdate('clinics', clinicId, approve ? 'approved' : 'rejected', rejectReason[clinicId])
+    if (!ok) { setApprovingClinic(null); return }
     setClinics(prev => prev.map(c => c.id === clinicId ? { ...c, status: approve ? 'approved' : 'rejected' } : c))
     setExpandedClinic(null)
     setApprovingClinic(null)
@@ -139,14 +149,10 @@ export default function AdminDashboard() {
 
   const handleVetAction = async (vetId: string, approve: boolean) => {
     setApprovingVet(vetId)
-    const reason = vetRejectReason[vetId] || ''
-    await supabase.from('vet_profiles').update({
-      status: approve ? 'approved' : 'rejected',
-      is_verified: approve,
-      reject_reason: approve ? null : reason,
-    }).eq('user_id', vetId)
+    const ok = await adminUpdate('vet_profiles', vetId, approve ? 'approved' : 'rejected', vetRejectReason[vetId])
+    if (!ok) { setApprovingVet(null); return }
     setVets(prev => prev.map(v => v.user_id === vetId
-      ? { ...v, status: approve ? 'approved' : 'rejected', is_verified: approve, reject_reason: approve ? null : reason }
+      ? { ...v, status: approve ? 'approved' : 'rejected', is_verified: approve, reject_reason: approve ? null : vetRejectReason[vetId] || null }
       : v))
     setExpandedVet(null)
     setApprovingVet(null)

@@ -121,10 +121,24 @@ export default function AdminClinicDetailPage() {
     })
   }
 
+  const adminUpdate = async (status: string, rejectReasonText?: string) => {
+    const res = await fetch('/api/admin/update-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ table: 'clinics', id, status, rejectReason: rejectReasonText }),
+    })
+    if (!res.ok) {
+      const { error } = await res.json()
+      toast.error('Error: ' + error)
+      return false
+    }
+    return true
+  }
+
   const handleStartReview = async () => {
     setReviewing(true)
-    const { error } = await supabase.from('clinics').update({ status: 'reviewing' }).eq('id', id)
-    if (error) { toast.error('Error: ' + error.message); console.error('START_REVIEW_ERROR', error); setReviewing(false); return }
+    const ok = await adminUpdate('reviewing')
+    if (!ok) { setReviewing(false); return }
     await notifyOwner(`🔍 <b>FindTheVet — Admin รับเรื่องแล้ว</b>\n\n<b>${clinic?.name}</b> กำลังถูกตรวจสอบโดย Admin\nกรุณารอผลการตรวจสอบ ระหว่างนี้จะยังแก้ไขข้อมูลไม่ได้`)
     toast.success('เปลี่ยนสถานะเป็นกำลังตรวจสอบแล้ว')
     setClinic(prev => prev ? { ...prev, status: 'reviewing' } : prev)
@@ -137,11 +151,8 @@ export default function AdminClinicDetailPage() {
       return
     }
     setApproving(true)
-    const { error } = await supabase.from('clinics').update({
-      status: approve ? 'approved' : 'rejected',
-      reject_reason: approve ? null : rejectReason.trim(),
-    }).eq('id', id)
-    if (error) { toast.error('Error: ' + error.message); console.error('CLINIC_APPROVE_ERROR', error); setApproving(false); return }
+    const ok = await adminUpdate(approve ? 'approved' : 'rejected', rejectReason.trim())
+    if (!ok) { setApproving(false); return }
 
     if (approve) {
       await notifyOwner(`✅ <b>FindTheVet — คลินิกได้รับการยืนยัน!</b>\n\n<b>${clinic?.name}</b> ผ่านการตรวจสอบแล้ว\nตอนนี้คลินิกของคุณแสดงในระบบ FindTheVet แล้วครับ`)
