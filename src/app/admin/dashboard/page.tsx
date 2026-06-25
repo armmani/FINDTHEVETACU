@@ -17,6 +17,8 @@ interface Stats {
   totalRevenue: number
   totalPlatformFee: number
   totalPayout: number
+  totalClinics: number
+  totalHospitals: number
 }
 
 interface OwnerRow {
@@ -190,6 +192,8 @@ export default function AdminDashboard() {
       { data: vetData },
       { data: spData },
       { data: clinicData },
+      { count: clinicCount },
+      { count: hospitalCount },
     ] = await Promise.all([
       supabase.from('profiles').select('id, full_name, phone, avatar_url, created_at', { count: 'exact' }).eq('role', 'owner').order('created_at', { ascending: false }),
       supabase.from('profiles').select('*', { count: 'exact', head: true }).in('role', ['vet', 'admin']),
@@ -203,6 +207,8 @@ export default function AdminDashboard() {
       ),
       supabase.from('specialty_types').select('*').order('name_th'),
       supabase.from('clinics').select('id, name, type, province, phone, status, license_doc_url, created_at, owner_vet_id').order('created_at', { ascending: false }),
+      supabase.from('clinics').select('*', { count: 'exact', head: true }).eq('type', 'clinic'),
+      supabase.from('clinics').select('*', { count: 'exact', head: true }).eq('type', 'hospital'),
     ])
 
     // ดึง profiles ของ vet แยก (รวม role สำหรับแสดง admin badge)
@@ -254,6 +260,8 @@ export default function AdminDashboard() {
       totalRevenue,
       totalPlatformFee,
       totalPayout,
+      totalClinics: clinicCount || 0,
+      totalHospitals: hospitalCount || 0,
     })
 
     setBookings(bk as BookingRow[])
@@ -280,7 +288,7 @@ export default function AdminDashboard() {
       <h1 className="text-2xl font-bold">Admin Dashboard</h1>
 
       {/* User stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="card text-center">
           <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
           <p className="text-3xl font-bold">{stats?.totalOwners}</p>
@@ -292,14 +300,19 @@ export default function AdminDashboard() {
           <p className="text-sm text-gray-500">สัตวแพทย์</p>
         </div>
         <div className="card text-center">
-          <CalendarCheck className="w-8 h-8 text-green-500 mx-auto mb-2" />
-          <p className="text-3xl font-bold">{stats?.completedBookings}</p>
-          <p className="text-sm text-gray-500">รักษาสำเร็จ</p>
+          <Building2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+          <p className="text-3xl font-bold">{stats?.totalClinics}</p>
+          <p className="text-sm text-gray-500">คลินิก</p>
         </div>
         <div className="card text-center">
-          <XCircle className="w-8 h-8 text-red-400 mx-auto mb-2" />
-          <p className="text-3xl font-bold">{stats?.cancelledBookings}</p>
-          <p className="text-sm text-gray-500">ยกเลิก</p>
+          <Building2 className="w-8 h-8 text-cyan-500 mx-auto mb-2" />
+          <p className="text-3xl font-bold">{stats?.totalHospitals}</p>
+          <p className="text-sm text-gray-500">โรงพยาบาลสัตว์</p>
+        </div>
+        <div className="card text-center">
+          <Building2 className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
+          <p className="text-3xl font-bold">{(stats?.totalClinics ?? 0) + (stats?.totalHospitals ?? 0)}</p>
+          <p className="text-sm text-gray-500">สถานพยาบาลสัตว์</p>
         </div>
       </div>
 
