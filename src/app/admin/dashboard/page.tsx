@@ -35,9 +35,11 @@ interface VetRow {
   is_available: boolean
   is_verified: boolean
   license_number: string | null
+  license_doc_url: string | null
   full_name: string
   avatar_url: string | null
   status: string
+  reject_reason: string | null
 }
 
 interface ClinicRow {
@@ -88,6 +90,9 @@ export default function AdminDashboard() {
   const [approvingClinic, setApprovingClinic] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState<Record<string, string>>({})
   const [expandedClinic, setExpandedClinic] = useState<string | null>(null)
+  const [expandedVet, setExpandedVet] = useState<string | null>(null)
+  const [vetRejectReason, setVetRejectReason] = useState<Record<string, string>>({})
+  const [approvingVet, setApprovingVet] = useState<string | null>(null)
 
   const handleAddSpecialty = async () => {
     if (!newSpTh.trim() || !newSpEn.trim()) { return }
@@ -130,6 +135,21 @@ export default function AdminDashboard() {
     setVerifying(null)
   }
 
+  const handleVetAction = async (vetId: string, approve: boolean) => {
+    setApprovingVet(vetId)
+    const reason = vetRejectReason[vetId] || ''
+    await supabase.from('vet_profiles').update({
+      status: approve ? 'approved' : 'rejected',
+      is_verified: approve,
+      reject_reason: approve ? null : reason,
+    }).eq('user_id', vetId)
+    setVets(prev => prev.map(v => v.user_id === vetId
+      ? { ...v, status: approve ? 'approved' : 'rejected', is_verified: approve, reject_reason: approve ? null : reason }
+      : v))
+    setExpandedVet(null)
+    setApprovingVet(null)
+  }
+
   useEffect(() => { loadData() }, [])
 
   const loadData = async () => {
@@ -149,7 +169,7 @@ export default function AdminDashboard() {
         vet_profile:profiles!bookings_vet_id_fkey(full_name)
       `).order('created_at', { ascending: false }),
       supabase.from('vet_profiles').select(`
-        user_id, university, graduation_year, additional_education, is_available, is_verified, license_number, status, reject_reason,
+        user_id, university, graduation_year, additional_education, is_available, is_verified, license_number, license_doc_url, status, reject_reason,
         profiles!inner(full_name, avatar_url)
       `).order('created_at', { ascending: false }),
       supabase.from('specialty_types').select('*').order('name_th'),
@@ -411,69 +431,121 @@ export default function AdminDashboard() {
       </div>
 
       {/* Vet profiles */}
-      {vets.length > 0 && (
-        <div>
-          <h2 className="text-lg font-bold mb-4">รายชื่อสัตวแพทย์</h2>
+      <div>
+        <h2 className="text-lg font-bold mb-4">
+          รายชื่อสัตวแพทย์ ({vets.length})
+          {vets.filter(v => v.status === 'pending' || v.status === 'reviewing').length > 0 && (
+            <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+              รอตรวจสอบ {vets.filter(v => v.status === 'pending' || v.status === 'reviewing').length}
+            </span>
+          )}
+        </h2>
+        {vets.length === 0 ? (
+          <div className="card text-center py-8 text-gray-400">ยังไม่มีสัตวแพทย์ในระบบ</div>
+        ) : (
           <div className="space-y-3">
-            {vets.map(vet => (
-              <div key={vet.user_id} className="card">
-                <div className="flex gap-4 items-start justify-between">
-                  <div className="flex gap-4 items-start flex-1 min-w-0">
-                  {vet.avatar_url ? (
-                    <img src={vet.avatar_url} alt={vet.full_name}
-                      className="w-10 h-10 rounded-full object-cover shrink-0" />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold shrink-0 text-sm">
-                      {vet.full_name[0] || 'H'}
+            {vets.map(vet => {
+              const vetStatusColor = vet.status === 'approved'
+                ? 'border-l-primary-400 bg-primary-50/30'
+                : vet.status === 'rejected'
+                ? 'border-l-red-400 bg-red-50/30'
+                : vet.status === 'reviewing'
+                ? 'border-l-blue-400 bg-blue-50/30'
+                : 'border-l-amber-400 bg-amber-50/30'
+              const vetNeedsAction = vet.status === 'pending' || vet.status === 'reviewing'
+              const isVetExpanded = expandedVet === vet.user_id
+              return (
+                <div key={vet.user_id} className={`card border-l-4 ${vetStatusColor}`}>
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {vet.avatar_url ? (
+                        <img src={vet.avatar_url} alt={vet.full_name}
+                          className="w-10 h-10 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold shrink-0 text-sm">
+                          {vet.full_name?.[0] || 'H'}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold">{vet.full_name}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                            vet.status === 'approved' ? 'bg-green-100 text-green-700'
+                            : vet.status === 'reviewing' ? 'bg-blue-100 text-blue-700'
+                            : vet.status === 'rejected' ? 'bg-red-100 text-red-500'
+                            : 'bg-amber-100 text-amber-700'
+                          }`}>
+                            {vet.status === 'approved' ? <ShieldCheck className="w-3 h-3" /> : <ShieldX className="w-3 h-3" />}
+                            {vet.status === 'approved' ? 'ยืนยันแล้ว' : vet.status === 'reviewing' ? 'กำลังตรวจสอบ' : vet.status === 'rejected' ? 'ไม่ผ่าน' : 'รอตรวจสอบ'}
+                          </span>
+                        </div>
+                        {vet.license_number && (
+                          <p className="text-xs text-gray-400 mt-0.5">ใบอนุญาต: {vet.license_number}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {vetNeedsAction && (
+                        <button onClick={() => setExpandedVet(isVetExpanded ? null : vet.user_id)}
+                          className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 font-medium transition-colors">
+                          {isVetExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          ตรวจสอบ
+                        </button>
+                      )}
+                      <Link href={`/admin/vet/${vet.user_id}`}
+                        className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium transition-colors">
+                        <Eye className="w-4 h-4" /> รายละเอียด
+                      </Link>
+                    </div>
+                  </div>
+
+                  {isVetExpanded && (
+                    <div className="mt-4 pt-4 border-t border-gray-100 space-y-4">
+                      {vet.license_doc_url ? (
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 mb-2">เอกสารใบอนุญาต</p>
+                          {vet.license_doc_url.match(/\.(jpg|jpeg|png|webp)$/i) ? (
+                            <img src={vet.license_doc_url} alt="ใบอนุญาต"
+                              className="max-h-96 rounded-lg border border-gray-200 object-contain bg-gray-50" />
+                          ) : (
+                            <a href={vet.license_doc_url} target="_blank" rel="noreferrer"
+                              className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
+                              <FileText className="w-4 h-4" /> เปิดเอกสาร PDF
+                            </a>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-400 italic">ยังไม่มีเอกสารแนบ</p>
+                      )}
+                      <div className="space-y-3">
+                        <div className="flex gap-2">
+                          <button onClick={() => handleVetAction(vet.user_id, true)}
+                            disabled={approvingVet === vet.user_id}
+                            className="flex items-center gap-1 text-sm px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors font-medium">
+                            <CheckCircle className="w-4 h-4" /> ยืนยัน
+                          </button>
+                          <button onClick={() => handleVetAction(vet.user_id, false)}
+                            disabled={approvingVet === vet.user_id || !vetRejectReason[vet.user_id]?.trim()}
+                            className="flex items-center gap-1 text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors font-medium">
+                            <XCircle className="w-4 h-4" /> ปฏิเสธ
+                          </button>
+                        </div>
+                        <textarea
+                          placeholder="ระบุเหตุผลปฏิเสธ (จำเป็นก่อนกดปฏิเสธ)"
+                          value={vetRejectReason[vet.user_id] || ''}
+                          onChange={e => setVetRejectReason(prev => ({ ...prev, [vet.user_id]: e.target.value }))}
+                          rows={2}
+                          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-red-300"
+                        />
+                      </div>
                     </div>
                   )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold">{vet.full_name}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${vet.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                        {vet.is_available ? 'รับงาน' : 'ปิดรับ'}
-                      </span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                        vet.status === 'approved' ? 'bg-green-100 text-green-700'
-                        : vet.status === 'reviewing' ? 'bg-blue-100 text-blue-700'
-                        : vet.status === 'rejected' ? 'bg-red-100 text-red-500'
-                        : 'bg-amber-100 text-amber-700'
-                      }`}>
-                        {vet.status === 'approved' ? <ShieldCheck className="w-3 h-3" /> : <ShieldX className="w-3 h-3" />}
-                        {vet.status === 'approved' ? 'ยืนยันแล้ว' : vet.status === 'reviewing' ? 'กำลังตรวจสอบ' : vet.status === 'rejected' ? 'ไม่ผ่าน' : 'รอตรวจสอบ'}
-                      </span>
-                      {vet.license_number && (
-                        <span className="text-xs text-gray-400">ใบอนุญาต: {vet.license_number}</span>
-                      )}
-                    </div>
-                  </div>
-                  <Link href={`/admin/vet/${vet.user_id}`}
-                    className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium transition-colors shrink-0 flex items-center gap-1">
-                    <Eye className="w-3.5 h-3.5" /> ดู
-                  </Link>
-                    {(vet.university || vet.graduation_year) && (
-                      <p className="text-sm text-gray-600 mt-0.5">
-                        {vet.university || ''}
-                        {vet.university && vet.graduation_year ? ' · ' : ''}
-                        {vet.graduation_year ? `รุ่น ${vet.graduation_year}` : ''}
-                      </p>
-                    )}
-                    {vet.additional_education?.length > 0 && (
-                      <div className="flex gap-1 mt-1 flex-wrap">
-                        {vet.additional_education.map((k: string) => (
-                          <span key={k} className="text-xs bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-full">
-                            {k === 'internship' ? 'Internship' : k === 'certificate' ? 'Certificate' : k === 'resident' ? 'Resident' : k}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Owner list */}
       {owners.length > 0 && (
@@ -504,8 +576,8 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Bookings table */}
-      <div>
+      {/* Bookings table — hidden for now */}
+      {false && <div>
         <h2 className="text-lg font-bold mb-4">รายการ Booking {filter !== 'all' && `(${statusLabel[filter]?.label})`}</h2>
         <div className="space-y-3">
           {filtered.length === 0 ? (
@@ -546,7 +618,7 @@ export default function AdminDashboard() {
             )
           })}
         </div>
-      </div>
+      </div>}
     </div>
   )
 }
