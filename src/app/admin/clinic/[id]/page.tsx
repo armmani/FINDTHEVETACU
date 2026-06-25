@@ -27,7 +27,7 @@ interface ClinicDetail {
   reject_reason: string | null
   license_doc_url: string | null
   created_at: string
-  owner: { full_name: string; phone: string | null } | null
+  owner: { full_name: string; phone: string | null; email: string | null } | null
   clinic_specialties: { specialty_types: { name_th: string; name_en: string } | null }[]
 }
 
@@ -68,7 +68,7 @@ export default function AdminClinicDetailPage() {
         // ดึง owner แยก
         if (c.owner_vet_id) {
           const { data: ownerData } = await supabase
-            .from('profiles').select('full_name, phone').eq('id', c.owner_vet_id).single()
+            .from('profiles').select('full_name, phone, email').eq('id', c.owner_vet_id).single()
           c.owner = ownerData
         }
         setClinic(c)
@@ -175,7 +175,8 @@ export default function AdminClinicDetailPage() {
       <div className="card bg-amber-50 dark:bg-amber-900/20 border border-amber-100">
         <p className="text-sm font-semibold text-amber-700 mb-1">ส่งโดย</p>
         <p className="font-medium">{(clinic.owner as any)?.full_name || '-'}</p>
-        {(clinic.owner as any)?.phone && <p className="text-sm text-gray-500">📞 {(clinic.owner as any).phone}</p>}
+        {(clinic.owner as any)?.phone && <p className="text-sm text-gray-500 mt-0.5">📞 {(clinic.owner as any).phone}</p>}
+        {(clinic.owner as any)?.email && <p className="text-sm text-gray-500 mt-0.5">✉️ {(clinic.owner as any).email}</p>}
         <p className="text-xs text-gray-400 mt-1">
           {new Date(clinic.created_at).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })}
         </p>
