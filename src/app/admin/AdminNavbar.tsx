@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
 import { useLang } from '@/contexts/LanguageContext'
-import { LogOut, LayoutDashboard, Sun, Moon } from 'lucide-react'
+import { LogOut, LayoutDashboard, Sun, Moon, Home } from 'lucide-react'
 import Image from 'next/image'
 
-export default function AdminNavbar({ fullName }: { fullName: string }) {
+export default function AdminNavbar({ fullName, role }: { fullName: string; role: string }) {
   const router = useRouter()
   const supabase = createClient()
   const { theme, setTheme } = useTheme()
@@ -28,10 +28,17 @@ export default function AdminNavbar({ fullName }: { fullName: string }) {
           <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full font-medium">Admin</span>
         </Link>
         <div className="flex items-center gap-4">
-          <Link href="/admin/dashboard" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-            <LayoutDashboard className="w-4 h-4" />
-            <span className="hidden sm:block">Dashboard</span>
-          </Link>
+          {role === 'super_admin' ? (
+            <Link href="/admin/dashboard" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+              <LayoutDashboard className="w-4 h-4" />
+              <span className="hidden sm:block">Dashboard</span>
+            </Link>
+          ) : (
+            <Link href="/home" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+              <Home className="w-4 h-4" />
+              <span className="hidden sm:block">กลับหน้าหลัก</span>
+            </Link>
+          )}
           <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">{fullName}</span>
           <button
             onClick={() => setLang(lang === 'th' ? 'en' : 'th')}
