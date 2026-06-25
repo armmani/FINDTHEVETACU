@@ -44,6 +44,8 @@ export default function NewClinicPage() {
   const [is24Hours, setIs24Hours] = useState(false)
   const [selectedSpecialties, setSelectedSpecialties] = useState<SelectedSpecialty[]>([])
   const [licenseFile, setLicenseFile] = useState<File | null>(null)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [locationName, setLocationName] = useState('')
   const [locationLat, setLocationLat] = useState<number | null>(null)
   const [locationLng, setLocationLng] = useState<number | null>(null)
@@ -114,6 +116,17 @@ export default function NewClinicPage() {
     if (uploadErr) { toast.error('อัปโหลดไฟล์ไม่สำเร็จ'); setSaving(false); return }
     const { data: urlData } = supabase.storage.from('clinic-docs').getPublicUrl(path)
 
+    let photoUrlValue: string | null = null
+    if (photoFile) {
+      const compressedPhoto = await compressImage(photoFile, { maxWidthPx: 1200, qualityJpeg: 0.85, maxSizeKB: 400 })
+      const photoPath = `clinic-photos/${user.id}-${Date.now()}.jpg`
+      const { error: photoErr } = await supabase.storage.from('clinic-docs').upload(photoPath, compressedPhoto)
+      if (!photoErr) {
+        const { data: photoUrlData } = supabase.storage.from('clinic-docs').getPublicUrl(photoPath)
+        photoUrlValue = photoUrlData.publicUrl
+      }
+    }
+
     const { data: clinic, error } = await supabase.from('clinics').insert({
       name: name.trim(),
       name_en: nameEn.trim() || null,
@@ -132,6 +145,7 @@ export default function NewClinicPage() {
       location_lat: locationLat,
       location_lng: locationLng,
       license_doc_url: urlData.publicUrl,
+      photo_url: photoUrlValue,
       owner_vet_id: user.id,
     }).select().single()
 
@@ -361,6 +375,24 @@ export default function NewClinicPage() {
             })}
           </div>
         )}
+      </div>
+
+      {/* รูปภาพคลินิก */}
+      <div className="card space-y-3">
+        <h2 className="font-semibold text-gray-700">รูปภาพคลินิก / โรงพยาบาล</h2>
+        <p className="text-xs text-gray-500">รูปหน้าร้านหรือภายในคลินิก (ไม่บังคับ)</p>
+        {photoPreview && (
+          <img src={photoPreview} alt="preview" className="w-full max-h-48 object-cover rounded-xl border border-gray-200" />
+        )}
+        <input type="file" accept="image/*"
+          onChange={e => {
+            const file = e.target.files?.[0] || null
+            setPhotoFile(file)
+            if (file) setPhotoPreview(URL.createObjectURL(file))
+            else setPhotoPreview(null)
+          }}
+          className="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-600 hover:file:bg-primary-100" />
+        {photoFile && <p className="text-xs text-green-600">✓ {photoFile.name}</p>}
       </div>
 
       {/* ใบอนุญาต */}

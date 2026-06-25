@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Lock, Clock, CheckCircle, XCircle, AlertCircle, Save } from 'lucide-react'
+import { ArrowLeft, Lock, Clock, CheckCircle, XCircle, AlertCircle, Save, Camera } from 'lucide-react'
 import { getProvinces, getDistricts, getSubDistricts } from '@/lib/thaiAddress'
 import { notifyAdmin } from '@/lib/telegram'
+import { compressImage } from '@/lib/compressImage'
 
 const DAYS = [
   { key: '1', label: 'จันทร์' }, { key: '2', label: 'อังคาร' },
@@ -47,6 +48,9 @@ export default function EditClinicPage() {
   const [subDistrict, setSubDistrict] = useState('')
   const [addressDetail, setAddressDetail] = useState('')
   const [openingHours, setOpeningHours] = useState<Record<string, DayHours>>({})
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null)
+  const [newPhotoFile, setNewPhotoFile] = useState<File | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -73,6 +77,7 @@ export default function EditClinicPage() {
       setSubDistrict(data.sub_district || '')
       setAddressDetail(data.address_detail || '')
       setOpeningHours(data.opening_hours || {})
+      setPhotoUrl(data.photo_url || null)
       setLoading(false)
     }
     load()
@@ -94,6 +99,21 @@ export default function EditClinicPage() {
     setSaving(true)
 
     const wasRejected = status === 'rejected'
+
+    let updatedPhotoUrl = photoUrl
+    if (newPhotoFile) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const compressed = await compressImage(newPhotoFile, { maxWidthPx: 1200, qualityJpeg: 0.85, maxSizeKB: 400 })
+        const photoPath = `clinic-photos/${user.id}-${Date.now()}.jpg`
+        const { error: photoErr } = await supabase.storage.from('clinic-docs').upload(photoPath, compressed)
+        if (!photoErr) {
+          const { data: photoUrlData } = supabase.storage.from('clinic-docs').getPublicUrl(photoPath)
+          updatedPhotoUrl = photoUrlData.publicUrl
+        }
+      }
+    }
+
     const { error } = await supabase.from('clinics').update({
       name: name.trim(),
       name_en: nameEn.trim() || null,
@@ -106,8 +126,11 @@ export default function EditClinicPage() {
       sub_district: subDistrict || null,
       address_detail: addressDetail.trim() || null,
       opening_hours: openingHours,
+      photo_url: updatedPhotoUrl,
       ...(wasRejected ? { status: 'pending', reject_reason: null } : {}),
     }).eq('id', id)
+
+    if (!error) setPhotoUrl(updatedPhotoUrl)
 
     if (error) { toast.error('บันทึกไม่สำเร็จ'); setSaving(false); return }
 
@@ -171,6 +194,31 @@ export default function EditClinicPage() {
           </div>
         </div>
       )}
+
+      {/* รูปภาพ */}
+      <div className="card space-y-3">
+        <h2 className="font-semibold text-gray-700">รูปภาพคลินิก / โรงพยาบาล</h2>
+        {(photoPreview || photoUrl) ? (
+          <img src={photoPreview || photoUrl!} alt="รูปคลินิก" className="w-full max-h-48 object-cover rounded-xl border border-gray-200" />
+        ) : (
+          <div className="w-full h-32 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-400 text-sm">
+            <Camera className="w-6 h-6 mr-2" /> ยังไม่มีรูปภาพ
+          </div>
+        )}
+        {!isLocked && (
+          <>
+            <input type="file" accept="image/*"
+              onChange={e => {
+                const file = e.target.files?.[0] || null
+                setNewPhotoFile(file)
+                if (file) setPhotoPreview(URL.createObjectURL(file))
+                else setPhotoPreview(null)
+              }}
+              className="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-600 hover:file:bg-primary-100" />
+            {newPhotoFile && <p className="text-xs text-green-600">✓ {newPhotoFile.name}</p>}
+          </>
+        )}
+      </div>
 
       {/* ข้อมูลพื้นฐาน */}
       <div className="card space-y-4">
