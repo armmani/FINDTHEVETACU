@@ -35,6 +35,7 @@ export default function EditClinicPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [ownerName, setOwnerName] = useState('')
+  const [editRequested, setEditRequested] = useState(false)
 
   const [name, setName] = useState('')
   const [nameEn, setNameEn] = useState('')
@@ -127,17 +128,18 @@ export default function EditClinicPage() {
       address_detail: addressDetail.trim() || null,
       opening_hours: openingHours,
       photo_url: updatedPhotoUrl,
-      ...(wasRejected ? { status: 'pending', reject_reason: null } : {}),
+      ...(wasRejected || (status === 'approved' && editRequested) ? { status: 'pending', reject_reason: null } : {}),
     }).eq('id', id)
 
     if (!error) setPhotoUrl(updatedPhotoUrl)
 
     if (error) { toast.error('บันทึกไม่สำเร็จ'); setSaving(false); return }
 
-    if (wasRejected) {
+    if (wasRejected || (status === 'approved' && editRequested)) {
       notifyAdmin(`🔄 <b>FindTheVet — ส่งข้อมูลใหม่</b>\n\n<b>${name.trim()}</b> แก้ไขและส่งข้อมูลใหม่อีกครั้ง\nกรุณาตรวจสอบใน Admin Dashboard`)
       setStatus('pending')
       setRejectReason(null)
+      setEditRequested(false)
     }
 
     toast.success('บันทึกสำเร็จ')
@@ -146,7 +148,7 @@ export default function EditClinicPage() {
 
   if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
 
-  const isLocked = status === 'reviewing' || status === 'approved'
+  const isLocked = status === 'reviewing' || (status === 'approved' && !editRequested)
   const cfg = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG]
   const StatusIcon = cfg?.icon
 
@@ -175,12 +177,28 @@ export default function EditClinicPage() {
           </div>
         </div>
       )}
-      {status === 'approved' && (
-        <div className="card bg-green-50 border border-green-200 flex items-start gap-3">
-          <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+      {status === 'approved' && !editRequested && (
+        <div className="card bg-green-50 border border-green-200 flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <CheckCircle className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-green-700 text-sm">คลินิกนี้ได้รับการยืนยันแล้ว</p>
+              <p className="text-green-600 text-xs mt-0.5">หากแก้ไขข้อมูล ระบบจะส่ง Admin ตรวจสอบใหม่อีกครั้ง</p>
+            </div>
+          </div>
+          <button
+            onClick={() => setEditRequested(true)}
+            className="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 font-medium transition-colors">
+            ขอแก้ไขข้อมูล
+          </button>
+        </div>
+      )}
+      {status === 'approved' && editRequested && (
+        <div className="card bg-amber-50 border border-amber-200 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
           <div>
-            <p className="font-semibold text-green-700 text-sm">คลินิกนี้ได้รับการยืนยันแล้ว</p>
-            <p className="text-green-600 text-xs mt-0.5">หากต้องการแก้ไขข้อมูล กรุณาติดต่อ Admin</p>
+            <p className="font-semibold text-amber-700 text-sm">กำลังแก้ไขข้อมูล</p>
+            <p className="text-amber-600 text-xs mt-0.5">เมื่อบันทึก ระบบจะส่งข้อมูลให้ Admin ตรวจสอบใหม่</p>
           </div>
         </div>
       )}
@@ -330,7 +348,7 @@ export default function EditClinicPage() {
         <button onClick={handleSave} disabled={saving}
           className="btn-primary w-full flex items-center justify-center gap-2">
           <Save className="w-4 h-4" />
-          {saving ? 'กำลังบันทึก...' : status === 'rejected' ? 'บันทึกและส่งใหม่' : 'บันทึกการแก้ไข'}
+          {saving ? 'กำลังบันทึก...' : (status === 'rejected' || editRequested) ? 'บันทึกและส่งตรวจสอบใหม่' : 'บันทึกการแก้ไข'}
         </button>
       )}
     </div>
