@@ -59,16 +59,18 @@ export default function AdminClinicDetailPage() {
     const load = async () => {
       const { data } = await supabase
         .from('clinics')
-        .select(`
-          *,
-          owner:profiles!clinics_owner_vet_id_fkey(full_name, phone),
-          clinic_specialties(specialty_types(name_th, name_en))
-        `)
+        .select('*, clinic_specialties(specialty_types(name_th, name_en))')
         .eq('id', id)
         .single()
 
       if (data) {
         const c = data as any
+        // ดึง owner แยก
+        if (c.owner_vet_id) {
+          const { data: ownerData } = await supabase
+            .from('profiles').select('full_name, phone').eq('id', c.owner_vet_id).single()
+          c.owner = ownerData
+        }
         setClinic(c)
         setOwnerId(c.owner_vet_id)
         setName(c.name || '')

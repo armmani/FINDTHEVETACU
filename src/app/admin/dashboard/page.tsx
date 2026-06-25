@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Users, Stethoscope, CalendarCheck, XCircle, CheckCircle, ShieldCheck, ShieldX, Building2, Plus, Trash2, Eye } from 'lucide-react'
+import { Users, Stethoscope, CalendarCheck, XCircle, CheckCircle, ShieldCheck, ShieldX, Building2, Plus, Trash2, Eye, FileText, ChevronDown, ChevronUp } from 'lucide-react'
 import Link from 'next/link'
 
 interface Stats {
@@ -87,6 +87,7 @@ export default function AdminDashboard() {
   const [verifying, setVerifying] = useState<string | null>(null)
   const [approvingClinic, setApprovingClinic] = useState<string | null>(null)
   const [rejectReason, setRejectReason] = useState<Record<string, string>>({})
+  const [expandedClinic, setExpandedClinic] = useState<string | null>(null)
 
   const handleAddSpecialty = async () => {
     if (!newSpTh.trim() || !newSpEn.trim()) { return }
@@ -102,6 +103,14 @@ export default function AdminDashboard() {
     setSpecialtyTypes(prev => prev.filter(s => s.id !== id))
   }
 
+  const handleStartReview = async (clinicId: string) => {
+    setApprovingClinic(clinicId)
+    await supabase.from('clinics').update({ status: 'reviewing' }).eq('id', clinicId)
+    setClinics(prev => prev.map(c => c.id === clinicId ? { ...c, status: 'reviewing' } : c))
+    setExpandedClinic(clinicId)
+    setApprovingClinic(null)
+  }
+
   const handleClinicApprove = async (clinicId: string, approve: boolean) => {
     setApprovingClinic(clinicId)
     const reason = rejectReason[clinicId] || ''
@@ -109,7 +118,8 @@ export default function AdminDashboard() {
       status: approve ? 'approved' : 'rejected',
       reject_reason: approve ? null : reason,
     }).eq('id', clinicId)
-    setClinics(prev => prev.filter(c => c.id !== clinicId))
+    setClinics(prev => prev.map(c => c.id === clinicId ? { ...c, status: approve ? 'approved' : 'rejected' } : c))
+    setExpandedClinic(null)
     setApprovingClinic(null)
   }
 
@@ -302,8 +312,11 @@ export default function AdminDashboard() {
                 : clinic.status === 'rejected' ? 'ไม่ผ่าน'
                 : clinic.status === 'reviewing' ? 'กำลังตรวจสอบ'
                 : 'รอตรวจสอบ'
+              const isExpanded = expandedClinic === clinic.id
+              const needsAction = clinic.status === 'pending' || clinic.status === 'reviewing'
               return (
                 <div key={clinic.id} className={`card border-l-4 ${statusColor}`}>
+                  {/* Header row */}
                   <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -319,11 +332,77 @@ export default function AdminDashboard() {
                         {clinic.province} · {clinic.owner_name || '-'}
                       </p>
                     </div>
-                    <Link href={`/admin/clinic/${clinic.id}`}
-                      className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium transition-colors shrink-0">
-                      <Eye className="w-4 h-4" /> ดูรายละเอียด
-                    </Link>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {needsAction && (
+                        <button onClick={() => setExpandedClinic(isExpanded ? null : clinic.id)}
+                          className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 font-medium transition-colors">
+                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          ตรวจสอบ
+                        </button>
+                      )}
+                      <Link href={`/admin/clinic/${clinic.id}`}
+                        className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium transition-colors">
+                        <Eye className="w-4 h-4" /> รายละเอียด
+                      </Link>
+                    </div>
                   </div>
+
+                  {/* Expandable review panel */}
+                  {isExpanded && (
+                    <div className="mt-4 pt-4 border-t border-gray-100 space-y-4">
+                      {/* License doc */}
+                      {clinic.license_doc_url ? (
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 mb-2">เอกสารใบอนุญาต</p>
+                          {clinic.license_doc_url.match(/\.(jpg|jpeg|png|webp)$/i) ? (
+                            <img src={clinic.license_doc_url} alt="ใบอนุญาต"
+                              className="max-h-96 rounded-lg border border-gray-200 object-contain bg-gray-50" />
+                          ) : (
+                            <a href={clinic.license_doc_url} target="_blank" rel="noreferrer"
+                              className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
+                              <FileText className="w-4 h-4" /> เปิดเอกสาร PDF
+                            </a>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-400 italic">ยังไม่มีเอกสารแนบ</p>
+                      )}
+
+                      {/* Start review button (for pending) */}
+                      {clinic.status === 'pending' && (
+                        <button onClick={() => handleStartReview(clinic.id)}
+                          disabled={approvingClinic === clinic.id}
+                          className="text-sm px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                          เริ่มตรวจสอบ
+                        </button>
+                      )}
+
+                      {/* Approve / Reject (for reviewing) */}
+                      {clinic.status === 'reviewing' && (
+                        <div className="space-y-3">
+                          <div className="flex gap-2">
+                            <button onClick={() => handleClinicApprove(clinic.id, true)}
+                              disabled={approvingClinic === clinic.id}
+                              className="flex items-center gap-1 text-sm px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors font-medium">
+                              <CheckCircle className="w-4 h-4" /> ยืนยัน
+                            </button>
+                            <button onClick={() => handleClinicApprove(clinic.id, false)}
+                              disabled={approvingClinic === clinic.id || !rejectReason[clinic.id]?.trim()}
+                              className="flex items-center gap-1 text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors font-medium">
+                              <XCircle className="w-4 h-4" /> ปฏิเสธ
+                            </button>
+                          </div>
+                          <textarea
+                            placeholder="ระบุเหตุผลปฏิเสธ (จำเป็นก่อนกดปฏิเสธ)"
+                            value={rejectReason[clinic.id] || ''}
+                            onChange={e => setRejectReason(prev => ({ ...prev, [clinic.id]: e.target.value }))}
+                            rows={2}
+                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-red-300"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )
             })}
