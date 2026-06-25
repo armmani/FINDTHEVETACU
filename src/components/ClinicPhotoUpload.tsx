@@ -2,6 +2,7 @@
 
 import { useRef, useState, useCallback } from 'react'
 import Cropper from 'react-easy-crop'
+import 'react-easy-crop/react-easy-crop.css'
 import { Camera, X, Check, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -103,9 +104,9 @@ export default function ClinicPhotoUpload({ currentUrl, onFileReady, disabled }:
 
       {/* Crop modal */}
       {rawSrc && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex flex-col">
-          {/* Cropper area */}
-          <div className="relative flex-1">
+        <div className="fixed inset-0 z-50 bg-black/80" style={{ display: 'flex', flexDirection: 'column' }}>
+          {/* Cropper area — ต้องมี height จริงๆ */}
+          <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
             <Cropper
               image={rawSrc}
               crop={crop}
@@ -118,7 +119,7 @@ export default function ClinicPhotoUpload({ currentUrl, onFileReady, disabled }:
           </div>
 
           {/* Controls */}
-          <div className="bg-black/70 px-6 py-4 space-y-3">
+          <div style={{ background: 'rgba(0,0,0,0.75)', padding: '16px 24px', flexShrink: 0 }} className="space-y-3">
             <div className="flex items-center gap-3">
               <span className="text-white text-sm w-16 shrink-0">ซูม</span>
               <input type="range" min={1} max={3} step={0.05} value={zoom}
