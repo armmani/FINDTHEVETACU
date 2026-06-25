@@ -2,7 +2,6 @@
 
 import { useRef, useState, useCallback } from 'react'
 import Cropper from 'react-easy-crop'
-import 'react-easy-crop/react-easy-crop.css'
 import { Camera, X, Check, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
