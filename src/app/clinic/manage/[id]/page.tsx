@@ -8,6 +8,7 @@ import { ArrowLeft, Lock, Clock, CheckCircle, XCircle, AlertCircle, Save, Camera
 import { getProvinces, getDistricts, getSubDistricts } from '@/lib/thaiAddress'
 import { notifyAdmin } from '@/lib/telegram'
 import { compressImage } from '@/lib/compressImage'
+import ClinicPhotoUpload from '@/components/ClinicPhotoUpload'
 
 const DAYS = [
   { key: '1', label: 'จันทร์' }, { key: '2', label: 'อังคาร' },
@@ -221,26 +222,12 @@ export default function EditClinicPage() {
       {/* รูปภาพ */}
       <div className="card space-y-3">
         <h2 className="font-semibold text-gray-700">รูปภาพคลินิก / โรงพยาบาล</h2>
-        {(photoPreview || photoUrl) ? (
-          <img src={photoPreview || photoUrl!} alt="รูปคลินิก" className="w-full max-h-48 object-cover rounded-xl border border-gray-200" />
-        ) : (
-          <div className="w-full h-32 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center text-gray-400 text-sm">
-            <Camera className="w-6 h-6 mr-2" /> ยังไม่มีรูปภาพ
-          </div>
-        )}
-        {!isLocked && (
-          <>
-            <input type="file" accept="image/*"
-              onChange={e => {
-                const file = e.target.files?.[0] || null
-                setNewPhotoFile(file)
-                if (file) setPhotoPreview(URL.createObjectURL(file))
-                else setPhotoPreview(null)
-              }}
-              className="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-600 hover:file:bg-primary-100" />
-            {newPhotoFile && <p className="text-xs text-green-600">✓ {newPhotoFile.name}</p>}
-          </>
-        )}
+        <p className="text-xs text-gray-500">อัตราส่วน 4:3</p>
+        <ClinicPhotoUpload
+          currentUrl={photoUrl}
+          onFileReady={file => setNewPhotoFile(file)}
+          disabled={isLocked}
+        />
       </div>
 
       {/* ข้อมูลพื้นฐาน */}
