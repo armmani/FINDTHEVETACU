@@ -23,8 +23,10 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // redirect logged-in users away from auth pages
-  if (user && request.nextUrl.pathname.startsWith('/auth/login')) {
+  const pathname = request.nextUrl.pathname
+
+  // redirect logged-in users away from auth/landing pages
+  if (user && (pathname === '/' || pathname.startsWith('/auth/login'))) {
     const { data: profile } = await supabase
       .from('profiles').select('role').eq('id', user.id).single()
     const role = (profile as any)?.role
@@ -36,5 +38,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/auth/login', '/auth/register', '/home/:path*', '/vet/:path*', '/owner/:path*', '/admin/:path*', '/clinic/:path*'],
+  matcher: ['/', '/auth/login', '/auth/register', '/home/:path*', '/vet/:path*', '/owner/:path*', '/admin/:path*', '/clinic/:path*'],
 }

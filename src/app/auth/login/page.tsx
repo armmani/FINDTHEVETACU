@@ -45,7 +45,7 @@ export default function LoginPage() {
       .single()
 
     const role = profile?.role
-    router.push(role === 'admin' ? '/admin/dashboard' : '/home')
+    router.push(role === 'super_admin' ? '/admin/dashboard' : '/home')
     router.refresh()
   }
 
