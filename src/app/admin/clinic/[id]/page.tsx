@@ -26,6 +26,7 @@ interface ClinicDetail {
   status: string
   reject_reason: string | null
   license_doc_url: string | null
+  photo_url: string | null
   created_at: string
   owner: { full_name: string; phone: string | null; email: string | null; line_id: string | null } | null
   clinic_specialties: { specialty_types: { name_th: string; name_en: string } | null }[]
@@ -204,14 +205,27 @@ export default function AdminClinicDetailPage() {
         </p>
       </div>
 
+      {/* รูปภาพคลินิก */}
+      {clinic.photo_url && (
+        <div className="card">
+          <p className="text-sm font-semibold mb-2">รูปภาพคลินิก / โรงพยาบาล</p>
+          <img src={clinic.photo_url} alt="รูปคลินิก"
+            className="w-full max-h-64 object-cover rounded-xl border border-gray-200" />
+        </div>
+      )}
+
       {/* ใบอนุญาต */}
       {clinic.license_doc_url && (
         <div className="card">
           <p className="text-sm font-semibold mb-2">ใบอนุญาตดำเนินการสถานพยาบาลสัตว์</p>
-          <a href={clinic.license_doc_url} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm text-blue-500 hover:underline font-medium">
-            <ExternalLink className="w-4 h-4" /> เปิดดูเอกสาร
-          </a>
+          {clinic.license_doc_url.match(/\.(jpg|jpeg|png|webp)$/i)
+            ? <img src={clinic.license_doc_url} alt="ใบอนุญาต"
+                className="w-full max-h-80 object-contain rounded-xl border border-gray-200 bg-gray-50" />
+            : <a href={clinic.license_doc_url} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm text-blue-500 hover:underline font-medium">
+                <ExternalLink className="w-4 h-4" /> เปิดดูเอกสาร
+              </a>
+          }
         </div>
       )}
 
