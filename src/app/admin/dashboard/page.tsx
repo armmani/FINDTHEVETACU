@@ -49,7 +49,8 @@ interface ClinicRow {
   status: string
   license_doc_url: string | null
   created_at: string
-  owner: { full_name: string } | null
+  owner_vet_id: string | null
+  owner_name?: string
 }
 
 interface BookingRow {
@@ -142,10 +143,7 @@ export default function AdminDashboard() {
         profiles!inner(full_name, avatar_url)
       `).order('created_at', { ascending: false }),
       supabase.from('specialty_types').select('*').order('name_th'),
-      supabase.from('clinics').select(`
-        id, name, type, province, phone, status, license_doc_url, created_at,
-        owner:profiles!clinics_owner_vet_id_fkey(full_name)
-      `).order('created_at', { ascending: false }),
+      supabase.from('clinics').select('id, name, type, province, phone, status, license_doc_url, created_at, owner_vet_id').order('created_at', { ascending: false }),
     ])
 
     const mappedVets = (vetData || []).map((v: any) => ({
@@ -166,7 +164,15 @@ export default function AdminDashboard() {
 
     setOwners((ownerData || []) as OwnerRow[])
     setSpecialtyTypes((spData || []) as any)
-    setClinics((clinicData || []).map((c: any) => ({ ...c, owner: c.owner })) as ClinicRow[])
+    const clinicList = (clinicData || []) as ClinicRow[]
+    const ownerIds = Array.from(new Set(clinicList.map(c => c.owner_vet_id).filter(Boolean))) as string[]
+    if (ownerIds.length > 0) {
+      const { data: ownerProfiles } = await supabase.from('profiles').select('id, full_name').in('id', ownerIds)
+      const ownerMap = Object.fromEntries((ownerProfiles || []).map(p => [p.id, p.full_name]))
+      setClinics(clinicList.map(c => ({ ...c, owner_name: c.owner_vet_id ? ownerMap[c.owner_vet_id] : undefined })))
+    } else {
+      setClinics(clinicList)
+    }
 
     setStats({
       totalOwners: ownerCount || 0,
@@ -310,7 +316,7 @@ export default function AdminDashboard() {
                         </span>
                       </div>
                       <p className="text-sm text-gray-500 mt-0.5">
-                        {clinic.province} · {(clinic.owner as any)?.full_name || '-'}
+                        {clinic.province} · {clinic.owner_name || '-'}
                       </p>
                     </div>
                     <Link href={`/admin/clinic/${clinic.id}`}

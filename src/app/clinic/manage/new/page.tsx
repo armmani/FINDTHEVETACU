@@ -5,8 +5,12 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 import { getProvinces, getDistricts, getSubDistricts } from '@/lib/thaiAddress'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Search, MapPin } from 'lucide-react'
 import { compressImage } from '@/lib/compressImage'
+import { geocodeAddress } from '@/lib/distance'
+import dynamic from 'next/dynamic'
+
+const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false })
 
 const DAYS = [
   { key: '1', label: 'จันทร์' }, { key: '2', label: 'อังคาร' },
@@ -37,13 +41,27 @@ export default function NewClinicPage() {
   const [subDistrict, setSubDistrict] = useState('')
   const [addressDetail, setAddressDetail] = useState('')
   const [openingHours, setOpeningHours] = useState<Record<string, DayHours>>({})
+  const [is24Hours, setIs24Hours] = useState(false)
   const [selectedSpecialties, setSelectedSpecialties] = useState<SelectedSpecialty[]>([])
   const [licenseFile, setLicenseFile] = useState<File | null>(null)
+  const [locationName, setLocationName] = useState('')
+  const [locationLat, setLocationLat] = useState<number | null>(null)
+  const [locationLng, setLocationLng] = useState<number | null>(null)
+  const [geocoding, setGeocoding] = useState(false)
 
   useEffect(() => {
     supabase.from('specialty_types').select('*').order('name_th')
       .then(({ data }) => setSpecialtyTypes(data || []))
   }, [])
+
+  const handleGeocode = async () => {
+    if (!locationName.trim()) { toast.error('กรุณาพิมพ์ที่อยู่ก่อน'); return }
+    setGeocoding(true)
+    const result = await geocodeAddress(locationName)
+    if (result) { setLocationLat(result.lat); setLocationLng(result.lng); toast.success('พบพิกัดแล้ว') }
+    else toast.error('ไม่พบพิกัด ลองพิมพ์ละเอียดขึ้น')
+    setGeocoding(false)
+  }
 
   const toggleDay = (day: string) => {
     setOpeningHours(prev => {
@@ -108,7 +126,11 @@ export default function NewClinicPage() {
       district: district || null,
       sub_district: subDistrict || null,
       address_detail: addressDetail.trim() || null,
-      opening_hours: openingHours,
+      opening_hours: is24Hours ? null : openingHours,
+      is_24_hours: is24Hours,
+      location_name: locationName.trim() || null,
+      location_lat: locationLat,
+      location_lng: locationLng,
       license_doc_url: urlData.publicUrl,
       owner_vet_id: user.id,
     }).select().single()
@@ -221,31 +243,67 @@ export default function NewClinicPage() {
           <label className="label">รายละเอียดที่อยู่</label>
           <input className="input" value={addressDetail} onChange={e => setAddressDetail(e.target.value)} placeholder="เลขที่, ซอย, ถนน" />
         </div>
+        <div>
+          <label className="label flex items-center gap-1"><MapPin className="w-4 h-4" /> พิกัดที่ตั้ง</label>
+          <div className="flex gap-2">
+            <input type="text" value={locationName}
+              onChange={e => { setLocationName(e.target.value); setLocationLat(null); setLocationLng(null) }}
+              className="input flex-1" placeholder="เช่น ลาดพร้าว 71 กรุงเทพ" />
+            <button type="button" onClick={handleGeocode} disabled={geocoding}
+              className="btn-secondary flex items-center gap-1 shrink-0">
+              <Search className="w-4 h-4" />
+              {geocoding ? '...' : 'ค้นหา'}
+            </button>
+          </div>
+          {locationLat && locationLng ? (
+            <>
+              <p className="text-xs text-primary-600 mt-1">✓ พบพิกัดแล้ว — ลากหมุดเพื่อปรับตำแหน่งให้ตรง</p>
+              <div className="mt-2 rounded-xl overflow-hidden border border-gray-200">
+                <MapPicker lat={locationLat} lng={locationLng}
+                  onMove={(lat, lng) => { setLocationLat(lat); setLocationLng(lng) }} />
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-gray-400 mt-1">พิมพ์ที่อยู่แล้วกด "ค้นหา" เพื่อระบุพิกัด</p>
+          )}
+        </div>
       </div>
 
       {/* เวลาเปิด-ปิด */}
       <div className="card space-y-3">
         <h2 className="font-semibold text-gray-700">เวลาเปิด-ปิด</h2>
-        <div className="flex flex-wrap gap-2">
-          {DAYS.map(d => (
-            <button key={d.key} onClick={() => toggleDay(d.key)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                openingHours[d.key] ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 text-gray-500'
-              }`}>
-              {d.label}
-            </button>
-          ))}
-        </div>
-        {DAYS.filter(d => openingHours[d.key]).map(d => (
-          <div key={d.key} className="flex items-center gap-2 text-sm">
-            <span className="w-16 text-gray-600 shrink-0">{d.label}</span>
-            <input type="time" value={openingHours[d.key].open}
-              onChange={e => updateDayHours(d.key, 'open', e.target.value)} className="input w-28" />
-            <span className="text-gray-400">–</span>
-            <input type="time" value={openingHours[d.key].close}
-              onChange={e => updateDayHours(d.key, 'close', e.target.value)} className="input w-28" />
-          </div>
-        ))}
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input type="checkbox" checked={is24Hours} onChange={e => setIs24Hours(e.target.checked)}
+            className="w-4 h-4 rounded accent-primary-600" />
+          <span className="text-sm font-medium text-gray-700">เปิด 24 ชั่วโมง</span>
+        </label>
+        {!is24Hours && (
+          <>
+            <div className="flex flex-wrap gap-2">
+              {DAYS.map(d => (
+                <button key={d.key} type="button" onClick={() => toggleDay(d.key)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                    openingHours[d.key] ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 text-gray-500'
+                  }`}>
+                  {d.label}
+                </button>
+              ))}
+            </div>
+            {DAYS.filter(d => openingHours[d.key]).map(d => (
+              <div key={d.key} className="flex items-center gap-2 text-sm">
+                <span className="w-16 text-gray-600 shrink-0">{d.label}</span>
+                <input type="time" value={openingHours[d.key].open}
+                  onChange={e => updateDayHours(d.key, 'open', e.target.value)} className="input w-28" />
+                <span className="text-gray-400">–</span>
+                <input type="time" value={openingHours[d.key].close}
+                  onChange={e => updateDayHours(d.key, 'close', e.target.value)} className="input w-28" />
+              </div>
+            ))}
+          </>
+        )}
+        {is24Hours && (
+          <p className="text-sm text-primary-600 bg-primary-50 rounded-lg px-3 py-2">🕐 เปิดให้บริการตลอด 24 ชั่วโมง</p>
+        )}
       </div>
 
       {/* แผนกเฉพาะทาง */}
