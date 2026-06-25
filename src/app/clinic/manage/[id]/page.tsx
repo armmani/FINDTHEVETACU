@@ -115,7 +115,7 @@ export default function EditClinicPage() {
       }
     }
 
-    const { error } = await supabase.from('clinics').update({
+    const updates: Record<string, any> = {
       name: name.trim(),
       name_en: nameEn.trim() || null,
       phone: phone.trim() || null,
@@ -129,11 +129,16 @@ export default function EditClinicPage() {
       opening_hours: openingHours,
       photo_url: updatedPhotoUrl,
       ...(wasRejected || (status === 'approved' && editRequested) ? { status: 'pending', reject_reason: null } : {}),
-    }).eq('id', id)
+    }
 
-    if (!error) setPhotoUrl(updatedPhotoUrl)
+    const res = await fetch('/api/clinic/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clinicId: id, updates }),
+    })
 
-    if (error) { toast.error('บันทึกไม่สำเร็จ'); setSaving(false); return }
+    if (!res.ok) { toast.error('บันทึกไม่สำเร็จ'); setSaving(false); return }
+    setPhotoUrl(updatedPhotoUrl)
 
     if (wasRejected || (status === 'approved' && editRequested)) {
       notifyAdmin(`🔄 <b>FindTheVet — ส่งข้อมูลใหม่</b>\n\n<b>${name.trim()}</b> แก้ไขและส่งข้อมูลใหม่อีกครั้ง\nกรุณาตรวจสอบใน Admin Dashboard`)
