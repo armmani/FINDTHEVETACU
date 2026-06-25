@@ -287,8 +287,8 @@ export default function AdminDashboard() {
     <div className="space-y-8">
       <h1 className="text-2xl font-bold">Admin Dashboard</h1>
 
-      {/* User stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      {/* Stats row 1 */}
+      <div className="grid grid-cols-3 gap-4">
         <div className="card text-center">
           <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
           <p className="text-3xl font-bold">{stats?.totalOwners}</p>
@@ -300,6 +300,15 @@ export default function AdminDashboard() {
           <p className="text-sm text-gray-500">สัตวแพทย์</p>
         </div>
         <div className="card text-center">
+          <Building2 className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
+          <p className="text-3xl font-bold">{(stats?.totalClinics ?? 0) + (stats?.totalHospitals ?? 0)}</p>
+          <p className="text-sm text-gray-500">สถานพยาบาลสัตว์</p>
+        </div>
+      </div>
+
+      {/* Stats row 2 */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="card text-center">
           <Building2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
           <p className="text-3xl font-bold">{stats?.totalClinics}</p>
           <p className="text-sm text-gray-500">คลินิก</p>
@@ -308,11 +317,6 @@ export default function AdminDashboard() {
           <Building2 className="w-8 h-8 text-cyan-500 mx-auto mb-2" />
           <p className="text-3xl font-bold">{stats?.totalHospitals}</p>
           <p className="text-sm text-gray-500">โรงพยาบาลสัตว์</p>
-        </div>
-        <div className="card text-center">
-          <Building2 className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
-          <p className="text-3xl font-bold">{(stats?.totalClinics ?? 0) + (stats?.totalHospitals ?? 0)}</p>
-          <p className="text-sm text-gray-500">สถานพยาบาลสัตว์</p>
         </div>
       </div>
 
