@@ -170,7 +170,7 @@ export default function AdminDashboard() {
       `).order('created_at', { ascending: false }),
       supabase.from('vet_profiles').select(
         'user_id, university, graduation_year, additional_education, is_available, is_verified, license_number, license_doc_url, status, reject_reason'
-      ).order('created_at', { ascending: false }).then(r => { if (r.error) console.error('VET_QUERY_ERROR', r.error); return r }),
+      ),
       supabase.from('specialty_types').select('*').order('name_th'),
       supabase.from('clinics').select('id, name, type, province, phone, status, license_doc_url, created_at, owner_vet_id').order('created_at', { ascending: false }),
     ])
