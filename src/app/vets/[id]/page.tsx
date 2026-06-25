@@ -168,13 +168,13 @@ export default function VetDetailPage() {
         </div>
       )}
 
-      {/* ความเชี่ยวชาญเฉพาะทาง */}
+      {/* สาขาที่สนใจ / ชำนาญ */}
       {vet.specialties?.length > 0 && (
         <div className="card">
           <div className="flex items-center gap-2 mb-2">
             <Stethoscope className="w-4 h-4 text-primary-500" />
             <p className="text-sm font-semibold text-gray-500">
-              {lang === 'en' ? 'Specialties' : 'ความเชี่ยวชาญเฉพาะทาง'}
+              {lang === 'en' ? 'Areas of Interest' : 'สาขาที่สนใจ / ชำนาญ'}
             </p>
           </div>
           <div className="flex flex-wrap gap-1.5">

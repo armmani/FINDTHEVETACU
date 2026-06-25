@@ -486,10 +486,10 @@ export default function VetProfilePage() {
           </div>
         </div>
 
-        {/* ความเชี่ยวชาญเฉพาะทาง */}
+        {/* สาขาที่สนใจ / ชำนาญ */}
         {specialtyTypes.length > 0 && (
           <div className="card">
-            <h2 className="font-semibold text-gray-800 mb-3">ความเชี่ยวชาญเฉพาะทาง</h2>
+            <h2 className="font-semibold text-gray-800 mb-3">สาขาที่สนใจ / ชำนาญ</h2>
             <div className="flex flex-wrap gap-2">
               {specialtyTypes.map(sp => {
                 const selected = vetSpecialties.includes(sp.id)
