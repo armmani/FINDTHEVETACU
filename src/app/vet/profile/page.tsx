@@ -30,7 +30,7 @@ const UNIVERSITIES = [
 const DAY_MAP: Record<string, string> = { '1': 'จันทร์', '2': 'อังคาร', '3': 'พุธ', '4': 'พฤหัสบดี', '5': 'ศุกร์', '6': 'เสาร์', '0': 'อาทิตย์' }
 const DAY_ORDER = ['1', '2', '3', '4', '5', '6', '0']
 
-interface ClinicSummary {
+interface ClinicOption {
   id: string
   name: string
   type: string
@@ -38,8 +38,17 @@ interface ClinicSummary {
   province: string | null
   district: string | null
   sub_district: string | null
-  opening_hours: Record<string, { open: string; close: string }>
-  status: string
+}
+
+interface VetSchedule {
+  id: string
+  clinic_id: string | null
+  place_name: string
+  clinic_phone: string | null
+  province: string | null
+  district: string | null
+  sub_district: string | null
+  slots: { day: number; start_time: string; end_time: string }[]
 }
 
 function formatLicense(input: string): string {
@@ -93,7 +102,13 @@ export default function VetProfilePage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [changingPassword, setChangingPassword] = useState(false)
-  const [myClinics, setMyClinics] = useState<ClinicSummary[]>([])
+  const [vetSchedules, setVetSchedules] = useState<VetSchedule[]>([])
+  const [allClinics, setAllClinics] = useState<ClinicOption[]>([])
+  const [showAddSchedule, setShowAddSchedule] = useState(false)
+  const [selectedClinicId, setSelectedClinicId] = useState('')
+  const [clinicSearch, setClinicSearch] = useState('')
+  const [newSlots, setNewSlots] = useState<Record<number, { open: string; close: string }>>({})
+  const [savingSchedule, setSavingSchedule] = useState(false)
 
   useEffect(() => { loadProfile() }, [])
 
@@ -131,14 +146,57 @@ export default function VetProfilePage() {
     setTelegramChatId((profile as any)?.telegram_chat_id || '')
     setAvatarUrl((profile as any)?.avatar_url || null)
 
-    const { data: clinicData } = await supabase
-      .from('clinics')
-      .select('id, name, type, phone, province, district, sub_district, opening_hours, status')
-      .eq('owner_vet_id', user.id)
-      .order('created_at', { ascending: true })
-    setMyClinics((clinicData as ClinicSummary[]) || [])
+    const [{ data: schedulesData }, { data: clinicsData }] = await Promise.all([
+      supabase.from('vet_schedules').select('*').eq('vet_id', user.id).order('created_at'),
+      supabase.from('clinics').select('id, name, type, phone, province, district, sub_district').eq('status', 'approved').order('name'),
+    ])
+    setVetSchedules((schedulesData as VetSchedule[]) || [])
+    setAllClinics((clinicsData as ClinicOption[]) || [])
 
     setLoading(false)
+  }
+
+  const toggleSlotDay = (day: number) => {
+    setNewSlots(prev => {
+      if (prev[day]) { const n = { ...prev }; delete n[day]; return n }
+      return { ...prev, [day]: { open: '09:00', close: '17:00' } }
+    })
+  }
+
+  const handleAddSchedule = async () => {
+    if (!selectedClinicId) { toast.error('กรุณาเลือกสถานที่'); return }
+    if (Object.keys(newSlots).length === 0) { toast.error('กรุณาเลือกวันออกตรวจอย่างน้อย 1 วัน'); return }
+    const clinic = allClinics.find(c => c.id === selectedClinicId)
+    if (!clinic) return
+    setSavingSchedule(true)
+    const slots = Object.entries(newSlots).map(([day, t]) => ({
+      day: Number(day), start_time: t.open + ':00', end_time: t.close + ':00',
+    }))
+    const { data, error } = await supabase.from('vet_schedules').insert({
+      vet_id: userId,
+      clinic_id: clinic.id,
+      place_name: clinic.name,
+      clinic_phone: clinic.phone,
+      province: clinic.province,
+      district: clinic.district,
+      sub_district: clinic.sub_district,
+      slots,
+    }).select().single()
+    if (error) { toast.error('บันทึกไม่สำเร็จ'); setSavingSchedule(false); return }
+    setVetSchedules(prev => [...prev, data as VetSchedule])
+    setShowAddSchedule(false)
+    setSelectedClinicId('')
+    setClinicSearch('')
+    setNewSlots({})
+    toast.success('เพิ่มตารางออกตรวจแล้ว')
+    setSavingSchedule(false)
+  }
+
+  const handleDeleteSchedule = async (id: string) => {
+    if (!window.confirm('ลบตารางออกตรวจนี้?')) return
+    await supabase.from('vet_schedules').delete().eq('id', id)
+    setVetSchedules(prev => prev.filter(s => s.id !== id))
+    toast.success('ลบแล้ว')
   }
 
   const handleGeocode = async () => {
@@ -518,63 +576,135 @@ export default function VetProfilePage() {
         </button>
       </form>
 
-      {/* ตารางออกตรวจ — ดึงจากคลินิกที่สร้างในระบบ */}
+      {/* ตารางออกตรวจ */}
       <div className="card space-y-4 mt-4">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-gray-800 flex items-center gap-2">
             <Calendar className="w-4 h-4" /> ตารางออกตรวจ
           </h2>
-          <a href="/clinic/manage" className="text-xs text-primary-600 hover:underline flex items-center gap-1">
-            <ExternalLink className="w-3.5 h-3.5" /> จัดการคลินิก
-          </a>
+          {!showAddSchedule && (
+            <button onClick={() => setShowAddSchedule(true)}
+              className="text-xs text-primary-600 hover:underline flex items-center gap-1 font-medium">
+              + เพิ่มสถานที่
+            </button>
+          )}
         </div>
 
-        {myClinics.length === 0 ? (
-          <div className="text-center py-6 text-gray-400 text-sm">
-            <p>ยังไม่มีคลินิก / โรงพยาบาลในระบบ</p>
-            <a href="/clinic/manage/new" className="text-primary-600 hover:underline mt-1 inline-block">
-              + สร้างคลินิกใหม่
-            </a>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {myClinics.map(clinic => {
-              const hours = clinic.opening_hours || {}
-              const openDays = DAY_ORDER.filter(k => hours[k])
-              return (
-                <div key={clinic.id} className="border border-gray-100 rounded-xl p-3 space-y-1.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <p className="font-medium text-gray-800">{clinic.name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {clinic.type === 'hospital' ? '🏥 โรงพยาบาลสัตว์' : '🏪 คลินิกสัตว์'}
-                        {[clinic.sub_district, clinic.district, clinic.province].filter(Boolean).length > 0 &&
-                          ' · ' + [clinic.sub_district, clinic.district, clinic.province].filter(Boolean).join(', ')}
-                      </p>
-                    </div>
-                    {clinic.status !== 'approved' && (
-                      <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0 ${
-                        clinic.status === 'pending' ? 'text-amber-600 bg-amber-50 border-amber-200' :
-                        clinic.status === 'reviewing' ? 'text-blue-600 bg-blue-50 border-blue-200' :
-                        'text-red-500 bg-red-50 border-red-200'
-                      }`}>
-                        {clinic.status === 'pending' ? 'รอตรวจสอบ' : clinic.status === 'reviewing' ? 'กำลังตรวจสอบ' : 'ไม่ผ่าน'}
-                      </span>
-                    )}
-                  </div>
-                  {clinic.phone && <p className="text-xs text-gray-500">📞 {clinic.phone}</p>}
-                  {openDays.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {openDays.map(k => (
-                        <span key={k} className="text-xs bg-primary-50 text-primary-700 border border-primary-100 px-2 py-0.5 rounded-full">
-                          {DAY_MAP[k]} {hours[k].open.slice(0,5)}–{hours[k].close.slice(0,5)}
-                        </span>
-                      ))}
-                    </div>
+        {/* ฟอร์มเพิ่มสถานที่ */}
+        {showAddSchedule && (
+          <div className="border border-primary-100 rounded-xl p-4 space-y-4 bg-primary-50/40">
+            <p className="font-medium text-sm text-gray-700">เพิ่มสถานที่ออกตรวจ</p>
+
+            {/* ค้นหาคลินิก */}
+            <div className="space-y-2">
+              <label className="label">ค้นหาสถานที่</label>
+              <input
+                className="input"
+                placeholder="พิมพ์ชื่อคลินิก / จังหวัด..."
+                value={clinicSearch}
+                onChange={e => { setClinicSearch(e.target.value); setSelectedClinicId('') }}
+              />
+              {clinicSearch.length >= 1 && !selectedClinicId && (
+                <div className="border border-gray-200 rounded-xl overflow-hidden max-h-48 overflow-y-auto bg-white shadow-sm">
+                  {allClinics
+                    .filter(c => c.name.toLowerCase().includes(clinicSearch.toLowerCase()) || (c.province || '').includes(clinicSearch))
+                    .slice(0, 20)
+                    .map(c => (
+                      <button key={c.id} type="button"
+                        onClick={() => { setSelectedClinicId(c.id); setClinicSearch(c.name) }}
+                        className="w-full text-left px-4 py-2.5 hover:bg-gray-50 border-b border-gray-100 last:border-0">
+                        <p className="text-sm font-medium text-gray-800">{c.name}</p>
+                        <p className="text-xs text-gray-400">{c.type === 'hospital' ? 'โรงพยาบาลสัตว์' : 'คลินิก'} · {[c.district, c.province].filter(Boolean).join(', ')}</p>
+                      </button>
+                    ))}
+                  {allClinics.filter(c => c.name.toLowerCase().includes(clinicSearch.toLowerCase()) || (c.province || '').includes(clinicSearch)).length === 0 && (
+                    <p className="text-sm text-gray-400 px-4 py-3">ไม่พบสถานที่</p>
                   )}
                 </div>
-              )
-            })}
+              )}
+              {selectedClinicId && (
+                <div className="flex items-center gap-2 bg-primary-50 border border-primary-100 rounded-lg px-3 py-2">
+                  <span className="text-sm font-medium text-primary-700 flex-1">{allClinics.find(c => c.id === selectedClinicId)?.name}</span>
+                  <button onClick={() => { setSelectedClinicId(''); setClinicSearch('') }}
+                    className="text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
+                </div>
+              )}
+            </div>
+
+            {/* เลือกวัน + เวลา */}
+            <div className="space-y-2">
+              <label className="label">วันและเวลาออกตรวจ</label>
+              <div className="space-y-2">
+                {DAY_ORDER.map(k => {
+                  const day = Number(k)
+                  const checked = !!newSlots[day]
+                  return (
+                    <div key={k} className={`flex items-center gap-3 rounded-lg px-3 py-2 border transition-colors ${checked ? 'border-primary-200 bg-primary-50' : 'border-gray-100 bg-gray-50'}`}>
+                      <input type="checkbox" id={`day-${k}`} checked={checked} onChange={() => toggleSlotDay(day)}
+                        className="rounded accent-primary-600 w-4 h-4 shrink-0" />
+                      <label htmlFor={`day-${k}`} className="text-sm font-medium text-gray-700 w-20 shrink-0 cursor-pointer">{DAY_MAP[k]}</label>
+                      {checked && (
+                        <div className="flex items-center gap-2 flex-1">
+                          <input type="time" value={newSlots[day].open}
+                            onChange={e => setNewSlots(p => ({ ...p, [day]: { ...p[day], open: e.target.value } }))}
+                            className="input py-1 text-sm" />
+                          <span className="text-gray-400 text-sm shrink-0">–</span>
+                          <input type="time" value={newSlots[day].close}
+                            onChange={e => setNewSlots(p => ({ ...p, [day]: { ...p[day], close: e.target.value } }))}
+                            className="input py-1 text-sm" />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button type="button" onClick={() => { setShowAddSchedule(false); setSelectedClinicId(''); setClinicSearch(''); setNewSlots({}) }}
+                className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50">ยกเลิก</button>
+              <button type="button" onClick={handleAddSchedule} disabled={savingSchedule}
+                className="flex-1 py-2.5 rounded-xl bg-primary-600 text-white text-sm font-medium hover:bg-primary-500 disabled:opacity-60">
+                {savingSchedule ? 'กำลังบันทึก...' : 'บันทึก'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* รายการตารางออกตรวจ */}
+        {vetSchedules.length === 0 && !showAddSchedule ? (
+          <div className="text-center py-6 text-gray-400 text-sm">ยังไม่มีตารางออกตรวจ กด "+ เพิ่มสถานที่" เพื่อเริ่มต้น</div>
+        ) : (
+          <div className="space-y-3">
+            {vetSchedules.map(s => (
+              <div key={s.id} className="border border-gray-100 rounded-xl p-3 space-y-1.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-medium text-gray-800">{s.place_name}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {[s.sub_district, s.district, s.province].filter(Boolean).join(' · ')}
+                    </p>
+                  </div>
+                  <button onClick={() => handleDeleteSchedule(s.id)}
+                    className="text-gray-300 hover:text-red-500 transition-colors shrink-0 mt-0.5">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                {s.clinic_phone && <p className="text-xs text-gray-500">📞 {s.clinic_phone}</p>}
+                {(s.slots || []).length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {[...s.slots].sort((a, b) => {
+                      const order = [1,2,3,4,5,6,0]
+                      return order.indexOf(a.day) - order.indexOf(b.day)
+                    }).map((slot, i) => (
+                      <span key={i} className="text-xs bg-primary-50 text-primary-700 border border-primary-100 px-2 py-0.5 rounded-full">
+                        {DAY_MAP[String(slot.day)]} {slot.start_time.slice(0,5)}–{slot.end_time.slice(0,5)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
