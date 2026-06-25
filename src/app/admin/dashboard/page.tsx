@@ -191,7 +191,7 @@ export default function AdminDashboard() {
       { data: clinicData },
     ] = await Promise.all([
       supabase.from('profiles').select('id, full_name, phone, avatar_url, created_at', { count: 'exact' }).eq('role', 'owner').order('created_at', { ascending: false }),
-      supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'vet'),
+      supabase.from('profiles').select('*', { count: 'exact', head: true }).in('role', ['vet', 'admin']),
       supabase.from('bookings').select(`
         *,
         appointments(pet_name, preferred_datetime, profiles:owner_id(full_name)),

@@ -48,7 +48,7 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
               )}
             </Link>
           )}
-          {profile.role === 'vet' && (
+          {(profile.role === 'vet' || profile.role === 'admin') && (
             <>
               <Link href="/vets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
                 <Stethoscope className="w-4 h-4" />
