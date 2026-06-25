@@ -143,9 +143,14 @@ export default function AdminDashboard() {
   }
 
   const handleToggleAdmin = async (vetId: string) => {
-    setTogglingAdmin(vetId)
     const currentRole = vetRoles[vetId] || 'vet'
     const newRole = currentRole === 'admin' ? 'vet' : 'admin'
+    const vetName = vets.find(v => v.user_id === vetId)?.full_name || 'หมอคนนี้'
+    const msg = newRole === 'admin'
+      ? `แต่งตั้ง "${vetName}" เป็น Admin ?\nจะสามารถตรวจสอบหมอและคลินิกได้`
+      : `ถอด "${vetName}" ออกจาก Admin ?\nจะกลับมาเป็น Vet ปกติ`
+    if (!window.confirm(msg)) return
+    setTogglingAdmin(vetId)
     const res = await fetch('/api/admin/update-status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
