@@ -154,7 +154,7 @@ export default function ClinicDetailPage() {
         )}
         {clinic.line_id && (
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-green-500 font-bold text-xs w-4 text-center">LINE</span>
+            <span className="text-green-500 font-bold text-xs shrink-0">LINE</span>
             <span>{clinic.line_id}</span>
           </div>
         )}
