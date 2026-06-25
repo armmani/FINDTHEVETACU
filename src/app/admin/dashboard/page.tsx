@@ -110,7 +110,8 @@ export default function AdminDashboard() {
 
   const handleStartReview = async (clinicId: string) => {
     setApprovingClinic(clinicId)
-    await supabase.from('clinics').update({ status: 'reviewing' }).eq('id', clinicId)
+    const { error } = await supabase.from('clinics').update({ status: 'reviewing' }).eq('id', clinicId)
+    if (error) { console.error('START_REVIEW_ERROR', error); alert('Error: ' + error.message); setApprovingClinic(null); return }
     setClinics(prev => prev.map(c => c.id === clinicId ? { ...c, status: 'reviewing' } : c))
     setExpandedClinic(clinicId)
     setApprovingClinic(null)
@@ -119,10 +120,11 @@ export default function AdminDashboard() {
   const handleClinicApprove = async (clinicId: string, approve: boolean) => {
     setApprovingClinic(clinicId)
     const reason = rejectReason[clinicId] || ''
-    await supabase.from('clinics').update({
+    const { error } = await supabase.from('clinics').update({
       status: approve ? 'approved' : 'rejected',
       reject_reason: approve ? null : reason,
     }).eq('id', clinicId)
+    if (error) { console.error('CLINIC_APPROVE_ERROR', error); alert('Error: ' + error.message); setApprovingClinic(null); return }
     setClinics(prev => prev.map(c => c.id === clinicId ? { ...c, status: approve ? 'approved' : 'rejected' } : c))
     setExpandedClinic(null)
     setApprovingClinic(null)

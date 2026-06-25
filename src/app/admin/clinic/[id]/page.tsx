@@ -123,7 +123,8 @@ export default function AdminClinicDetailPage() {
 
   const handleStartReview = async () => {
     setReviewing(true)
-    await supabase.from('clinics').update({ status: 'reviewing' }).eq('id', id)
+    const { error } = await supabase.from('clinics').update({ status: 'reviewing' }).eq('id', id)
+    if (error) { toast.error('Error: ' + error.message); console.error('START_REVIEW_ERROR', error); setReviewing(false); return }
     await notifyOwner(`🔍 <b>FindTheVet — Admin รับเรื่องแล้ว</b>\n\n<b>${clinic?.name}</b> กำลังถูกตรวจสอบโดย Admin\nกรุณารอผลการตรวจสอบ ระหว่างนี้จะยังแก้ไขข้อมูลไม่ได้`)
     toast.success('เปลี่ยนสถานะเป็นกำลังตรวจสอบแล้ว')
     setClinic(prev => prev ? { ...prev, status: 'reviewing' } : prev)
@@ -136,10 +137,11 @@ export default function AdminClinicDetailPage() {
       return
     }
     setApproving(true)
-    await supabase.from('clinics').update({
+    const { error } = await supabase.from('clinics').update({
       status: approve ? 'approved' : 'rejected',
       reject_reason: approve ? null : rejectReason.trim(),
     }).eq('id', id)
+    if (error) { toast.error('Error: ' + error.message); console.error('CLINIC_APPROVE_ERROR', error); setApproving(false); return }
 
     if (approve) {
       await notifyOwner(`✅ <b>FindTheVet — คลินิกได้รับการยืนยัน!</b>\n\n<b>${clinic?.name}</b> ผ่านการตรวจสอบแล้ว\nตอนนี้คลินิกของคุณแสดงในระบบ FindTheVet แล้วครับ`)
