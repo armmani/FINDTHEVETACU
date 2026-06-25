@@ -5,8 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { geocodeAddress, PLATFORM_ACUPUNCTURE_FEE, PLATFORM_RATE_LABEL } from '@/lib/distance'
 import toast from 'react-hot-toast'
-import { MapPin, Save, Info, Search, Send, ShieldCheck, ShieldX, Lock, Calendar, Plus, Trash2, Pencil, X } from 'lucide-react'
-import { getProvinces, getDistricts, getSubDistricts } from '@/lib/thaiAddress'
+import { MapPin, Save, Info, Search, Send, ShieldCheck, ShieldX, Lock, Calendar, ExternalLink, X } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import PhotoUpload from '@/components/PhotoUpload'
 
@@ -28,23 +27,19 @@ const UNIVERSITIES = [
   'อื่นๆ',
 ]
 
-const DAY_LABELS = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส']
-const DAY_NAMES = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์']
+const DAY_MAP: Record<string, string> = { '1': 'จันทร์', '2': 'อังคาร', '3': 'พุธ', '4': 'พฤหัสบดี', '5': 'ศุกร์', '6': 'เสาร์', '0': 'อาทิตย์' }
+const DAY_ORDER = ['1', '2', '3', '4', '5', '6', '0']
 
-interface Slot {
-  day: number
-  start_time: string
-  end_time: string
-}
-
-interface VetSchedule {
+interface ClinicSummary {
   id: string
-  place_name: string
-  clinic_phone: string | null
-  sub_district: string | null
+  name: string
+  type: string
+  phone: string | null
+  province: string | null
   district: string | null
-  province: string
-  slots: Slot[]
+  sub_district: string | null
+  opening_hours: Record<string, { open: string; close: string }>
+  status: string
 }
 
 function formatLicense(input: string): string {
@@ -98,23 +93,7 @@ export default function VetProfilePage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [changingPassword, setChangingPassword] = useState(false)
-  const [schedules, setSchedules] = useState<VetSchedule[]>([])
-  const [showAddSchedule, setShowAddSchedule] = useState(false)
-  const [savingSchedule, setSavingSchedule] = useState(false)
-  const [newPlace, setNewPlace] = useState('')
-  const [newClinicPhone, setNewClinicPhone] = useState('')
-  const [newSubDistrict, setNewSubDistrict] = useState('')
-  const [newDistrict, setNewDistrict] = useState('')
-  const [newProvince, setNewProvince] = useState('')
-  const [newSlots, setNewSlots] = useState<Slot[]>([{ day: 1, start_time: '09:00', end_time: '17:00' }])
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editPlace, setEditPlace] = useState('')
-  const [editClinicPhone, setEditClinicPhone] = useState('')
-  const [editSubDistrict, setEditSubDistrict] = useState('')
-  const [editDistrict, setEditDistrict] = useState('')
-  const [editProvince, setEditProvince] = useState('')
-  const [editSlots, setEditSlots] = useState<Slot[]>([])
-  const [savingEdit, setSavingEdit] = useState(false)
+  const [myClinics, setMyClinics] = useState<ClinicSummary[]>([])
 
   useEffect(() => { loadProfile() }, [])
 
@@ -152,89 +131,14 @@ export default function VetProfilePage() {
     setTelegramChatId((profile as any)?.telegram_chat_id || '')
     setAvatarUrl((profile as any)?.avatar_url || null)
 
-    const { data: schData } = await supabase
-      .from('vet_schedules')
-      .select('*')
-      .eq('vet_id', user.id)
+    const { data: clinicData } = await supabase
+      .from('clinics')
+      .select('id, name, type, phone, province, district, sub_district, opening_hours, status')
+      .eq('owner_vet_id', user.id)
       .order('created_at', { ascending: true })
-    setSchedules((schData as VetSchedule[]) || [])
+    setMyClinics((clinicData as ClinicSummary[]) || [])
 
     setLoading(false)
-  }
-
-  const handleAddSchedule = async () => {
-    if (!newPlace.trim() || !newProvince.trim()) { toast.error('กรุณากรอกชื่อสถานที่และจังหวัด'); return }
-    if (newSlots.length === 0) { toast.error('กรุณาเพิ่มอย่างน้อย 1 วัน/เวลา'); return }
-    setSavingSchedule(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { data, error } = await supabase.from('vet_schedules').insert({
-      vet_id: user.id,
-      place_name: newPlace.trim(),
-      clinic_phone: newClinicPhone.trim() || null,
-      sub_district: newSubDistrict || null,
-      district: newDistrict || null,
-      province: newProvince,
-      slots: newSlots,
-    }).select().single()
-    if (error) { toast.error('บันทึกไม่สำเร็จ'); setSavingSchedule(false); return }
-    setSchedules(prev => [...prev, data as VetSchedule])
-    setNewPlace(''); setNewClinicPhone(''); setNewSubDistrict(''); setNewDistrict(''); setNewProvince('')
-    setNewSlots([{ day: 1, start_time: '09:00', end_time: '17:00' }])
-    setShowAddSchedule(false)
-    toast.success('เพิ่มสถานที่ออกตรวจแล้ว')
-    setSavingSchedule(false)
-  }
-
-  const handleDeleteSchedule = async (id: string) => {
-    await supabase.from('vet_schedules').delete().eq('id', id)
-    setSchedules(prev => prev.filter(s => s.id !== id))
-    toast.success('ลบแล้ว')
-  }
-
-  const startEdit = (s: VetSchedule) => {
-    setEditingId(s.id)
-    setEditPlace(s.place_name)
-    setEditClinicPhone(s.clinic_phone || '')
-    setEditSubDistrict(s.sub_district || '')
-    setEditDistrict(s.district || '')
-    setEditProvince(s.province)
-    setEditSlots(s.slots || [])
-  }
-
-  const handleSaveEdit = async () => {
-    if (!editPlace.trim() || !editProvince.trim()) { toast.error('กรุณากรอกชื่อสถานที่และจังหวัด'); return }
-    if (editSlots.length === 0) { toast.error('กรุณาเพิ่มอย่างน้อย 1 วัน/เวลา'); return }
-    setSavingEdit(true)
-    const { error } = await supabase.from('vet_schedules').update({
-      place_name: editPlace.trim(),
-      clinic_phone: editClinicPhone.trim() || null,
-      sub_district: editSubDistrict || null,
-      district: editDistrict || null,
-      province: editProvince,
-      slots: editSlots,
-    }).eq('id', editingId!)
-    if (error) { toast.error('บันทึกไม่สำเร็จ'); setSavingEdit(false); return }
-    setSchedules(prev => prev.map(s => s.id === editingId ? {
-      ...s, place_name: editPlace, clinic_phone: editClinicPhone.trim() || null,
-      sub_district: editSubDistrict || null,
-      district: editDistrict || null, province: editProvince, slots: editSlots,
-    } : s))
-    setEditingId(null)
-    toast.success('แก้ไขแล้ว')
-    setSavingEdit(false)
-  }
-
-  const updateEditSlot = (i: number, field: keyof Slot, value: string | number) => {
-    setEditSlots(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: value } : s))
-  }
-
-  const updateSlot = (i: number, field: keyof Slot, value: string | number) => {
-    setNewSlots(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: value } : s))
-  }
-
-  const removeSlot = (i: number) => {
-    setNewSlots(prev => prev.filter((_, idx) => idx !== i))
   }
 
   const handleGeocode = async () => {
@@ -614,196 +518,64 @@ export default function VetProfilePage() {
         </button>
       </form>
 
-      {/* ตารางออกตรวจ */}
+      {/* ตารางออกตรวจ — ดึงจากคลินิกที่สร้างในระบบ */}
       <div className="card space-y-4 mt-4">
-        <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-          <Calendar className="w-4 h-4" /> ตารางออกตรวจ
-        </h2>
-        <p className="text-xs text-gray-400 -mt-2">เพิ่มคลินิก/โรงพยาบาลที่คุณออกตรวจ เพื่อให้เจ้าของสัตว์เลี้ยงรู้ว่าคุณอยู่ที่ไหนบ้าง</p>
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+            <Calendar className="w-4 h-4" /> ตารางออกตรวจ
+          </h2>
+          <a href="/clinic/manage" className="text-xs text-primary-600 hover:underline flex items-center gap-1">
+            <ExternalLink className="w-3.5 h-3.5" /> จัดการคลินิก
+          </a>
+        </div>
 
-        {schedules.length > 0 && (
-          <div className="space-y-3">
-            {schedules.map(s => (
-              <div key={s.id} className="border border-gray-100 rounded-xl p-3">
-                {editingId === s.id ? (
-                  <div className="space-y-3">
-                    <div>
-                      <label className="label text-xs">ชื่อคลินิก / โรงพยาบาล</label>
-                      <input type="text" value={editPlace} onChange={e => setEditPlace(e.target.value)} className="input text-sm" />
-                    </div>
-                    <div>
-                      <label className="label text-xs">เบอร์โทรคลินิก / โรงพยาบาล</label>
-                      <input type="tel" value={editClinicPhone} onChange={e => setEditClinicPhone(e.target.value)} className="input text-sm" placeholder="02-xxx-xxxx" />
-                    </div>
-                    <div className="space-y-2">
-                      <div>
-                        <label className="label text-xs">จังหวัด *</label>
-                        <select value={editProvince} onChange={e => { setEditProvince(e.target.value); setEditDistrict(''); setEditSubDistrict('') }} className="input text-sm">
-                          <option value="">-- เลือกจังหวัด --</option>
-                          {getProvinces().map(p => <option key={p} value={p}>{p}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="label text-xs">เขต/อำเภอ</label>
-                        <select value={editDistrict} onChange={e => { setEditDistrict(e.target.value); setEditSubDistrict('') }} className="input text-sm" disabled={!editProvince}>
-                          <option value="">-- เลือกเขต/อำเภอ --</option>
-                          {editProvince && getDistricts(editProvince).map(d => <option key={d} value={d}>{d}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="label text-xs">แขวง/ตำบล</label>
-                        <select value={editSubDistrict} onChange={e => setEditSubDistrict(e.target.value)} className="input text-sm" disabled={!editDistrict}>
-                          <option value="">-- เลือกแขวง/ตำบล --</option>
-                          {editDistrict && getSubDistricts(editProvince, editDistrict).map(sub => <option key={sub} value={sub}>{sub}</option>)}
-                        </select>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="label text-xs">วัน / เวลา</label>
-                      <div className="space-y-2">
-                        {editSlots.map((slot, i) => (
-                          <div key={i} className="flex items-center gap-2">
-                            <select value={slot.day} onChange={e => updateEditSlot(i, 'day', Number(e.target.value))} className="input flex-1 text-sm">
-                              {DAY_NAMES.map((name, d) => <option key={d} value={d}>{name}</option>)}
-                            </select>
-                            <input type="time" value={slot.start_time} onChange={e => updateEditSlot(i, 'start_time', e.target.value)} className="input w-28 text-sm" />
-                            <span className="text-gray-400">–</span>
-                            <input type="time" value={slot.end_time} onChange={e => updateEditSlot(i, 'end_time', e.target.value)} className="input w-28 text-sm" />
-                            {editSlots.length > 1 && (
-                              <button type="button" onClick={() => setEditSlots(prev => prev.filter((_, idx) => idx !== i))} className="text-gray-300 hover:text-red-400">
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                        <button type="button" onClick={() => setEditSlots(prev => [...prev, { day: 1, start_time: '09:00', end_time: '17:00' }])}
-                          className="text-sm text-primary-600 hover:underline flex items-center gap-1">
-                          <Plus className="w-3.5 h-3.5" /> เพิ่มวัน/เวลา
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={handleSaveEdit} disabled={savingEdit} className="btn-primary flex-1 text-sm py-2">
-                        {savingEdit ? 'กำลังบันทึก...' : 'บันทึก'}
-                      </button>
-                      <button onClick={() => setEditingId(null)} className="btn-secondary flex-1 text-sm py-2">ยกเลิก</button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-800">{s.place_name}</p>
-                        <p className="text-sm text-gray-500 mt-0.5">
-                          {[s.sub_district, s.district, s.province].filter(Boolean).join(' · ')}
-                        </p>
-                        {s.clinic_phone && (
-                          <p className="text-sm text-gray-500 mt-0.5">📞 {s.clinic_phone}</p>
-                        )}
-                        <div className="mt-1 space-y-0.5">
-                          {(s.slots || []).map((slot, i) => (
-                            <p key={i} className="text-sm text-primary-600">
-                              {DAY_NAMES[slot.day]} · {slot.start_time.slice(0,5)}–{slot.end_time.slice(0,5)} น.
-                            </p>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="flex gap-1 shrink-0">
-                        <button onClick={() => startEdit(s)} className="text-gray-300 hover:text-primary-500 transition-colors p-1">
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => handleDeleteSchedule(s.id)} className="text-gray-300 hover:text-red-400 transition-colors p-1">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {showAddSchedule ? (
-          <div className="border border-dashed border-primary-200 rounded-xl p-4 space-y-3 bg-primary-50/30">
-            <div>
-              <label className="label">ชื่อคลินิก / โรงพยาบาล</label>
-              <input type="text" value={newPlace} onChange={e => setNewPlace(e.target.value)}
-                className="input" placeholder="เช่น คลินิกสัตว์รักษ์, รพ.สัตว์จุฬา" />
-            </div>
-            <div>
-              <label className="label">เบอร์โทรคลินิก / โรงพยาบาล</label>
-              <input type="tel" value={newClinicPhone} onChange={e => setNewClinicPhone(e.target.value)}
-                className="input" placeholder="02-xxx-xxxx" />
-            </div>
-            <div className="space-y-2">
-              <div>
-                <label className="label text-xs">จังหวัด *</label>
-                <select value={newProvince} onChange={e => { setNewProvince(e.target.value); setNewDistrict(''); setNewSubDistrict('') }}
-                  className="input text-sm">
-                  <option value="">-- เลือกจังหวัด --</option>
-                  {getProvinces().map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="label text-xs">เขต/อำเภอ</label>
-                <select value={newDistrict} onChange={e => { setNewDistrict(e.target.value); setNewSubDistrict('') }}
-                  className="input text-sm" disabled={!newProvince}>
-                  <option value="">-- เลือกเขต/อำเภอ --</option>
-                  {newProvince && getDistricts(newProvince).map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="label text-xs">แขวง/ตำบล</label>
-                <select value={newSubDistrict} onChange={e => setNewSubDistrict(e.target.value)}
-                  className="input text-sm" disabled={!newDistrict}>
-                  <option value="">-- เลือกแขวง/ตำบล --</option>
-                  {newDistrict && getSubDistricts(newProvince, newDistrict).map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="label">วัน / เวลาออกตรวจ</label>
-              <div className="space-y-2 mt-1">
-                {newSlots.map((slot, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <select value={slot.day} onChange={e => updateSlot(i, 'day', Number(e.target.value))}
-                      className="input flex-1 text-sm">
-                      {DAY_NAMES.map((name, d) => <option key={d} value={d}>{name}</option>)}
-                    </select>
-                    <input type="time" value={slot.start_time}
-                      onChange={e => updateSlot(i, 'start_time', e.target.value)}
-                      className="input w-28 text-sm" />
-                    <span className="text-gray-400 shrink-0">–</span>
-                    <input type="time" value={slot.end_time}
-                      onChange={e => updateSlot(i, 'end_time', e.target.value)}
-                      className="input w-28 text-sm" />
-                    {newSlots.length > 1 && (
-                      <button type="button" onClick={() => removeSlot(i)}
-                        className="text-gray-300 hover:text-red-400 shrink-0">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button type="button"
-                  onClick={() => setNewSlots(prev => [...prev, { day: 1, start_time: '09:00', end_time: '17:00' }])}
-                  className="text-sm text-primary-600 hover:underline flex items-center gap-1 mt-1">
-                  <Plus className="w-3.5 h-3.5" /> เพิ่มวัน/เวลา
-                </button>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={handleAddSchedule} disabled={savingSchedule}
-                className="btn-primary flex-1">{savingSchedule ? 'กำลังบันทึก...' : 'บันทึก'}</button>
-              <button onClick={() => setShowAddSchedule(false)} className="btn-secondary flex-1">ยกเลิก</button>
-            </div>
+        {myClinics.length === 0 ? (
+          <div className="text-center py-6 text-gray-400 text-sm">
+            <p>ยังไม่มีคลินิก / โรงพยาบาลในระบบ</p>
+            <a href="/clinic/manage/new" className="text-primary-600 hover:underline mt-1 inline-block">
+              + สร้างคลินิกใหม่
+            </a>
           </div>
         ) : (
-          <button onClick={() => setShowAddSchedule(true)}
-            className="btn-secondary w-full flex items-center justify-center gap-2">
-            <Plus className="w-4 h-4" /> เพิ่มสถานที่ออกตรวจ
-          </button>
+          <div className="space-y-3">
+            {myClinics.map(clinic => {
+              const hours = clinic.opening_hours || {}
+              const openDays = DAY_ORDER.filter(k => hours[k])
+              return (
+                <div key={clinic.id} className="border border-gray-100 rounded-xl p-3 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="font-medium text-gray-800">{clinic.name}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {clinic.type === 'hospital' ? '🏥 โรงพยาบาลสัตว์' : '🏪 คลินิกสัตว์'}
+                        {[clinic.sub_district, clinic.district, clinic.province].filter(Boolean).length > 0 &&
+                          ' · ' + [clinic.sub_district, clinic.district, clinic.province].filter(Boolean).join(', ')}
+                      </p>
+                    </div>
+                    {clinic.status !== 'approved' && (
+                      <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0 ${
+                        clinic.status === 'pending' ? 'text-amber-600 bg-amber-50 border-amber-200' :
+                        clinic.status === 'reviewing' ? 'text-blue-600 bg-blue-50 border-blue-200' :
+                        'text-red-500 bg-red-50 border-red-200'
+                      }`}>
+                        {clinic.status === 'pending' ? 'รอตรวจสอบ' : clinic.status === 'reviewing' ? 'กำลังตรวจสอบ' : 'ไม่ผ่าน'}
+                      </span>
+                    )}
+                  </div>
+                  {clinic.phone && <p className="text-xs text-gray-500">📞 {clinic.phone}</p>}
+                  {openDays.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {openDays.map(k => (
+                        <span key={k} className="text-xs bg-primary-50 text-primary-700 border border-primary-100 px-2 py-0.5 rounded-full">
+                          {DAY_MAP[k]} {hours[k].open.slice(0,5)}–{hours[k].close.slice(0,5)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         )}
       </div>
 
