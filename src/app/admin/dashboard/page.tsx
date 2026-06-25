@@ -338,13 +338,13 @@ export default function AdminDashboard() {
               <Plus className="w-4 h-4" /> เพิ่ม
             </button>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {specialtyTypes.map(sp => (
-              <div key={sp.id} className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-sm">
-                <span>{sp.name_th}</span>
-                <span className="text-blue-400 text-xs">/ {sp.name_en}</span>
+          <div className="grid grid-cols-3 gap-2">
+            {[...specialtyTypes].sort((a, b) => a.name_th.localeCompare(b.name_th, 'th')).map(sp => (
+              <div key={sp.id} className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg text-sm">
+                <span className="flex-1 min-w-0 truncate">{sp.name_th}</span>
+                <span className="text-blue-400 text-xs shrink-0">/ {sp.name_en}</span>
                 <button onClick={() => handleDeleteSpecialty(sp.id)}
-                  className="text-blue-300 hover:text-red-500 transition-colors ml-1">
+                  className="text-blue-300 hover:text-red-500 transition-colors ml-1 shrink-0">
                   <Trash2 className="w-3 h-3" />
                 </button>
               </div>
