@@ -523,7 +523,7 @@ export default function VetProfilePage() {
           <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-700 space-y-2 mb-3">
             <p className="font-semibold">วิธีหา Chat ID</p>
             <ol className="list-decimal list-inside space-y-1 text-blue-600">
-              <li>เปิด Telegram ค้นหา <strong>@FINDTHEVET_BOT</strong> แล้วกด Start</li>
+              <li>เปิด Telegram ค้นหา <strong>@VETACU_BOT</strong> แล้วกด Start</li>
               <li>ไปที่ <strong>@userinfobot</strong> แล้วกด Start</li>
               <li>คัดลอก <strong>ID</strong> ที่ได้มาวางด้านล่าง</li>
             </ol>
