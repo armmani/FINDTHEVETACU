@@ -7,6 +7,7 @@ import { ArrowLeft, CheckCircle, XCircle, ExternalLink, MapPin, Phone, Clock, Bu
 import toast from 'react-hot-toast'
 import { notifyAdmin } from '@/lib/telegram'
 import { AdminDetailSkeleton } from '@/components/AdminSkeleton'
+import { createNotification } from '@/lib/notifications'
 import { formatPhone } from '@/lib/formatPhone'
 
 const DAY_TH = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์']
@@ -167,8 +168,10 @@ export default function AdminClinicDetailPage() {
 
     if (approve) {
       await notifyOwner(`✅ <b>FindTheVet — คลินิกได้รับการยืนยัน!</b>\n\n<b>${clinic?.name}</b> ผ่านการตรวจสอบแล้ว\nตอนนี้คลินิกของคุณแสดงในระบบ FindTheVet แล้วครับ`)
+      if (ownerId) await createNotification(ownerId, `✅ ${clinic?.name} ได้รับการอนุมัติ`, 'คลินิกของคุณผ่านการตรวจสอบแล้ว ตอนนี้แสดงในระบบแล้ว', '/clinic/manage')
     } else {
       await notifyOwner(`❌ <b>FindTheVet — คลินิกไม่ผ่านการตรวจสอบ</b>\n\n<b>${clinic?.name}</b>\n\n<b>เหตุผล:</b> ${rejectReason.trim()}\n\nกรุณาแก้ไขข้อมูลแล้วส่งใหม่ได้เลยครับ`)
+      if (ownerId) await createNotification(ownerId, `❌ ${clinic?.name} ไม่ผ่านการตรวจสอบ`, `เหตุผล: ${rejectReason.trim()} — กรุณาแก้ไขแล้วส่งใหม่`, '/clinic/manage')
     }
 
     toast.success(approve ? 'อนุมัติคลินิกแล้ว' : 'ปฏิเสธคลินิกแล้ว')

@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { ArrowLeft, CheckCircle, XCircle, ExternalLink, PlayCircle, ShieldCheck, ShieldX } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { AdminDetailSkeleton } from '@/components/AdminSkeleton'
+import { createNotification } from '@/lib/notifications'
 
 const STATUS_CONFIG = {
   pending:   { label: 'รอตรวจสอบ',     color: 'text-amber-600 bg-amber-50 border-amber-200' },
@@ -99,8 +100,10 @@ export default function AdminVetDetailPage() {
 
     if (approve) {
       await notifyVet(`✅ <b>FindTheVet — ยืนยันตัวตนสำเร็จ!</b>\n\n<b>${vet?.full_name}</b> ผ่านการตรวจสอบแล้ว\nตอนนี้สามารถเปิดรับงานได้แล้วครับ`)
+      await createNotification(id, '✅ ยืนยันตัวตนสำเร็จ!', 'โปรไฟล์ของคุณผ่านการตรวจสอบแล้ว ตอนนี้สามารถเปิดรับงานได้', '/vet/profile')
     } else {
       await notifyVet(`❌ <b>FindTheVet — ไม่ผ่านการตรวจสอบ</b>\n\n<b>${vet?.full_name}</b>\n\n<b>เหตุผล:</b> ${rejectReason.trim()}\n\nกรุณาแก้ไขข้อมูลแล้วส่งใหม่ได้เลยครับ`)
+      await createNotification(id, '❌ ไม่ผ่านการตรวจสอบ', `เหตุผล: ${rejectReason.trim()} — กรุณาแก้ไขแล้วส่งใหม่`, '/vet/profile')
     }
 
     toast.success(approve ? 'ยืนยันตัวตนหมอแล้ว' : 'ปฏิเสธการสมัครแล้ว')

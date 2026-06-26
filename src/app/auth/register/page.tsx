@@ -30,6 +30,8 @@ function RegisterForm() {
   const [loading, setLoading] = useState(false)
   const [pendingUserId, setPendingUserId] = useState<string | null>(null)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [pdpaAccepted, setPdpaAccepted] = useState(false)
+  const [showPdpa, setShowPdpa] = useState(false)
 
   const handleGoogleRegister = async () => {
     setGoogleLoading(true)
@@ -247,7 +249,44 @@ function RegisterForm() {
               required
             />
           </div>
-          <button type="submit" disabled={loading} className="btn-primary w-full py-2.5">
+          {/* PDPA consent */}
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+            <label className="flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={pdpaAccepted}
+                onChange={e => setPdpaAccepted(e.target.checked)}
+                className="mt-0.5 w-4 h-4 accent-primary-600 shrink-0"
+              />
+              <span className="text-sm text-gray-600 leading-snug">
+                ฉันยอมรับ{' '}
+                <button
+                  type="button"
+                  onClick={() => setShowPdpa(v => !v)}
+                  className="text-primary-600 underline font-medium"
+                >
+                  นโยบายความเป็นส่วนตัว (PDPA)
+                </button>
+                {' '}และยินยอมให้ FindTheVet เก็บและใช้ข้อมูลส่วนบุคคลของฉัน
+              </span>
+            </label>
+            {showPdpa && (
+              <div className="mt-3 text-xs text-gray-500 space-y-2 max-h-40 overflow-y-auto border-t border-gray-200 pt-3">
+                <p className="font-semibold text-gray-700">นโยบายความเป็นส่วนตัว FindTheVet</p>
+                <p>FindTheVet เก็บรวบรวมข้อมูลส่วนบุคคล ได้แก่ ชื่อ-นามสกุล อีเมล เบอร์โทรศัพท์ ที่อยู่ และข้อมูลโปรไฟล์ที่คุณกรอก เพื่อวัตถุประสงค์ดังนี้</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  <li>ให้บริการจับคู่ระหว่างเจ้าของสัตว์เลี้ยงและสัตวแพทย์</li>
+                  <li>ยืนยันตัวตนและใบอนุญาตของสัตวแพทย์</li>
+                  <li>ส่งการแจ้งเตือนเกี่ยวกับบริการผ่าน Telegram</li>
+                  <li>ปรับปรุงและพัฒนาระบบ</li>
+                </ul>
+                <p>เราจะไม่เปิดเผยข้อมูลของคุณแก่บุคคลภายนอก ยกเว้นที่จำเป็นต่อการให้บริการหรือตามที่กฎหมายกำหนด คุณมีสิทธิ์เข้าถึง แก้ไข หรือลบข้อมูลได้ตลอดเวลาโดยติดต่อเราผ่านระบบ</p>
+                <p className="text-gray-400">ดำเนินการตาม พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562 (PDPA)</p>
+              </div>
+            )}
+          </div>
+
+          <button type="submit" disabled={loading || !pdpaAccepted} className="btn-primary w-full py-2.5 disabled:opacity-50">
             {loading ? 'กำลังส่งรหัสยืนยัน...' : 'สมัครสมาชิก'}
           </button>
         </form>
