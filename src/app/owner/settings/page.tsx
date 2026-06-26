@@ -179,7 +179,7 @@ export default function OwnerSettingsPage() {
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-700 space-y-2">
           <p className="font-semibold">วิธีหา Chat ID ของคุณ</p>
           <ol className="list-decimal list-inside space-y-1 text-blue-600">
-            <li>เปิด Telegram แล้วค้นหา <strong>@VETACU_BOT</strong></li>
+            <li>เปิด Telegram แล้วค้นหา <strong>@FINDTHEVET_BOT</strong></li>
             <li>กด Start หรือพิมพ์ <code className="bg-blue-100 px-1 rounded">/start</code></li>
             <li>ไปที่ <strong>@userinfobot</strong> แล้วกด Start</li>
             <li>คัดลอก <strong>ID</strong> ที่ได้มาวางด้านล่าง</li>
