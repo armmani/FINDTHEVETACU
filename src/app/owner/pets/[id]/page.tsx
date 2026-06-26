@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 import Image from 'next/image'
 import PhotoUpload from '@/components/PhotoUpload'
 import SearchableSelect, { SelectOption } from '@/components/SearchableSelect'
+import { useLang } from '@/contexts/LanguageContext'
 
 const SPECIES = ['สุนัข', 'แมว', 'กระต่าย', 'นก', 'ปลา', 'อื่นๆ']
 const GENDERS = ['เพศผู้', 'เพศเมีย', 'ไม่ระบุ']
@@ -37,10 +38,13 @@ function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+interface RawVet { id: string; full_name: string; vet_profiles: { title: string | null; full_name_en: string | null }[] }
+
 export default function PetDetailPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
   const supabase = createClient()
+  const { lang } = useLang()
 
   const [tab, setTab] = useState<Tab>('info')
   const [pet, setPet] = useState<Pet | null>(null)
@@ -61,6 +65,7 @@ export default function PetDetailPage() {
   // searchable options
   const [breeds, setBreeds] = useState<SelectOption[]>([])
   const [loadingBreeds, setLoadingBreeds] = useState(false)
+  const [rawVets, setRawVets] = useState<RawVet[]>([])
   const [vets, setVets] = useState<SelectOption[]>([])
   const [clinics, setClinics] = useState<SelectOption[]>([])
 
@@ -86,6 +91,20 @@ export default function PetDetailPage() {
 
   useEffect(() => { load() }, [id])
 
+  useEffect(() => {
+    setVets(rawVets.map(u => {
+      const vp = u.vet_profiles?.[0]
+      const titleTh = vp?.title || ''
+      const fullNameEn = vp?.full_name_en || ''
+      if (lang === 'en' && fullNameEn) {
+        const label = titleTh ? `${fullNameEn}, DVM` : fullNameEn
+        return { value: u.id, label }
+      }
+      const label = titleTh ? `${titleTh} ${u.full_name}` : u.full_name
+      return { value: u.id, label }
+    }))
+  }, [lang, rawVets])
+
   // load breeds whenever species changes
   useEffect(() => {
     if (!pet) return
@@ -109,7 +128,7 @@ export default function PetDetailPage() {
       supabase.from('pet_medical_records').select('*').eq('pet_id', id).order('record_date', { ascending: false }),
       supabase.from('pet_vaccines').select('*').eq('pet_id', id).order('vaccine_date', { ascending: false }),
       supabase.from('pet_parasite_controls').select('*').eq('pet_id', id).order('control_date', { ascending: false }),
-      supabase.from('profiles').select('id, full_name, vet_profiles(title)').eq('role', 'vet').not('full_name', 'is', null).order('full_name'),
+      supabase.from('profiles').select('id, full_name, vet_profiles(title, full_name_en)').eq('role', 'vet').not('full_name', 'is', null).order('full_name'),
       supabase.from('clinics').select('id, name').eq('status', 'approved').order('name'),
     ])
     if (!p) { router.push('/owner/pets'); return }
@@ -117,12 +136,7 @@ export default function PetDetailPage() {
     setMedRecords((m as MedRecord[]) || [])
     setVaccines((v as Vaccine[]) || [])
     setParasites((pa as Parasite[]) || [])
-    setVets((vetData || []).map((u: any) => {
-      const titleTh = u.vet_profiles?.[0]?.title || ''
-      const label = titleTh ? `${titleTh} ${u.full_name}` : u.full_name
-      const sublabel = titleTh ? ', DVM' : undefined
-      return { value: u.id, label, sublabel }
-    }))
+    setRawVets((vetData || []) as RawVet[])
     setClinics((clinicData || []).map((c: any) => ({ value: c.id, label: c.name })))
     setLoading(false)
   }
