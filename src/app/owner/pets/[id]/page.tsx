@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { ArrowLeft, Save, Trash2, Plus, X, Syringe, Bug, Stethoscope, PawPrint, Check } from 'lucide-react'
+import { ArrowLeft, Save, Trash2, Plus, X, Syringe, Bug, Stethoscope, PawPrint, Check, Pencil } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
 import PhotoUpload from '@/components/PhotoUpload'
@@ -22,6 +22,7 @@ interface Pet {
 interface MedRecord { id: string; record_date: string; title: string; description: string | null; vet_name: string | null; clinic_name: string | null }
 interface Vaccine { id: string; vaccine_date: string; vaccine_name: string; next_due_date: string | null; clinic_name: string | null; notes: string | null }
 interface Parasite { id: string; control_date: string; product_name: string; next_due_date: string | null; notes: string | null }
+interface RawVet { id: string; full_name: string; vet_profiles: { title: string | null; full_name_en: string | null }[] }
 
 function calcAge(birthdate: string): string {
   const birth = new Date(birthdate)
@@ -37,8 +38,6 @@ function calcAge(birthdate: string): string {
 function fmtDate(d: string) {
   return new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
 }
-
-interface RawVet { id: string; full_name: string; vet_profiles: { title: string | null; full_name_en: string | null }[] }
 
 export default function PetDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -62,32 +61,35 @@ export default function PetDetailPage() {
   const [showVacForm, setShowVacForm] = useState(false)
   const [showParaForm, setShowParaForm] = useState(false)
 
-  // searchable options
-  const [breeds, setBreeds] = useState<SelectOption[]>([])
-  const [loadingBreeds, setLoadingBreeds] = useState(false)
-  const [rawVets, setRawVets] = useState<RawVet[]>([])
-  const [vets, setVets] = useState<SelectOption[]>([])
-  const [clinics, setClinics] = useState<SelectOption[]>([])
+  // edit mode: which record id is being edited
+  const [editMedId, setEditMedId] = useState<string | null>(null)
+  const [editVacId, setEditVacId] = useState<string | null>(null)
+  const [editParaId, setEditParaId] = useState<string | null>(null)
 
-  // med form state
+  // edit form state (shared for add + edit)
   const [medDate, setMedDate] = useState(new Date().toISOString().split('T')[0])
   const [medTitle, setMedTitle] = useState('')
   const [medDesc, setMedDesc] = useState('')
   const [medVet, setMedVet] = useState('')
   const [medClinic, setMedClinic] = useState('')
 
-  // vaccine form state
   const [vacDate, setVacDate] = useState(new Date().toISOString().split('T')[0])
   const [vacName, setVacName] = useState('')
   const [vacNext, setVacNext] = useState('')
   const [vacClinic, setVacClinic] = useState('')
   const [vacNotes, setVacNotes] = useState('')
 
-  // parasite form state
   const [paraDate, setParaDate] = useState(new Date().toISOString().split('T')[0])
   const [paraProduct, setParaProduct] = useState('')
   const [paraNext, setParaNext] = useState('')
   const [paraNotes, setParaNotes] = useState('')
+
+  // searchable options
+  const [breeds, setBreeds] = useState<SelectOption[]>([])
+  const [loadingBreeds, setLoadingBreeds] = useState(false)
+  const [rawVets, setRawVets] = useState<RawVet[]>([])
+  const [vets, setVets] = useState<SelectOption[]>([])
+  const [clinics, setClinics] = useState<SelectOption[]>([])
 
   useEffect(() => { load() }, [id])
 
@@ -97,25 +99,18 @@ export default function PetDetailPage() {
       const titleTh = vp?.title || ''
       const fullNameEn = vp?.full_name_en || ''
       if (lang === 'en' && fullNameEn) {
-        const label = titleTh ? `${fullNameEn}, DVM` : fullNameEn
-        return { value: u.id, label }
+        return { value: u.id, label: `${fullNameEn}, DVM` }
       }
-      const label = titleTh ? `${titleTh} ${u.full_name}` : u.full_name
-      return { value: u.id, label }
+      return { value: u.id, label: titleTh ? `${titleTh} ${u.full_name}` : u.full_name }
     }))
   }, [lang, rawVets])
 
-  // load breeds whenever species changes
   useEffect(() => {
     if (!pet) return
     const fetchBreeds = async () => {
       if (pet.species === 'อื่นๆ') { setBreeds([]); return }
       setLoadingBreeds(true)
-      const { data } = await supabase
-        .from('pet_breeds')
-        .select('id, name')
-        .eq('species', pet.species)
-        .order('name')
+      const { data } = await supabase.from('pet_breeds').select('id, name').eq('species', pet.species).order('name')
       setBreeds((data || []).map((b: any) => ({ value: b.id, label: b.name })))
       setLoadingBreeds(false)
     }
@@ -162,6 +157,26 @@ export default function PetDetailPage() {
     router.push('/owner/pets')
   }
 
+  // ---- Medical records ----
+  const openAddMed = () => {
+    setEditMedId(null)
+    setMedDate(new Date().toISOString().split('T')[0])
+    setMedTitle(''); setMedDesc(''); setMedVet(''); setMedClinic('')
+    setShowMedForm(true)
+  }
+
+  const openEditMed = (r: MedRecord) => {
+    setShowMedForm(false)
+    setEditMedId(r.id)
+    setMedDate(r.record_date)
+    setMedTitle(r.title)
+    setMedDesc(r.description || '')
+    setMedVet(r.vet_name || '')
+    setMedClinic(r.clinic_name || '')
+  }
+
+  const cancelMedEdit = () => { setEditMedId(null) }
+
   const handleAddMed = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!medTitle.trim()) return
@@ -171,11 +186,49 @@ export default function PetDetailPage() {
     }).select().single()
     if (error) { toast.error('บันทึกไม่สำเร็จ'); return }
     setMedRecords(prev => [data as MedRecord, ...prev])
-    setMedTitle(''); setMedDesc(''); setMedVet(''); setMedClinic('')
-    setMedDate(new Date().toISOString().split('T')[0])
     setShowMedForm(false)
     toast.success('บันทึกแล้ว')
   }
+
+  const handleUpdateMed = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!medTitle.trim() || !editMedId) return
+    const { error } = await supabase.from('pet_medical_records').update({
+      record_date: medDate, title: medTitle.trim(),
+      description: medDesc.trim() || null, vet_name: medVet.trim() || null, clinic_name: medClinic.trim() || null,
+    }).eq('id', editMedId)
+    if (error) { toast.error('บันทึกไม่สำเร็จ'); return }
+    setMedRecords(prev => prev.map(r => r.id === editMedId
+      ? { ...r, record_date: medDate, title: medTitle.trim(), description: medDesc.trim() || null, vet_name: medVet.trim() || null, clinic_name: medClinic.trim() || null }
+      : r))
+    setEditMedId(null)
+    toast.success('อัปเดตแล้ว')
+  }
+
+  const deleteMed = async (rid: string) => {
+    await supabase.from('pet_medical_records').delete().eq('id', rid)
+    setMedRecords(prev => prev.filter(r => r.id !== rid))
+  }
+
+  // ---- Vaccines ----
+  const openAddVac = () => {
+    setEditVacId(null)
+    setVacDate(new Date().toISOString().split('T')[0])
+    setVacName(''); setVacNext(''); setVacClinic(''); setVacNotes('')
+    setShowVacForm(true)
+  }
+
+  const openEditVac = (v: Vaccine) => {
+    setShowVacForm(false)
+    setEditVacId(v.id)
+    setVacDate(v.vaccine_date)
+    setVacName(v.vaccine_name)
+    setVacNext(v.next_due_date || '')
+    setVacClinic(v.clinic_name || '')
+    setVacNotes(v.notes || '')
+  }
+
+  const cancelVacEdit = () => { setEditVacId(null) }
 
   const handleAddVac = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -186,11 +239,48 @@ export default function PetDetailPage() {
     }).select().single()
     if (error) { toast.error('บันทึกไม่สำเร็จ'); return }
     setVaccines(prev => [data as Vaccine, ...prev])
-    setVacName(''); setVacNext(''); setVacClinic(''); setVacNotes('')
-    setVacDate(new Date().toISOString().split('T')[0])
     setShowVacForm(false)
     toast.success('บันทึกแล้ว')
   }
+
+  const handleUpdateVac = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!vacName.trim() || !editVacId) return
+    const { error } = await supabase.from('pet_vaccines').update({
+      vaccine_date: vacDate, vaccine_name: vacName.trim(),
+      next_due_date: vacNext || null, clinic_name: vacClinic.trim() || null, notes: vacNotes.trim() || null,
+    }).eq('id', editVacId)
+    if (error) { toast.error('บันทึกไม่สำเร็จ'); return }
+    setVaccines(prev => prev.map(v => v.id === editVacId
+      ? { ...v, vaccine_date: vacDate, vaccine_name: vacName.trim(), next_due_date: vacNext || null, clinic_name: vacClinic.trim() || null, notes: vacNotes.trim() || null }
+      : v))
+    setEditVacId(null)
+    toast.success('อัปเดตแล้ว')
+  }
+
+  const deleteVac = async (vid: string) => {
+    await supabase.from('pet_vaccines').delete().eq('id', vid)
+    setVaccines(prev => prev.filter(v => v.id !== vid))
+  }
+
+  // ---- Parasites ----
+  const openAddPara = () => {
+    setEditParaId(null)
+    setParaDate(new Date().toISOString().split('T')[0])
+    setParaProduct(''); setParaNext(''); setParaNotes('')
+    setShowParaForm(true)
+  }
+
+  const openEditPara = (p: Parasite) => {
+    setShowParaForm(false)
+    setEditParaId(p.id)
+    setParaDate(p.control_date)
+    setParaProduct(p.product_name)
+    setParaNext(p.next_due_date || '')
+    setParaNotes(p.notes || '')
+  }
+
+  const cancelParaEdit = () => { setEditParaId(null) }
 
   const handleAddPara = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -201,20 +291,25 @@ export default function PetDetailPage() {
     }).select().single()
     if (error) { toast.error('บันทึกไม่สำเร็จ'); return }
     setParasites(prev => [data as Parasite, ...prev])
-    setParaProduct(''); setParaNext(''); setParaNotes('')
-    setParaDate(new Date().toISOString().split('T')[0])
     setShowParaForm(false)
     toast.success('บันทึกแล้ว')
   }
 
-  const deleteMed = async (rid: string) => {
-    await supabase.from('pet_medical_records').delete().eq('id', rid)
-    setMedRecords(prev => prev.filter(r => r.id !== rid))
+  const handleUpdatePara = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!paraProduct.trim() || !editParaId) return
+    const { error } = await supabase.from('pet_parasite_controls').update({
+      control_date: paraDate, product_name: paraProduct.trim(),
+      next_due_date: paraNext || null, notes: paraNotes.trim() || null,
+    }).eq('id', editParaId)
+    if (error) { toast.error('บันทึกไม่สำเร็จ'); return }
+    setParasites(prev => prev.map(p => p.id === editParaId
+      ? { ...p, control_date: paraDate, product_name: paraProduct.trim(), next_due_date: paraNext || null, notes: paraNotes.trim() || null }
+      : p))
+    setEditParaId(null)
+    toast.success('อัปเดตแล้ว')
   }
-  const deleteVac = async (vid: string) => {
-    await supabase.from('pet_vaccines').delete().eq('id', vid)
-    setVaccines(prev => prev.filter(v => v.id !== vid))
-  }
+
   const deletePara = async (pid: string) => {
     await supabase.from('pet_parasite_controls').delete().eq('id', pid)
     setParasites(prev => prev.filter(p => p.id !== pid))
@@ -230,6 +325,89 @@ export default function PetDetailPage() {
     { key: 'parasite', label: 'ป้องกันปรสิต', icon: <Bug className="w-4 h-4" />, count: parasites.length },
   ]
 
+  // reusable med form fields
+  const MedFormFields = () => (
+    <>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="label">วันที่รักษา</label>
+          <input type="date" value={medDate} onChange={e => setMedDate(e.target.value)} className="input" />
+        </div>
+        <div>
+          <label className="label">หัวข้อ / อาการ *</label>
+          <input value={medTitle} onChange={e => setMedTitle(e.target.value)} className="input" placeholder="ตรวจสุขภาพ, ผ่าตัด..." required />
+        </div>
+      </div>
+      <div>
+        <label className="label">รายละเอียด</label>
+        <textarea value={medDesc} onChange={e => setMedDesc(e.target.value)} className="input resize-none" rows={2} placeholder="อาการ การรักษา ยาที่ได้รับ..." />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="label">ชื่อสัตวแพทย์</label>
+          <SearchableSelect value={medVet} onChange={setMedVet} options={vets}
+            placeholder="ค้นหาหมอในระบบ..." freeTextPlaceholder="ชื่อสัตวแพทย์..." notInListLabel="ไม่มีในระบบ — กรอกเอง" />
+        </div>
+        <div>
+          <label className="label">คลินิก / โรงพยาบาล</label>
+          <SearchableSelect value={medClinic} onChange={setMedClinic} options={clinics}
+            placeholder="ค้นหาคลินิกในระบบ..." freeTextPlaceholder="ชื่อคลินิก..." notInListLabel="ไม่มีในระบบ — กรอกเอง" />
+        </div>
+      </div>
+    </>
+  )
+
+  const VacFormFields = () => (
+    <>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="label">วันที่ฉีด</label>
+          <input type="date" value={vacDate} onChange={e => setVacDate(e.target.value)} className="input" />
+        </div>
+        <div>
+          <label className="label">ชื่อวัคซีน *</label>
+          <input value={vacName} onChange={e => setVacName(e.target.value)} className="input" placeholder="DHPPiL, พิษสุนัขบ้า..." required />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="label">ฉีดครั้งถัดไป</label>
+          <input type="date" value={vacNext} onChange={e => setVacNext(e.target.value)} className="input" />
+        </div>
+        <div>
+          <label className="label">คลินิก</label>
+          <SearchableSelect value={vacClinic} onChange={setVacClinic} options={clinics}
+            placeholder="ค้นหาคลินิกในระบบ..." freeTextPlaceholder="ชื่อคลินิก..." notInListLabel="ไม่มีในระบบ — กรอกเอง" />
+        </div>
+      </div>
+      <div>
+        <label className="label">หมายเหตุ</label>
+        <input value={vacNotes} onChange={e => setVacNotes(e.target.value)} className="input" placeholder="เลขที่ batch, ผลข้างเคียง..." />
+      </div>
+    </>
+  )
+
+  const ParaFormFields = () => (
+    <div className="grid grid-cols-2 gap-3">
+      <div>
+        <label className="label">วันที่ใช้ยา</label>
+        <input type="date" value={paraDate} onChange={e => setParaDate(e.target.value)} className="input" />
+      </div>
+      <div>
+        <label className="label">ชื่อยา / ผลิตภัณฑ์ *</label>
+        <input value={paraProduct} onChange={e => setParaProduct(e.target.value)} className="input" placeholder="Frontline, NexGard..." required />
+      </div>
+      <div>
+        <label className="label">ครั้งถัดไป</label>
+        <input type="date" value={paraNext} onChange={e => setParaNext(e.target.value)} className="input" />
+      </div>
+      <div>
+        <label className="label">หมายเหตุ</label>
+        <input value={paraNotes} onChange={e => setParaNotes(e.target.value)} className="input" placeholder="ขนาด, วิธีใช้..." />
+      </div>
+    </div>
+  )
+
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <div className="flex items-center gap-3">
@@ -237,9 +415,7 @@ export default function PetDetailPage() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <h1 className="text-xl font-bold">{pet.name}</h1>
-        {pet.birthdate && (
-          <span className="text-sm text-gray-400">อายุ {calcAge(pet.birthdate)}</span>
-        )}
+        {pet.birthdate && <span className="text-sm text-gray-400">อายุ {calcAge(pet.birthdate)}</span>}
       </div>
 
       {/* tabs */}
@@ -247,10 +423,8 @@ export default function PetDetailPage() {
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)}
             className={`flex items-center gap-1.5 px-3 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors
-              ${tab === t.key ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-          >
-            {t.icon}
-            {t.label}
+              ${tab === t.key ? 'border-primary-500 text-primary-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+            {t.icon}{t.label}
             {t.count !== undefined && t.count > 0 && (
               <span className="bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 text-xs rounded-full px-1.5">{t.count}</span>
             )}
@@ -262,15 +436,9 @@ export default function PetDetailPage() {
       {tab === 'info' && (
         <div className="card space-y-4">
           <div className="flex justify-center">
-            <PhotoUpload
-              bucket="pet-photos"
-              currentUrl={pet.photo_url}
-              userId={pet.id}
+            <PhotoUpload bucket="pet-photos" currentUrl={pet.photo_url} userId={pet.id}
               onUploaded={url => setPet(prev => prev ? { ...prev, photo_url: url } : prev)}
-              size="lg"
-              shape="square"
-              label="อัปโหลดรูปสัตว์เลี้ยง"
-            />
+              size="lg" shape="square" label="อัปโหลดรูปสัตว์เลี้ยง" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -279,9 +447,7 @@ export default function PetDetailPage() {
             </div>
             <div>
               <label className="label">ชนิด</label>
-              <select value={pet.species}
-                onChange={e => setPet(p => p ? { ...p, species: e.target.value, breed: null } : p)}
-                className="input">
+              <select value={pet.species} onChange={e => setPet(p => p ? { ...p, species: e.target.value, breed: null } : p)} className="input">
                 {SPECIES.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
@@ -290,22 +456,11 @@ export default function PetDetailPage() {
             <div>
               <label className="label">สายพันธุ์</label>
               {pet.species === 'อื่นๆ' ? (
-                <input
-                  value={pet.breed || ''}
-                  onChange={e => setPet(p => p ? { ...p, breed: e.target.value } : p)}
-                  className="input"
-                  placeholder="ระบุสายพันธุ์"
-                />
+                <input value={pet.breed || ''} onChange={e => setPet(p => p ? { ...p, breed: e.target.value } : p)} className="input" placeholder="ระบุสายพันธุ์" />
               ) : (
-                <SearchableSelect
-                  value={pet.breed || ''}
-                  onChange={v => setPet(p => p ? { ...p, breed: v } : p)}
-                  options={breeds}
-                  loading={loadingBreeds}
-                  placeholder="ค้นหาสายพันธุ์..."
-                  freeTextPlaceholder="ระบุสายพันธุ์..."
-                  notInListLabel="ไม่มีในรายการ — กรอกเอง"
-                />
+                <SearchableSelect value={pet.breed || ''} onChange={v => setPet(p => p ? { ...p, breed: v } : p)}
+                  options={breeds} loading={loadingBreeds} placeholder="ค้นหาสายพันธุ์..."
+                  freeTextPlaceholder="ระบุสายพันธุ์..." notInListLabel="ไม่มีในรายการ — กรอกเอง" />
               )}
             </div>
             <div>
@@ -341,52 +496,20 @@ export default function PetDetailPage() {
       {/* Tab: ประวัติการรักษา */}
       {tab === 'medical' && (
         <div className="space-y-4">
-          <button onClick={() => setShowMedForm(v => !v)} className="btn-primary flex items-center gap-2">
-            {showMedForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-            {showMedForm ? 'ยกเลิก' : 'เพิ่มประวัติการรักษา'}
-          </button>
+          {!showMedForm && !editMedId && (
+            <button onClick={openAddMed} className="btn-primary flex items-center gap-2">
+              <Plus className="w-4 h-4" /> เพิ่มประวัติการรักษา
+            </button>
+          )}
 
           {showMedForm && (
             <div className="card">
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-semibold text-sm">เพิ่มประวัติการรักษา</span>
+                <button type="button" onClick={() => setShowMedForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+              </div>
               <form onSubmit={handleAddMed} className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="label">วันที่รักษา</label>
-                    <input type="date" value={medDate} onChange={e => setMedDate(e.target.value)} className="input" />
-                  </div>
-                  <div>
-                    <label className="label">หัวข้อ / อาการ *</label>
-                    <input value={medTitle} onChange={e => setMedTitle(e.target.value)} className="input" placeholder="ตรวจสุขภาพ, ผ่าตัด..." required />
-                  </div>
-                </div>
-                <div>
-                  <label className="label">รายละเอียด</label>
-                  <textarea value={medDesc} onChange={e => setMedDesc(e.target.value)} className="input resize-none" rows={2} placeholder="อาการ การรักษา ยาที่ได้รับ..." />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="label">ชื่อสัตวแพทย์</label>
-                    <SearchableSelect
-                      value={medVet}
-                      onChange={setMedVet}
-                      options={vets}
-                      placeholder="ค้นหาหมอในระบบ..."
-                      freeTextPlaceholder="ชื่อสัตวแพทย์..."
-                      notInListLabel="ไม่มีในระบบ — กรอกเอง"
-                    />
-                  </div>
-                  <div>
-                    <label className="label">คลินิก / โรงพยาบาล</label>
-                    <SearchableSelect
-                      value={medClinic}
-                      onChange={setMedClinic}
-                      options={clinics}
-                      placeholder="ค้นหาคลินิกในระบบ..."
-                      freeTextPlaceholder="ชื่อคลินิก..."
-                      notInListLabel="ไม่มีในระบบ — กรอกเอง"
-                    />
-                  </div>
-                </div>
+                <MedFormFields />
                 <button type="submit" className="btn-primary w-full">บันทึก</button>
               </form>
             </div>
@@ -398,23 +521,38 @@ export default function PetDetailPage() {
             <div className="space-y-3">
               {medRecords.map(r => (
                 <div key={r.id} className="card">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium">{r.title}</span>
-                        <span className="text-xs text-gray-400">{fmtDate(r.record_date)}</span>
+                  {editMedId === r.id ? (
+                    <form onSubmit={handleUpdateMed} className="space-y-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold text-sm text-primary-600">แก้ไขประวัติการรักษา</span>
+                        <button type="button" onClick={cancelMedEdit} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
                       </div>
-                      {r.description && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{r.description}</p>}
-                      {(r.vet_name || r.clinic_name) && (
-                        <p className="text-xs text-gray-400 mt-1">
-                          {r.vet_name && `🩺 ${r.vet_name}`}{r.vet_name && r.clinic_name && ' · '}{r.clinic_name && `🏥 ${r.clinic_name}`}
-                        </p>
-                      )}
+                      <MedFormFields />
+                      <div className="flex gap-2">
+                        <button type="submit" className="btn-primary flex-1">บันทึก</button>
+                        <button type="button" onClick={cancelMedEdit} className="btn-secondary flex-1">ยกเลิก</button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">{r.title}</span>
+                          <span className="text-xs text-gray-400">{fmtDate(r.record_date)}</span>
+                        </div>
+                        {r.description && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{r.description}</p>}
+                        {(r.vet_name || r.clinic_name) && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            {r.vet_name && `🩺 ${r.vet_name}`}{r.vet_name && r.clinic_name && ' · '}{r.clinic_name && `🏥 ${r.clinic_name}`}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <button onClick={() => openEditMed(r)} className="text-gray-300 hover:text-primary-500 p-1"><Pencil className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => deleteMed(r.id)} className="text-gray-300 hover:text-red-400 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
                     </div>
-                    <button onClick={() => deleteMed(r.id)} className="text-gray-300 hover:text-red-400 shrink-0">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -425,45 +563,20 @@ export default function PetDetailPage() {
       {/* Tab: วัคซีน */}
       {tab === 'vaccine' && (
         <div className="space-y-4">
-          <button onClick={() => setShowVacForm(v => !v)} className="btn-primary flex items-center gap-2">
-            {showVacForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-            {showVacForm ? 'ยกเลิก' : 'เพิ่มประวัติวัคซีน'}
-          </button>
+          {!showVacForm && !editVacId && (
+            <button onClick={openAddVac} className="btn-primary flex items-center gap-2">
+              <Plus className="w-4 h-4" /> เพิ่มประวัติวัคซีน
+            </button>
+          )}
 
           {showVacForm && (
             <div className="card">
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-semibold text-sm">เพิ่มประวัติวัคซีน</span>
+                <button type="button" onClick={() => setShowVacForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+              </div>
               <form onSubmit={handleAddVac} className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="label">วันที่ฉีด</label>
-                    <input type="date" value={vacDate} onChange={e => setVacDate(e.target.value)} className="input" />
-                  </div>
-                  <div>
-                    <label className="label">ชื่อวัคซีน *</label>
-                    <input value={vacName} onChange={e => setVacName(e.target.value)} className="input" placeholder="DHPPiL, พิษสุนัขบ้า..." required />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="label">ฉีดครั้งถัดไป</label>
-                    <input type="date" value={vacNext} onChange={e => setVacNext(e.target.value)} className="input" />
-                  </div>
-                  <div>
-                    <label className="label">คลินิก</label>
-                    <SearchableSelect
-                      value={vacClinic}
-                      onChange={setVacClinic}
-                      options={clinics}
-                      placeholder="ค้นหาคลินิกในระบบ..."
-                      freeTextPlaceholder="ชื่อคลินิก..."
-                      notInListLabel="ไม่มีในระบบ — กรอกเอง"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="label">หมายเหตุ</label>
-                  <input value={vacNotes} onChange={e => setVacNotes(e.target.value)} className="input" placeholder="เลขที่ batch, ผลข้างเคียง..." />
-                </div>
+                <VacFormFields />
                 <button type="submit" className="btn-primary w-full">บันทึก</button>
               </form>
             </div>
@@ -475,25 +588,38 @@ export default function PetDetailPage() {
             <div className="space-y-3">
               {vaccines.map(v => (
                 <div key={v.id} className="card">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium">💉 {v.vaccine_name}</span>
-                        <span className="text-xs text-gray-400">{fmtDate(v.vaccine_date)}</span>
+                  {editVacId === v.id ? (
+                    <form onSubmit={handleUpdateVac} className="space-y-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold text-sm text-primary-600">แก้ไขประวัติวัคซีน</span>
+                        <button type="button" onClick={cancelVacEdit} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
                       </div>
-                      {v.next_due_date && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">🔔 นัดฉีดครั้งถัดไป: {fmtDate(v.next_due_date)}</p>
-                      )}
-                      {(v.clinic_name || v.notes) && (
-                        <p className="text-xs text-gray-400 mt-1">
-                          {v.clinic_name && `🏥 ${v.clinic_name}`}{v.clinic_name && v.notes && ' · '}{v.notes}
-                        </p>
-                      )}
+                      <VacFormFields />
+                      <div className="flex gap-2">
+                        <button type="submit" className="btn-primary flex-1">บันทึก</button>
+                        <button type="button" onClick={cancelVacEdit} className="btn-secondary flex-1">ยกเลิก</button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">💉 {v.vaccine_name}</span>
+                          <span className="text-xs text-gray-400">{fmtDate(v.vaccine_date)}</span>
+                        </div>
+                        {v.next_due_date && <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">🔔 นัดฉีดครั้งถัดไป: {fmtDate(v.next_due_date)}</p>}
+                        {(v.clinic_name || v.notes) && (
+                          <p className="text-xs text-gray-400 mt-1">
+                            {v.clinic_name && `🏥 ${v.clinic_name}`}{v.clinic_name && v.notes && ' · '}{v.notes}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <button onClick={() => openEditVac(v)} className="text-gray-300 hover:text-primary-500 p-1"><Pencil className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => deleteVac(v.id)} className="text-gray-300 hover:text-red-400 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
                     </div>
-                    <button onClick={() => deleteVac(v.id)} className="text-gray-300 hover:text-red-400 shrink-0">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -504,34 +630,20 @@ export default function PetDetailPage() {
       {/* Tab: ป้องกันปรสิตภายนอก */}
       {tab === 'parasite' && (
         <div className="space-y-4">
-          <button onClick={() => setShowParaForm(v => !v)} className="btn-primary flex items-center gap-2">
-            {showParaForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-            {showParaForm ? 'ยกเลิก' : 'เพิ่มประวัติป้องกันปรสิต'}
-          </button>
+          {!showParaForm && !editParaId && (
+            <button onClick={openAddPara} className="btn-primary flex items-center gap-2">
+              <Plus className="w-4 h-4" /> เพิ่มประวัติป้องกันปรสิต
+            </button>
+          )}
 
           {showParaForm && (
             <div className="card">
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-semibold text-sm">เพิ่มประวัติป้องกันปรสิต</span>
+                <button type="button" onClick={() => setShowParaForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+              </div>
               <form onSubmit={handleAddPara} className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="label">วันที่ใช้ยา</label>
-                    <input type="date" value={paraDate} onChange={e => setParaDate(e.target.value)} className="input" />
-                  </div>
-                  <div>
-                    <label className="label">ชื่อยา / ผลิตภัณฑ์ *</label>
-                    <input value={paraProduct} onChange={e => setParaProduct(e.target.value)} className="input" placeholder="Frontline, NexGard..." required />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="label">ครั้งถัดไป</label>
-                    <input type="date" value={paraNext} onChange={e => setParaNext(e.target.value)} className="input" />
-                  </div>
-                  <div>
-                    <label className="label">หมายเหตุ</label>
-                    <input value={paraNotes} onChange={e => setParaNotes(e.target.value)} className="input" placeholder="ขนาด, วิธีใช้..." />
-                  </div>
-                </div>
+                <ParaFormFields />
                 <button type="submit" className="btn-primary w-full">บันทึก</button>
               </form>
             </div>
@@ -543,21 +655,34 @@ export default function PetDetailPage() {
             <div className="space-y-3">
               {parasites.map(p => (
                 <div key={p.id} className="card">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium">🐛 {p.product_name}</span>
-                        <span className="text-xs text-gray-400">{fmtDate(p.control_date)}</span>
+                  {editParaId === p.id ? (
+                    <form onSubmit={handleUpdatePara} className="space-y-3">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-semibold text-sm text-primary-600">แก้ไขประวัติป้องกันปรสิต</span>
+                        <button type="button" onClick={cancelParaEdit} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
                       </div>
-                      {p.next_due_date && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">🔔 ครั้งถัดไป: {fmtDate(p.next_due_date)}</p>
-                      )}
-                      {p.notes && <p className="text-xs text-gray-400 mt-1">{p.notes}</p>}
+                      <ParaFormFields />
+                      <div className="flex gap-2">
+                        <button type="submit" className="btn-primary flex-1">บันทึก</button>
+                        <button type="button" onClick={cancelParaEdit} className="btn-secondary flex-1">ยกเลิก</button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-medium">🐛 {p.product_name}</span>
+                          <span className="text-xs text-gray-400">{fmtDate(p.control_date)}</span>
+                        </div>
+                        {p.next_due_date && <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">🔔 ครั้งถัดไป: {fmtDate(p.next_due_date)}</p>}
+                        {p.notes && <p className="text-xs text-gray-400 mt-1">{p.notes}</p>}
+                      </div>
+                      <div className="flex gap-1 shrink-0">
+                        <button onClick={() => openEditPara(p)} className="text-gray-300 hover:text-primary-500 p-1"><Pencil className="w-3.5 h-3.5" /></button>
+                        <button onClick={() => deletePara(p.id)} className="text-gray-300 hover:text-red-400 p-1"><Trash2 className="w-3.5 h-3.5" /></button>
+                      </div>
                     </div>
-                    <button onClick={() => deletePara(p.id)} className="text-gray-300 hover:text-red-400 shrink-0">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  )}
                 </div>
               ))}
             </div>
