@@ -116,6 +116,10 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
                     <Building2 className="w-4 h-4" />
                     <span className="hidden sm:block">{t.nav.clinics}</span>
                   </Link>
+                  <Link href="/owner/pets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+                    <PawPrint className="w-4 h-4" />
+                    <span className="hidden sm:block">{t.nav.myPets}</span>
+                  </Link>
                   <Link href="/owner/settings" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
                     <User className="w-4 h-4" />
                     <span className="hidden sm:block">{t.nav.profile}</span>
@@ -170,6 +174,10 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
               <Link href="/clinics" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
                 <Building2 className="w-4 h-4" />
                 <span className="hidden sm:block">{t.nav.clinics}</span>
+              </Link>
+              <Link href="/owner/pets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+                <PawPrint className="w-4 h-4" />
+                <span className="hidden sm:block">{t.nav.myPets}</span>
               </Link>
               <Link href="/owner/settings" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
                 <User className="w-4 h-4" />
