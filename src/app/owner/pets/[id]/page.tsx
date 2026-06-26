@@ -19,7 +19,7 @@ interface Pet {
   id: string; name: string; species: string; breed: string | null
   gender: string; birthdate: string | null; photo_url: string | null; notes: string | null
 }
-interface MedRecord { id: string; record_date: string; title: string; description: string | null; vet_name: string | null; clinic_name: string | null }
+interface MedRecord { id: string; pet_id: string; record_date: string; title: string; description: string | null; vet_name: string | null; clinic_name: string | null; next_appointment: string | null }
 interface Vaccine { id: string; vaccine_date: string; vaccine_name: string; next_due_date: string | null; clinic_name: string | null; notes: string | null }
 interface Parasite { id: string; control_date: string; product_name: string; next_due_date: string | null; notes: string | null }
 interface RawVet { id: string; full_name: string; title: string | null; full_name_en: string | null }
@@ -72,6 +72,7 @@ export default function PetDetailPage() {
   const [medDesc, setMedDesc] = useState('')
   const [medVet, setMedVet] = useState('')
   const [medClinic, setMedClinic] = useState('')
+  const [medNextAppt, setMedNextAppt] = useState('')
 
   const [vacDate, setVacDate] = useState(new Date().toISOString().split('T')[0])
   const [vacName, setVacName] = useState('')
@@ -165,7 +166,7 @@ export default function PetDetailPage() {
   const openAddMed = () => {
     setEditMedId(null)
     setMedDate(new Date().toISOString().split('T')[0])
-    setMedTitle(''); setMedDesc(''); setMedVet(''); setMedClinic('')
+    setMedTitle(''); setMedDesc(''); setMedVet(''); setMedClinic(''); setMedNextAppt('')
     setShowMedForm(true)
   }
 
@@ -177,6 +178,7 @@ export default function PetDetailPage() {
     setMedDesc(r.description || '')
     setMedVet(r.vet_name || '')
     setMedClinic(r.clinic_name || '')
+    setMedNextAppt(r.next_appointment || '')
   }
 
   const cancelMedEdit = () => { setEditMedId(null) }
@@ -187,6 +189,7 @@ export default function PetDetailPage() {
     const { data, error } = await supabase.from('pet_medical_records').insert({
       pet_id: id, record_date: medDate, title: medTitle.trim(),
       description: medDesc.trim() || null, vet_name: medVet.trim() || null, clinic_name: medClinic.trim() || null,
+      next_appointment: medNextAppt || null,
     }).select().single()
     if (error) { toast.error('บันทึกไม่สำเร็จ'); return }
     setMedRecords(prev => [data as MedRecord, ...prev])
@@ -200,10 +203,11 @@ export default function PetDetailPage() {
     const { error } = await supabase.from('pet_medical_records').update({
       record_date: medDate, title: medTitle.trim(),
       description: medDesc.trim() || null, vet_name: medVet.trim() || null, clinic_name: medClinic.trim() || null,
+      next_appointment: medNextAppt || null,
     }).eq('id', editMedId)
     if (error) { toast.error('บันทึกไม่สำเร็จ'); return }
     setMedRecords(prev => prev.map(r => r.id === editMedId
-      ? { ...r, record_date: medDate, title: medTitle.trim(), description: medDesc.trim() || null, vet_name: medVet.trim() || null, clinic_name: medClinic.trim() || null }
+      ? { ...r, record_date: medDate, title: medTitle.trim(), description: medDesc.trim() || null, vet_name: medVet.trim() || null, clinic_name: medClinic.trim() || null, next_appointment: medNextAppt || null }
       : r))
     setEditMedId(null)
     toast.success('อัปเดตแล้ว')
@@ -356,6 +360,11 @@ export default function PetDetailPage() {
           <SearchableSelect value={medClinic} onChange={setMedClinic} options={clinics}
             placeholder="ค้นหาคลินิกในระบบ..." freeTextPlaceholder="ชื่อคลินิก..." notInListLabel="ไม่มีในระบบ — กรอกเอง" />
         </div>
+      </div>
+      <div>
+        <label className="label">นัดหมายครั้งถัดไป</label>
+        <input type="date" value={medNextAppt} onChange={e => setMedNextAppt(e.target.value)} className="input"
+          min={new Date().toISOString().split('T')[0]} />
       </div>
     </>
   )
@@ -548,6 +557,9 @@ export default function PetDetailPage() {
                           <p className="text-xs text-gray-400 mt-1">
                             {r.vet_name && `🩺 ${r.vet_name}`}{r.vet_name && r.clinic_name && ' · '}{r.clinic_name && `🏥 ${r.clinic_name}`}
                           </p>
+                        )}
+                        {r.next_appointment && (
+                          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">🗓️ นัดหมายครั้งถัดไป: {fmtDate(r.next_appointment)}</p>
                         )}
                       </div>
                       <div className="flex gap-1 shrink-0">
