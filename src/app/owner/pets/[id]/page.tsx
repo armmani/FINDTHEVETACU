@@ -22,7 +22,7 @@ interface Pet {
 interface MedRecord { id: string; record_date: string; title: string; description: string | null; vet_name: string | null; clinic_name: string | null }
 interface Vaccine { id: string; vaccine_date: string; vaccine_name: string; next_due_date: string | null; clinic_name: string | null; notes: string | null }
 interface Parasite { id: string; control_date: string; product_name: string; next_due_date: string | null; notes: string | null }
-interface RawVet { id: string; full_name: string; vet_profiles: { title: string | null; full_name_en: string | null }[] }
+interface RawVet { id: string; full_name: string; title: string | null; full_name_en: string | null }
 
 function calcAge(birthdate: string): string {
   const birth = new Date(birthdate)
@@ -95,9 +95,8 @@ export default function PetDetailPage() {
 
   useEffect(() => {
     setVets(rawVets.map(u => {
-      const vp = u.vet_profiles?.[0]
-      const titleTh = vp?.title || ''
-      const fullNameEn = vp?.full_name_en || ''
+      const titleTh = u.title || ''
+      const fullNameEn = u.full_name_en || ''
       if (lang === 'en' && fullNameEn) {
         return { value: u.id, label: `${fullNameEn}, DVM` }
       }
@@ -123,7 +122,7 @@ export default function PetDetailPage() {
       supabase.from('pet_medical_records').select('*').eq('pet_id', id).order('record_date', { ascending: false }),
       supabase.from('pet_vaccines').select('*').eq('pet_id', id).order('vaccine_date', { ascending: false }),
       supabase.from('pet_parasite_controls').select('*').eq('pet_id', id).order('control_date', { ascending: false }),
-      supabase.from('profiles').select('id, full_name, vet_profiles(title, full_name_en)').eq('role', 'vet').not('full_name', 'is', null).order('full_name'),
+      supabase.from('vet_profiles').select('user_id, title, full_name_en, profiles!inner(full_name)').order('profiles(full_name)'),
       supabase.from('clinics').select('id, name').eq('status', 'approved').order('name'),
     ])
     if (!p) { router.push('/owner/pets'); return }
@@ -131,7 +130,12 @@ export default function PetDetailPage() {
     setMedRecords((m as MedRecord[]) || [])
     setVaccines((v as Vaccine[]) || [])
     setParasites((pa as Parasite[]) || [])
-    setRawVets((vetData || []) as RawVet[])
+    setRawVets((vetData || []).map((vp: any) => ({
+      id: vp.user_id,
+      full_name: vp.profiles?.full_name || '',
+      title: vp.title || null,
+      full_name_en: vp.full_name_en || null,
+    })))
     setClinics((clinicData || []).map((c: any) => ({ value: c.id, label: c.name })))
     setLoading(false)
   }
