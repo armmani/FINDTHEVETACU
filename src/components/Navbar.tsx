@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
 import { useLang } from '@/contexts/LanguageContext'
-import { LogOut, User, Stethoscope, Home, Sun, Moon, Building2, ShieldCheck, Bell } from 'lucide-react'
+import { LogOut, User, Stethoscope, Home, Sun, Moon, Building2, ShieldCheck, Bell, PawPrint, ArrowLeftRight } from 'lucide-react'
 import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import type { Profile } from '@/lib/types'
@@ -28,6 +28,17 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
   const notifRef = useRef<HTMLDivElement>(null)
 
   const unreadCount = notifications.filter(n => !n.read).length
+
+  const [ownerMode, setOwnerMode] = useState(false)
+  useEffect(() => {
+    setOwnerMode(localStorage.getItem('vetOwnerMode') === '1')
+  }, [])
+  const toggleOwnerMode = () => {
+    const next = !ownerMode
+    setOwnerMode(next)
+    localStorage.setItem('vetOwnerMode', next ? '1' : '0')
+    router.push(next ? '/vets' : '/vet/dashboard')
+  }
 
   useEffect(() => {
     const loadNotifs = async () => {
@@ -94,26 +105,60 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
           )}
           {(profile.role === 'vet' || profile.role === 'admin') && (
             <>
-              <Link href="/vets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                <Stethoscope className="w-4 h-4" />
-                <span className="hidden sm:block">{t.nav.findVet}</span>
-              </Link>
-              <Link href="/clinics" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                <Building2 className="w-4 h-4" />
-                <span className="hidden sm:block">{t.nav.clinics}</span>
-              </Link>
-              <Link href="/vet/dashboard" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                <Home className="w-4 h-4" />
-                <span className="hidden sm:block">{t.nav.dashboard}</span>
-              </Link>
-              <Link href="/clinic/manage" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                <Building2 className="w-4 h-4" />
-                <span className="hidden sm:block">{t.nav.myClinics}</span>
-              </Link>
-              <Link href="/vet/profile" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                <User className="w-4 h-4" />
-                <span className="hidden sm:block">{t.nav.profile}</span>
-              </Link>
+              {ownerMode ? (
+                /* vet ในโหมดเจ้าของ */
+                <>
+                  <Link href="/vets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+                    <Stethoscope className="w-4 h-4" />
+                    <span className="hidden sm:block">{t.nav.findVet}</span>
+                  </Link>
+                  <Link href="/clinics" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+                    <Building2 className="w-4 h-4" />
+                    <span className="hidden sm:block">{t.nav.clinics}</span>
+                  </Link>
+                  <Link href="/owner/settings" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+                    <User className="w-4 h-4" />
+                    <span className="hidden sm:block">{t.nav.profile}</span>
+                  </Link>
+                </>
+              ) : (
+                /* vet โหมดปกติ */
+                <>
+                  <Link href="/vets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+                    <Stethoscope className="w-4 h-4" />
+                    <span className="hidden sm:block">{t.nav.findVet}</span>
+                  </Link>
+                  <Link href="/clinics" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+                    <Building2 className="w-4 h-4" />
+                    <span className="hidden sm:block">{t.nav.clinics}</span>
+                  </Link>
+                  <Link href="/vet/dashboard" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+                    <Home className="w-4 h-4" />
+                    <span className="hidden sm:block">{t.nav.dashboard}</span>
+                  </Link>
+                  <Link href="/clinic/manage" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+                    <Building2 className="w-4 h-4" />
+                    <span className="hidden sm:block">{t.nav.myClinics}</span>
+                  </Link>
+                  <Link href="/vet/profile" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+                    <User className="w-4 h-4" />
+                    <span className="hidden sm:block">{t.nav.profile}</span>
+                  </Link>
+                </>
+              )}
+              {/* ปุ่มสลับโหมด */}
+              <button
+                onClick={toggleOwnerMode}
+                title={ownerMode ? 'สลับเป็นโหมดหมอ' : 'สลับเป็นโหมดเจ้าของสัตว์'}
+                className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg border transition-colors
+                  ${ownerMode
+                    ? 'border-primary-400 text-primary-600 bg-primary-50 dark:bg-primary-950 dark:text-primary-400'
+                    : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-primary-400 hover:text-primary-600'
+                  }`}
+              >
+                {ownerMode ? <Stethoscope className="w-3.5 h-3.5" /> : <PawPrint className="w-3.5 h-3.5" />}
+                <span className="hidden sm:block">{ownerMode ? 'โหมดหมอ' : 'โหมดเจ้าของ'}</span>
+              </button>
             </>
           )}
           {profile.role === 'owner' && (
