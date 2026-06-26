@@ -7,6 +7,7 @@ import { ArrowLeft, Save, Trash2, Plus, X, Syringe, Bug, Stethoscope, PawPrint, 
 import toast from 'react-hot-toast'
 import Image from 'next/image'
 import PhotoUpload from '@/components/PhotoUpload'
+import SearchableSelect, { SelectOption } from '@/components/SearchableSelect'
 
 const SPECIES = ['สุนัข', 'แมว', 'กระต่าย', 'นก', 'ปลา', 'อื่นๆ']
 const GENDERS = ['เพศผู้', 'เพศเมีย', 'ไม่ระบุ']
@@ -57,6 +58,12 @@ export default function PetDetailPage() {
   const [showVacForm, setShowVacForm] = useState(false)
   const [showParaForm, setShowParaForm] = useState(false)
 
+  // searchable options
+  const [breeds, setBreeds] = useState<SelectOption[]>([])
+  const [loadingBreeds, setLoadingBreeds] = useState(false)
+  const [vets, setVets] = useState<SelectOption[]>([])
+  const [clinics, setClinics] = useState<SelectOption[]>([])
+
   // med form state
   const [medDate, setMedDate] = useState(new Date().toISOString().split('T')[0])
   const [medTitle, setMedTitle] = useState('')
@@ -79,18 +86,39 @@ export default function PetDetailPage() {
 
   useEffect(() => { load() }, [id])
 
+  // load breeds whenever species changes
+  useEffect(() => {
+    if (!pet) return
+    const fetchBreeds = async () => {
+      if (pet.species === 'อื่นๆ') { setBreeds([]); return }
+      setLoadingBreeds(true)
+      const { data } = await supabase
+        .from('pet_breeds')
+        .select('id, name')
+        .eq('species', pet.species)
+        .order('name')
+      setBreeds((data || []).map((b: any) => ({ value: b.id, label: b.name })))
+      setLoadingBreeds(false)
+    }
+    fetchBreeds()
+  }, [pet?.species])
+
   const load = async () => {
-    const [{ data: p }, { data: m }, { data: v }, { data: pa }] = await Promise.all([
+    const [{ data: p }, { data: m }, { data: v }, { data: pa }, { data: vetData }, { data: clinicData }] = await Promise.all([
       supabase.from('pets').select('*').eq('id', id).single(),
       supabase.from('pet_medical_records').select('*').eq('pet_id', id).order('record_date', { ascending: false }),
       supabase.from('pet_vaccines').select('*').eq('pet_id', id).order('vaccine_date', { ascending: false }),
       supabase.from('pet_parasite_controls').select('*').eq('pet_id', id).order('control_date', { ascending: false }),
+      supabase.from('profiles').select('id, full_name').eq('role', 'vet').not('full_name', 'is', null).order('full_name'),
+      supabase.from('clinics').select('id, name').eq('status', 'approved').order('name'),
     ])
     if (!p) { router.push('/owner/pets'); return }
     setPet(p as Pet)
     setMedRecords((m as MedRecord[]) || [])
     setVaccines((v as Vaccine[]) || [])
     setParasites((pa as Parasite[]) || [])
+    setVets((vetData || []).map((u: any) => ({ value: u.id, label: u.full_name })))
+    setClinics((clinicData || []).map((c: any) => ({ value: c.id, label: c.name })))
     setLoading(false)
   }
 
@@ -232,7 +260,9 @@ export default function PetDetailPage() {
             </div>
             <div>
               <label className="label">ชนิด</label>
-              <select value={pet.species} onChange={e => setPet(p => p ? { ...p, species: e.target.value } : p)} className="input">
+              <select value={pet.species}
+                onChange={e => setPet(p => p ? { ...p, species: e.target.value, breed: null } : p)}
+                className="input">
                 {SPECIES.map(s => <option key={s}>{s}</option>)}
               </select>
             </div>
@@ -240,7 +270,24 @@ export default function PetDetailPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">สายพันธุ์</label>
-              <input value={pet.breed || ''} onChange={e => setPet(p => p ? { ...p, breed: e.target.value } : p)} className="input" placeholder="โกลเด้น รีทรีฟเวอร์" />
+              {pet.species === 'อื่นๆ' ? (
+                <input
+                  value={pet.breed || ''}
+                  onChange={e => setPet(p => p ? { ...p, breed: e.target.value } : p)}
+                  className="input"
+                  placeholder="ระบุสายพันธุ์"
+                />
+              ) : (
+                <SearchableSelect
+                  value={pet.breed || ''}
+                  onChange={v => setPet(p => p ? { ...p, breed: v } : p)}
+                  options={breeds}
+                  loading={loadingBreeds}
+                  placeholder="ค้นหาสายพันธุ์..."
+                  freeTextPlaceholder="ระบุสายพันธุ์..."
+                  notInListLabel="ไม่มีในรายการ — กรอกเอง"
+                />
+              )}
             </div>
             <div>
               <label className="label">เพศ</label>
@@ -300,11 +347,25 @@ export default function PetDetailPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="label">ชื่อสัตวแพทย์</label>
-                    <input value={medVet} onChange={e => setMedVet(e.target.value)} className="input" placeholder="สพ.ญ. สมหญิง" />
+                    <SearchableSelect
+                      value={medVet}
+                      onChange={setMedVet}
+                      options={vets}
+                      placeholder="ค้นหาหมอในระบบ..."
+                      freeTextPlaceholder="ชื่อสัตวแพทย์..."
+                      notInListLabel="ไม่มีในระบบ — กรอกเอง"
+                    />
                   </div>
                   <div>
                     <label className="label">คลินิก / โรงพยาบาล</label>
-                    <input value={medClinic} onChange={e => setMedClinic(e.target.value)} className="input" placeholder="คลินิกสัตวแพทย์..." />
+                    <SearchableSelect
+                      value={medClinic}
+                      onChange={setMedClinic}
+                      options={clinics}
+                      placeholder="ค้นหาคลินิกในระบบ..."
+                      freeTextPlaceholder="ชื่อคลินิก..."
+                      notInListLabel="ไม่มีในระบบ — กรอกเอง"
+                    />
                   </div>
                 </div>
                 <button type="submit" className="btn-primary w-full">บันทึก</button>
@@ -370,7 +431,14 @@ export default function PetDetailPage() {
                   </div>
                   <div>
                     <label className="label">คลินิก</label>
-                    <input value={vacClinic} onChange={e => setVacClinic(e.target.value)} className="input" placeholder="คลินิกสัตวแพทย์..." />
+                    <SearchableSelect
+                      value={vacClinic}
+                      onChange={setVacClinic}
+                      options={clinics}
+                      placeholder="ค้นหาคลินิกในระบบ..."
+                      freeTextPlaceholder="ชื่อคลินิก..."
+                      notInListLabel="ไม่มีในระบบ — กรอกเอง"
+                    />
                   </div>
                 </div>
                 <div>

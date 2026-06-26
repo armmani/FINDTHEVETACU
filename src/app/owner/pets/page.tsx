@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase'
 import { Plus, PawPrint, ChevronRight, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
+import SearchableSelect, { SelectOption } from '@/components/SearchableSelect'
 
 interface Pet {
   id: string
@@ -45,9 +46,26 @@ export default function PetsPage() {
   const [gender, setGender] = useState('ไม่ระบุ')
   const [birthdate, setBirthdate] = useState('')
 
+  const [breeds, setBreeds] = useState<SelectOption[]>([])
+  const [loadingBreeds, setLoadingBreeds] = useState(false)
+
+  useEffect(() => { load() }, [])
+
   useEffect(() => {
-    load()
-  }, [])
+    const fetchBreeds = async () => {
+      if (species === 'อื่นๆ') { setBreeds([]); return }
+      setLoadingBreeds(true)
+      setBreed('')
+      const { data } = await supabase
+        .from('pet_breeds')
+        .select('id, name')
+        .eq('species', species)
+        .order('name')
+      setBreeds((data || []).map((b: any) => ({ value: b.id, label: b.name })))
+      setLoadingBreeds(false)
+    }
+    fetchBreeds()
+  }, [species])
 
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -73,7 +91,7 @@ export default function PetsPage() {
     }).select().single()
     if (error) { toast.error('บันทึกไม่สำเร็จ'); setSaving(false); return }
     toast.success('เพิ่มสัตว์เลี้ยงแล้ว!')
-    setName(''); setSpecies('สุนัข'); setBreed(''); setGender('ไม่ระบุ'); setBirthdate('')
+    setName(''); setBreed(''); setGender('ไม่ระบุ'); setBirthdate('')
     setShowForm(false)
     setSaving(false)
     router.push(`/owner/pets/${(data as any).id}`)
@@ -112,7 +130,19 @@ export default function PetsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label">สายพันธุ์</label>
-                <input value={breed} onChange={e => setBreed(e.target.value)} className="input" placeholder="โกลเด้น รีทรีฟเวอร์" />
+                {species === 'อื่นๆ' ? (
+                  <input value={breed} onChange={e => setBreed(e.target.value)} className="input" placeholder="ระบุสายพันธุ์" />
+                ) : (
+                  <SearchableSelect
+                    value={breed}
+                    onChange={setBreed}
+                    options={breeds}
+                    loading={loadingBreeds}
+                    placeholder="ค้นหาสายพันธุ์..."
+                    freeTextPlaceholder="ระบุสายพันธุ์..."
+                    notInListLabel="ไม่มีในรายการ — กรอกเอง"
+                  />
+                )}
               </div>
               <div>
                 <label className="label">เพศ</label>
