@@ -109,7 +109,7 @@ export default function PetDetailPage() {
       supabase.from('pet_medical_records').select('*').eq('pet_id', id).order('record_date', { ascending: false }),
       supabase.from('pet_vaccines').select('*').eq('pet_id', id).order('vaccine_date', { ascending: false }),
       supabase.from('pet_parasite_controls').select('*').eq('pet_id', id).order('control_date', { ascending: false }),
-      supabase.from('profiles').select('id, full_name').eq('role', 'vet').not('full_name', 'is', null).order('full_name'),
+      supabase.from('profiles').select('id, full_name, vet_profiles(title)').eq('role', 'vet').not('full_name', 'is', null).order('full_name'),
       supabase.from('clinics').select('id, name').eq('status', 'approved').order('name'),
     ])
     if (!p) { router.push('/owner/pets'); return }
@@ -117,7 +117,12 @@ export default function PetDetailPage() {
     setMedRecords((m as MedRecord[]) || [])
     setVaccines((v as Vaccine[]) || [])
     setParasites((pa as Parasite[]) || [])
-    setVets((vetData || []).map((u: any) => ({ value: u.id, label: u.full_name })))
+    setVets((vetData || []).map((u: any) => {
+      const titleTh = u.vet_profiles?.[0]?.title || ''
+      const label = titleTh ? `${titleTh} ${u.full_name}` : u.full_name
+      const sublabel = titleTh ? ', DVM' : undefined
+      return { value: u.id, label, sublabel }
+    }))
     setClinics((clinicData || []).map((c: any) => ({ value: c.id, label: c.name })))
     setLoading(false)
   }

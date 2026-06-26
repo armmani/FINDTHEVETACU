@@ -139,7 +139,7 @@ export default function SearchableSelect({
               <button key={opt.value} type="button" onClick={() => select(opt)}
                 className="w-full text-left px-3 py-2.5 hover:bg-primary-50 dark:hover:bg-primary-950 transition-colors text-sm flex items-baseline gap-2">
                 <span>{opt.label}</span>
-                {opt.sublabel && <span className="text-xs text-gray-400">{opt.sublabel}</span>}
+                {opt.sublabel && <span className="text-xs text-gray-400 -ml-1">{opt.sublabel}</span>}
               </button>
             ))
           )}
