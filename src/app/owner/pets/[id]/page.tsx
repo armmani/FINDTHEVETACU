@@ -329,8 +329,7 @@ export default function PetDetailPage() {
     { key: 'parasite', label: 'ป้องกันปรสิต', icon: <Bug className="w-4 h-4" />, count: parasites.length },
   ]
 
-  // reusable med form fields
-  const MedFormFields = () => (
+  const medFormFields = (
     <>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -361,7 +360,7 @@ export default function PetDetailPage() {
     </>
   )
 
-  const VacFormFields = () => (
+  const vacFormFields = (
     <>
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -391,7 +390,7 @@ export default function PetDetailPage() {
     </>
   )
 
-  const ParaFormFields = () => (
+  const paraFormFields = (
     <div className="grid grid-cols-2 gap-3">
       <div>
         <label className="label">วันที่ใช้ยา</label>
@@ -513,7 +512,7 @@ export default function PetDetailPage() {
                 <button type="button" onClick={() => setShowMedForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
               </div>
               <form onSubmit={handleAddMed} className="space-y-3">
-                <MedFormFields />
+                {medFormFields}
                 <button type="submit" className="btn-primary w-full">บันทึก</button>
               </form>
             </div>
@@ -531,7 +530,7 @@ export default function PetDetailPage() {
                         <span className="font-semibold text-sm text-primary-600">แก้ไขประวัติการรักษา</span>
                         <button type="button" onClick={cancelMedEdit} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
                       </div>
-                      <MedFormFields />
+                      {medFormFields}
                       <div className="flex gap-2">
                         <button type="submit" className="btn-primary flex-1">บันทึก</button>
                         <button type="button" onClick={cancelMedEdit} className="btn-secondary flex-1">ยกเลิก</button>
@@ -580,7 +579,7 @@ export default function PetDetailPage() {
                 <button type="button" onClick={() => setShowVacForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
               </div>
               <form onSubmit={handleAddVac} className="space-y-3">
-                <VacFormFields />
+                {vacFormFields}
                 <button type="submit" className="btn-primary w-full">บันทึก</button>
               </form>
             </div>
@@ -598,7 +597,7 @@ export default function PetDetailPage() {
                         <span className="font-semibold text-sm text-primary-600">แก้ไขประวัติวัคซีน</span>
                         <button type="button" onClick={cancelVacEdit} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
                       </div>
-                      <VacFormFields />
+                      {vacFormFields}
                       <div className="flex gap-2">
                         <button type="submit" className="btn-primary flex-1">บันทึก</button>
                         <button type="button" onClick={cancelVacEdit} className="btn-secondary flex-1">ยกเลิก</button>
@@ -647,7 +646,7 @@ export default function PetDetailPage() {
                 <button type="button" onClick={() => setShowParaForm(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
               </div>
               <form onSubmit={handleAddPara} className="space-y-3">
-                <ParaFormFields />
+                {paraFormFields}
                 <button type="submit" className="btn-primary w-full">บันทึก</button>
               </form>
             </div>
@@ -665,7 +664,7 @@ export default function PetDetailPage() {
                         <span className="font-semibold text-sm text-primary-600">แก้ไขประวัติป้องกันปรสิต</span>
                         <button type="button" onClick={cancelParaEdit} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
                       </div>
-                      <ParaFormFields />
+                      {paraFormFields}
                       <div className="flex gap-2">
                         <button type="submit" className="btn-primary flex-1">บันทึก</button>
                         <button type="button" onClick={cancelParaEdit} className="btn-secondary flex-1">ยกเลิก</button>
