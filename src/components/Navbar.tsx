@@ -30,8 +30,10 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
   return (
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href="/home" className="hidden sm:block">
-          <Image src="/FindTheVet.png" alt="FindTheVet" width={160} height={40} className="h-8 w-auto" priority />
+        <Link href="/home">
+          {/* mobile: icon only, desktop: full logo */}
+          <Image src="/FindTheVet.png" alt="FindTheVet" width={160} height={40} className="h-8 w-auto hidden sm:block" priority />
+          <Image src="/logo-icon.png" alt="FindTheVet" width={32} height={32} className="h-8 w-8 block sm:hidden rounded-lg" priority />
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-4">
