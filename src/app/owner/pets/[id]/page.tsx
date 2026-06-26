@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { ArrowLeft, Save, Trash2, Plus, X, Syringe, Bug, Stethoscope, PawPrint } from 'lucide-react'
+import { ArrowLeft, Save, Trash2, Plus, X, Syringe, Bug, Stethoscope, PawPrint, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
 import PhotoUpload from '@/components/PhotoUpload'
@@ -45,7 +45,9 @@ export default function PetDetailPage() {
   const [pet, setPet] = useState<Pet | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const markSaved = () => { setSaved(true); setTimeout(() => setSaved(false), 2000) }
 
   const [medRecords, setMedRecords] = useState<MedRecord[]>([])
   const [vaccines, setVaccines] = useState<Vaccine[]>([])
@@ -101,7 +103,7 @@ export default function PetDetailPage() {
       notes: pet.notes || null, photo_url: pet.photo_url || null,
     }).eq('id', id)
     if (error) toast.error('บันทึกไม่สำเร็จ')
-    else toast.success('บันทึกแล้ว!')
+    else { toast.success('บันทึกแล้ว!'); markSaved() }
     setSaving(false)
   }
 
@@ -259,8 +261,9 @@ export default function PetDetailPage() {
             <textarea value={pet.notes || ''} onChange={e => setPet(p => p ? { ...p, notes: e.target.value } : p)} className="input resize-none" rows={2} placeholder="โรคประจำตัว, อาหารที่แพ้, หมายเหตุอื่นๆ" />
           </div>
           <div className="flex gap-3">
-            <button onClick={handleSavePet} disabled={saving} className="btn-primary flex-1 flex items-center justify-center gap-2">
-              <Save className="w-4 h-4" /> {saving ? 'กำลังบันทึก...' : 'บันทึก'}
+            <button onClick={handleSavePet} disabled={saving || saved} className="btn-primary flex-1 flex items-center justify-center gap-2">
+              {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+              {saved ? 'บันทึกแล้ว' : saving ? 'กำลังบันทึก...' : 'บันทึก'}
             </button>
             <button onClick={handleDeletePet} disabled={deleting} className="px-4 py-2 rounded-xl border border-red-200 text-red-500 hover:bg-red-50 transition-colors">
               <Trash2 className="w-4 h-4" />

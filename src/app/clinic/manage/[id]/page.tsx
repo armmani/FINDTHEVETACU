@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Lock, Clock, CheckCircle, XCircle, AlertCircle, Save, Camera } from 'lucide-react'
+import { ArrowLeft, Lock, Clock, CheckCircle, XCircle, AlertCircle, Save, Camera, Check } from 'lucide-react'
 import { getProvinces, getDistricts, getSubDistricts } from '@/lib/thaiAddress'
 import { notifyAdmin } from '@/lib/telegram'
 import { compressImage } from '@/lib/compressImage'
@@ -36,6 +36,8 @@ export default function EditClinicPage() {
   const [rejectReason, setRejectReason] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const markSaved = () => { setSaved(true); setTimeout(() => setSaved(false), 2000) }
   const [ownerName, setOwnerName] = useState('')
   const [editRequested, setEditRequested] = useState(false)
 
@@ -149,7 +151,7 @@ export default function EditClinicPage() {
       setEditRequested(false)
     }
 
-    toast.success('บันทึกสำเร็จ')
+    toast.success('บันทึกสำเร็จ'); markSaved()
     setSaving(false)
   }
 
@@ -343,10 +345,10 @@ export default function EditClinicPage() {
       </div>
 
       {!isLocked && (
-        <button onClick={handleSave} disabled={saving}
+        <button onClick={handleSave} disabled={saving || saved}
           className="btn-primary w-full flex items-center justify-center gap-2">
-          <Save className="w-4 h-4" />
-          {saving ? 'กำลังบันทึก...' : (status === 'rejected' || editRequested) ? 'บันทึกและส่งตรวจสอบใหม่' : 'บันทึกการแก้ไข'}
+          {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+          {saved ? 'บันทึกแล้ว' : saving ? 'กำลังบันทึก...' : (status === 'rejected' || editRequested) ? 'บันทึกและส่งตรวจสอบใหม่' : 'บันทึกการแก้ไข'}
         </button>
       )}
     </div>

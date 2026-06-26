@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Save, Send, User, Lock } from 'lucide-react'
+import { Save, Send, User, Lock, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import PhotoUpload from '@/components/PhotoUpload'
 import { formatPhone } from '@/lib/formatPhone'
@@ -19,10 +19,15 @@ export default function OwnerSettingsPage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [testing, setTesting] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [changingPassword, setChangingPassword] = useState(false)
+  const [passwordSaved, setPasswordSaved] = useState(false)
+
+  const markSaved = () => { setSaved(true); setTimeout(() => setSaved(false), 2000) }
+  const markPasswordSaved = () => { setPasswordSaved(true); setTimeout(() => setPasswordSaved(false), 2000) }
 
   useEffect(() => {
     const load = async () => {
@@ -59,7 +64,7 @@ export default function OwnerSettingsPage() {
       avatar_url: avatarUrl || null,
     }).eq('id', user.id)
     if (error) toast.error('บันทึกไม่สำเร็จ')
-    else toast.success('บันทึกแล้ว!')
+    else { toast.success('บันทึกแล้ว!'); markSaved() }
     setSaving(false)
   }
 
@@ -83,7 +88,7 @@ export default function OwnerSettingsPage() {
     setChangingPassword(true)
     const { error } = await supabase.auth.updateUser({ password: newPassword })
     if (error) toast.error('เปลี่ยนรหัสผ่านไม่สำเร็จ')
-    else { toast.success('เปลี่ยนรหัสผ่านแล้ว!'); setNewPassword(''); setConfirmPassword('') }
+    else { toast.success('เปลี่ยนรหัสผ่านแล้ว!'); setNewPassword(''); setConfirmPassword(''); markPasswordSaved() }
     setChangingPassword(false)
   }
 
@@ -139,9 +144,9 @@ export default function OwnerSettingsPage() {
           <textarea value={address} onChange={e => setAddress(e.target.value)}
             className="input resize-none" rows={2} placeholder="บ้านเลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด" />
         </div>
-        <button onClick={handleSave} disabled={saving} className="btn-primary w-full flex items-center justify-center gap-2">
-          <Save className="w-4 h-4" />
-          {saving ? 'กำลังบันทึก...' : 'บันทึก'}
+        <button onClick={handleSave} disabled={saving || saved} className="btn-primary w-full flex items-center justify-center gap-2">
+          {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+          {saved ? 'บันทึกแล้ว' : saving ? 'กำลังบันทึก...' : 'บันทึก'}
         </button>
       </div>
 
@@ -160,10 +165,10 @@ export default function OwnerSettingsPage() {
           <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
             className="input" placeholder="พิมพ์รหัสผ่านอีกครั้ง" />
         </div>
-        <button onClick={handleChangePassword} disabled={changingPassword || !newPassword}
+        <button onClick={handleChangePassword} disabled={changingPassword || passwordSaved || !newPassword}
           className="btn-primary w-full flex items-center justify-center gap-2">
-          <Lock className="w-4 h-4" />
-          {changingPassword ? 'กำลังเปลี่ยน...' : 'เปลี่ยนรหัสผ่าน'}
+          {passwordSaved ? <Check className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+          {passwordSaved ? 'เปลี่ยนแล้ว' : changingPassword ? 'กำลังเปลี่ยน...' : 'เปลี่ยนรหัสผ่าน'}
         </button>
       </div>
 
@@ -195,9 +200,9 @@ export default function OwnerSettingsPage() {
             <Send className="w-4 h-4" />
             {testing ? 'กำลังส่ง...' : 'ทดสอบส่งข้อความ'}
           </button>
-          <button onClick={handleSave} disabled={saving} className="btn-primary flex items-center gap-2 flex-1">
-            <Save className="w-4 h-4" />
-            {saving ? 'กำลังบันทึก...' : 'บันทึก'}
+          <button onClick={handleSave} disabled={saving || saved} className="btn-primary flex items-center gap-2 flex-1">
+            {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+            {saved ? 'บันทึกแล้ว' : saving ? 'กำลังบันทึก...' : 'บันทึก'}
           </button>
         </div>
       </div>

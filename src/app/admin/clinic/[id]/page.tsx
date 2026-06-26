@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { ArrowLeft, CheckCircle, XCircle, ExternalLink, MapPin, Phone, Clock, Building2, Globe, Save, PlayCircle } from 'lucide-react'
+import { ArrowLeft, CheckCircle, XCircle, ExternalLink, MapPin, Phone, Clock, Building2, Globe, Save, PlayCircle, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { notifyAdmin } from '@/lib/telegram'
 import { AdminDetailSkeleton } from '@/components/AdminSkeleton'
@@ -42,6 +42,8 @@ export default function AdminClinicDetailPage() {
   const [clinic, setClinic] = useState<ClinicDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const markSaved = () => { setSaved(true); setTimeout(() => setSaved(false), 2000) }
   const [approving, setApproving] = useState(false)
   const [reviewing, setReviewing] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
@@ -116,7 +118,7 @@ export default function AdminClinicDetailPage() {
       }),
     })
     if (!res.ok) toast.error('บันทึกไม่สำเร็จ')
-    else toast.success('บันทึกแล้ว')
+    else { toast.success('บันทึกแล้ว'); markSaved() }
     setSaving(false)
   }
 
@@ -298,9 +300,10 @@ export default function AdminClinicDetailPage() {
           </div>
         </div>
 
-        <button onClick={handleSave} disabled={saving}
+        <button onClick={handleSave} disabled={saving || saved}
           className="btn-primary flex items-center gap-2 w-full justify-center">
-          <Save className="w-4 h-4" /> {saving ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
+          {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+          {saved ? 'บันทึกแล้ว' : saving ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข'}
         </button>
       </div>
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { geocodeAddress, PLATFORM_ACUPUNCTURE_FEE, PLATFORM_RATE_LABEL } from '@/lib/distance'
 import toast from 'react-hot-toast'
-import { MapPin, Save, Info, Search, Send, ShieldCheck, ShieldX, Lock, Calendar, ExternalLink, X } from 'lucide-react'
+import { MapPin, Save, Info, Search, Send, ShieldCheck, ShieldX, Lock, Calendar, ExternalLink, X, Check } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import PhotoUpload from '@/components/PhotoUpload'
 
@@ -74,7 +74,9 @@ export default function VetProfilePage() {
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [geocoding, setGeocoding] = useState(false)
+  const markSaved = () => { setSaved(true); setTimeout(() => setSaved(false), 2000) }
   const [userId, setUserId] = useState<string>('')
 
   const [title, setTitle] = useState('')
@@ -285,7 +287,7 @@ export default function VetProfilePage() {
       setRejectReason(null)
     }
 
-    toast.success('บันทึกโปรไฟล์สำเร็จ!')
+    toast.success('บันทึกโปรไฟล์สำเร็จ!'); markSaved()
     router.push('/home')
     setSaving(false)
   }
@@ -569,10 +571,10 @@ export default function VetProfilePage() {
           {licenseFile && <p className="text-xs text-green-600">✓ {licenseFile.name}</p>}
         </div>
 
-        <button type="submit" disabled={saving || vetStatus === 'reviewing'}
+        <button type="submit" disabled={saving || saved || vetStatus === 'reviewing'}
           className="btn-primary w-full py-3 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-          <Save className="w-4 h-4" />
-          {saving ? 'กำลังบันทึก...' : vetStatus === 'reviewing' ? 'กำลังตรวจสอบ — ไม่สามารถแก้ไขได้' : vetStatus === 'rejected' ? 'บันทึกและส่งใหม่' : 'บันทึกโปรไฟล์'}
+          {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+          {saved ? 'บันทึกแล้ว' : saving ? 'กำลังบันทึก...' : vetStatus === 'reviewing' ? 'กำลังตรวจสอบ — ไม่สามารถแก้ไขได้' : vetStatus === 'rejected' ? 'บันทึกและส่งใหม่' : 'บันทึกโปรไฟล์'}
         </button>
       </form>
 
