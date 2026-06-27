@@ -142,9 +142,9 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
               ) : (
                 <>
                   <NavLink href="/vets" icon={<Stethoscope className="w-5 h-5" />} label={t.nav.findVet} />
-                  <NavLink href="/vet/opd" icon={<ClipboardList className="w-5 h-5" />} label="OPD" />
                   <NavLink href="/clinics" icon={<Hospital className="w-5 h-5" />} label={t.nav.clinics} />
                   <NavLink href="/clinic/manage" icon={<Building2 className="w-5 h-5" />} label={t.nav.myClinics} />
+                  <NavLink href="/vet/opd" icon={<ClipboardList className="w-5 h-5" />} label="OPD" />
                   <NavLink href="/vet/profile" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
                 </>
               )}
