@@ -45,7 +45,7 @@ interface OPDRecord {
   cc: string | null; hx: string | null; pe: string | null
   diff_dx: string | null; dx: string | null
   tx: string | null; rx: string | null; ce: string | null
-  pets: { name: string; species: string; breed: string | null; medical_tags: string[]; profiles: { full_name: string } | null } | null
+  pets: { name: string; species: string; breed: string | null; photo_url: string | null; medical_tags: string[]; profiles: { full_name: string } | null } | null
   clinics: { name: string } | null
 }
 
@@ -58,7 +58,7 @@ export default function OPDDetailPage() {
   useEffect(() => {
     supabase
       .from('opd_records')
-      .select('*, pets(name, species, breed, medical_tags, profiles!owner_id(full_name)), clinics(name)')
+      .select('*, pets(name, species, breed, photo_url, medical_tags, profiles!owner_id(full_name)), clinics(name)')
       .eq('id', id)
       .single()
       .then(({ data }) => { setRecord(data as any); setLoading(false) })
@@ -93,7 +93,12 @@ export default function OPDDetailPage() {
       {/* Pet + clinic summary */}
       <div className="card space-y-3">
         <div className="flex items-center gap-3">
-          <span className="text-3xl">{EMOJI[pet?.species || ''] || '🐾'}</span>
+          <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
+            {pet?.photo_url
+              ? <Image src={pet.photo_url} alt={pet.name} width={56} height={56} className="w-full h-full object-cover" />
+              : <span className="text-2xl">{EMOJI[pet?.species || ''] || '🐾'}</span>
+            }
+          </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-lg">{pet?.name}</p>
             <p className="text-sm text-gray-500">
