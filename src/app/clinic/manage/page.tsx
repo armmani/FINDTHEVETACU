@@ -44,7 +44,34 @@ export default function ManageClinicsPage() {
     load()
   }, [])
 
-  if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
+  if (loading) return (
+    <div className="max-w-2xl mx-auto animate-pulse">
+      <div className="flex items-center justify-between mb-6">
+        <div className="space-y-2">
+          <div className="h-7 bg-gray-200 dark:bg-gray-700 rounded w-40" />
+          <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-56" />
+        </div>
+        <div className="h-9 bg-gray-200 dark:bg-gray-700 rounded-lg w-28" />
+      </div>
+      <div className="space-y-3">
+        {[...Array(2)].map((_, i) => (
+          <div key={i} className="card">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-40" />
+                  <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-16 rounded-full" />
+                </div>
+                <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-24" />
+                <div className="h-5 bg-gray-100 dark:bg-gray-800 rounded w-20 rounded-full" />
+              </div>
+              <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-10" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 
   return (
     <div className="max-w-2xl mx-auto">
