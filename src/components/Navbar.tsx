@@ -12,10 +12,10 @@ import type { Profile } from '@/lib/types'
 
 function NavLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   return (
-    <div className="relative flex justify-center" style={{ width: '2.25rem' }}>
+    <div className="relative h-9 flex items-center" style={{ width: '2.25rem' }}>
       <Link
         href={href}
-        className="group nav-icon absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors z-10"
+        className="group nav-icon absolute inset-y-0 left-1/2 -translate-x-1/2 flex items-center gap-1.5 rounded-lg px-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors z-10"
       >
         <span className="shrink-0">{icon}</span>
         <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-[6rem] transition-all duration-500 ease-out text-sm font-medium">
