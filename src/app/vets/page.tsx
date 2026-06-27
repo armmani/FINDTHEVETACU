@@ -1,5 +1,8 @@
 'use client'
 
+import LoadingScreen from '@/components/LoadingScreen'
+'use client'
+
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Stethoscope, MapPin, ExternalLink, ShieldCheck, Search, ChevronRight } from 'lucide-react'
@@ -104,7 +107,7 @@ export default function VetsPage() {
     return matchSearch && matchProvince
   })
 
-  if (loading) return <div className="text-center py-20 text-gray-400">{t.common.loading}</div>
+  if (loading) return <LoadingScreen />
 
   return (
     <div className="max-w-2xl mx-auto">

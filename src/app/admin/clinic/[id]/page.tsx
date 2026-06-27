@@ -1,5 +1,8 @@
 'use client'
 
+import LoadingScreen from '@/components/LoadingScreen'
+'use client'
+
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
@@ -180,7 +183,7 @@ export default function AdminClinicDetailPage() {
     router.push('/admin/dashboard')
   }
 
-  if (loading) return <AdminDetailSkeleton />
+  if (loading) return <LoadingScreen />
   if (!clinic) return <div className="text-center py-20 text-gray-400">ไม่พบข้อมูลคลินิก</div>
 
   const statusColor = clinic.status === 'approved' ? 'bg-green-100 text-green-700'

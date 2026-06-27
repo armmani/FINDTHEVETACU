@@ -1,5 +1,8 @@
 'use client'
 
+import LoadingScreen from '@/components/LoadingScreen'
+'use client'
+
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Save, Send, User, Lock, Check } from 'lucide-react'
@@ -92,7 +95,7 @@ export default function OwnerSettingsPage() {
     setChangingPassword(false)
   }
 
-  if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
+  if (loading) return <LoadingScreen />
 
   return (
     <div className="max-w-lg mx-auto space-y-6">

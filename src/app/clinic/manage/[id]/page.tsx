@@ -1,5 +1,8 @@
 'use client'
 
+import LoadingScreen from '@/components/LoadingScreen'
+'use client'
+
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
@@ -155,7 +158,7 @@ export default function EditClinicPage() {
     setSaving(false)
   }
 
-  if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
+  if (loading) return <LoadingScreen />
 
   const isLocked = status === 'reviewing' || (status === 'approved' && !editRequested)
   const cfg = STATUS_CONFIG[status as keyof typeof STATUS_CONFIG]

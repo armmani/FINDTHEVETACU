@@ -1,5 +1,8 @@
 'use client'
 
+import LoadingScreen from '@/components/LoadingScreen'
+'use client'
+
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Building2, MapPin, Phone, Search, ChevronRight, Clock } from 'lucide-react'
@@ -69,7 +72,7 @@ export default function ClinicsPage() {
     return hours[day] || null
   }
 
-  if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
+  if (loading) return <LoadingScreen />
 
   return (
     <div className="max-w-2xl mx-auto">

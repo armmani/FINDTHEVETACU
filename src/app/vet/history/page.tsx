@@ -1,5 +1,8 @@
 'use client'
 
+import LoadingScreen from '@/components/LoadingScreen'
+'use client'
+
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Calendar, MapPin, TrendingUp, Wallet, PawPrint } from 'lucide-react'
@@ -55,7 +58,7 @@ export default function VetHistoryPage() {
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })
 
-  if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
+  if (loading) return <LoadingScreen />
 
   return (
     <div className="space-y-6">

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import LoadingScreen from '@/components/LoadingScreen'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { ArrowLeft, Save, Trash2, Plus, X, Syringe, Bug, Stethoscope, PawPrint, Check, Pencil } from 'lucide-react'
@@ -323,36 +324,7 @@ export default function PetDetailPage() {
     setParasites(prev => prev.filter(p => p.id !== pid))
   }
 
-  if (loading) return (
-    <div className="max-w-2xl mx-auto space-y-5 animate-pulse">
-      <div className="flex items-center gap-3">
-        <div className="w-5 h-5 bg-gray-200 dark:bg-gray-700 rounded" />
-        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32" />
-        <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-20" />
-      </div>
-      <div className="flex gap-1 border-b border-gray-200 dark:border-gray-800 pb-0">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-10 bg-gray-100 dark:bg-gray-800 rounded-t w-24 mx-0.5" />
-        ))}
-      </div>
-      <div className="card space-y-4">
-        <div className="flex justify-center">
-          <div className="w-32 h-32 rounded-xl bg-gray-200 dark:bg-gray-700" />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-xl" />
-          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-xl" />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-xl" />
-          <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-xl" />
-        </div>
-        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-xl" />
-        <div className="h-16 bg-gray-100 dark:bg-gray-800 rounded-xl" />
-        <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-xl" />
-      </div>
-    </div>
-  )
+  if (loading) return <LoadingScreen />
   if (!pet) return null
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode; count?: number }[] = [

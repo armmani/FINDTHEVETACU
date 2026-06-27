@@ -7,6 +7,7 @@ import { Plus, PawPrint, ChevronRight, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
 import SearchableSelect, { SelectOption } from '@/components/SearchableSelect'
+import LoadingScreen from '@/components/LoadingScreen'
 
 interface Pet {
   id: string
@@ -97,6 +98,8 @@ export default function PetsPage() {
     router.push(`/owner/pets/${(data as any).id}`)
   }
 
+  if (loading) return <LoadingScreen />
+
   const speciesEmoji: Record<string, string> = {
     สุนัข: '🐕', แมว: '🐈', กระต่าย: '🐇', นก: '🐦', ปลา: '🐟', อื่นๆ: '🐾'
   }
@@ -162,20 +165,7 @@ export default function PetsPage() {
         </div>
       )}
 
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="card flex items-center gap-4 animate-pulse">
-              <div className="w-14 h-14 rounded-xl bg-gray-200 dark:bg-gray-700 shrink-0" />
-              <div className="flex-1 space-y-2">
-                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
-                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/2" />
-                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/3" />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : pets.length === 0 ? (
+      {pets.length === 0 ? (
         <div className="card text-center py-14">
           <PawPrint className="w-12 h-12 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-400">ยังไม่มีสัตว์เลี้ยง</p>

@@ -1,5 +1,8 @@
 'use client'
 
+import LoadingScreen from '@/components/LoadingScreen'
+'use client'
+
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Users, Stethoscope, CalendarCheck, XCircle, CheckCircle, ShieldCheck, ShieldX, Building2, Plus, Trash2, Eye, FileText, ChevronDown, ChevronUp, UserCog } from 'lucide-react'
@@ -281,7 +284,7 @@ export default function AdminDashboard() {
 
   const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter)
 
-  if (loading) return <AdminDashboardSkeleton />
+  if (loading) return <LoadingScreen />
 
   return (
     <div className="space-y-8">

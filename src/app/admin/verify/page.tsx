@@ -1,5 +1,8 @@
 'use client'
 
+import LoadingScreen from '@/components/LoadingScreen'
+'use client'
+
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { CheckCircle, XCircle, FileText, ChevronDown, ChevronUp, Eye, ShieldX } from 'lucide-react'
@@ -110,7 +113,7 @@ export default function AdminVerifyPage() {
     setBusy(null)
   }
 
-  if (loading) return <AdminDashboardSkeleton />
+  if (loading) return <LoadingScreen />
 
   const totalPending = clinics.length + vets.length
 

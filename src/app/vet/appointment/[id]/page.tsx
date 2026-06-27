@@ -1,5 +1,8 @@
 'use client'
 
+import LoadingScreen from '@/components/LoadingScreen'
+'use client'
+
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
@@ -36,7 +39,7 @@ export default function VetAppointmentPage() {
   const formatDT = (iso: string) =>
     new Date(iso).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })
 
-  if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
+  if (loading) return <LoadingScreen />
   if (!apt) return <div className="text-center py-20 text-gray-400">ไม่พบข้อมูล</div>
 
   return (

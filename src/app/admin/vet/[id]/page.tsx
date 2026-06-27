@@ -1,5 +1,8 @@
 'use client'
 
+import LoadingScreen from '@/components/LoadingScreen'
+'use client'
+
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
@@ -110,7 +113,7 @@ export default function AdminVetDetailPage() {
     router.push('/admin/dashboard')
   }
 
-  if (loading) return <AdminDetailSkeleton />
+  if (loading) return <LoadingScreen />
   if (!vet) return <div className="text-center py-20 text-gray-400">ไม่พบข้อมูล</div>
 
   const cfg = STATUS_CONFIG[vet.status as keyof typeof STATUS_CONFIG]

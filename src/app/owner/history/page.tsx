@@ -1,5 +1,8 @@
 'use client'
 
+import LoadingScreen from '@/components/LoadingScreen'
+'use client'
+
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Calendar, MapPin, PawPrint, User } from 'lucide-react'
@@ -97,7 +100,7 @@ export default function OwnerHistoryPage() {
     return acc
   }, {})
 
-  if (loading) return <div className="text-center py-20 text-gray-400">กำลังโหลด...</div>
+  if (loading) return <LoadingScreen />
 
   return (
     <div className="space-y-6">
