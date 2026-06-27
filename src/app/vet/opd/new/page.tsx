@@ -14,7 +14,18 @@ const GENDERS = ['เพศผู้', 'เพศเมีย', 'ไม่ระ
 const EMOJI: Record<string, string> = { สุนัข: '🐕', แมว: '🐈', กระต่าย: '🐇', นก: '🐦', ปลา: '🐟', อื่นๆ: '🐾' }
 
 interface Clinic { id: string; name: string; type: string }
-interface PetResult { id: string; name: string; species: string; breed: string | null; owner_name: string | null }
+interface PetResult { id: string; name: string; species: string; breed: string | null; owner_name: string | null; tags: string[] }
+
+function MedicalTags({ tags }: { tags: string[] }) {
+  if (!tags?.length) return null
+  return (
+    <div className="flex flex-wrap gap-1 mt-1">
+      {tags.map(t => (
+        <span key={t} className="text-xs bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-300 px-2 py-0.5 rounded-full font-medium">⚠️ {t}</span>
+      ))}
+    </div>
+  )
+}
 
 const OPD_FIELDS = [
   { key: 'cc',      label: 'CC',      title: 'Chief Complaint',        hint: 'อาการหลักที่นำมาพบ' },
@@ -93,12 +104,13 @@ export default function NewOPDPage() {
     searchTimer.current = setTimeout(async () => {
       const { data } = await supabase
         .from('pets')
-        .select('id, name, species, breed, owner_id, profiles!owner_id(full_name)')
+        .select('id, name, species, breed, owner_id, medical_tags, profiles!owner_id(full_name)')
         .ilike('name', `%${petQuery.trim()}%`)
         .limit(10)
       setPetResults((data || []).map((p: any) => ({
         id: p.id, name: p.name, species: p.species, breed: p.breed,
         owner_name: p.profiles?.full_name ?? null,
+        tags: p.medical_tags || [],
       })))
       setPetSearching(false)
     }, 350)
@@ -143,7 +155,7 @@ export default function NewOPDPage() {
       .single()
     setCreatingPet(false)
     if (error) { toast.error('สร้างไม่สำเร็จ: ' + error.message); return }
-    setSelectedPet({ id: data.id, name: data.name, species: data.species, breed: data.breed, owner_name: null })
+    setSelectedPet({ id: data.id, name: data.name, species: data.species, breed: data.breed, owner_name: null, tags: [] })
     setShowCreatePet(false)
     setStep('form')
     toast.success('สร้างสัตว์เลี้ยงแล้ว')
@@ -255,6 +267,7 @@ export default function NewOPDPage() {
                         {p.owner_name
                           ? <p className="text-xs text-gray-400">เจ้าของ: {p.owner_name}</p>
                           : <p className="text-xs text-amber-500">ยังไม่มีเจ้าของในระบบ</p>}
+                        <MedicalTags tags={p.tags} />
                       </div>
                     </button>
                   ))}
@@ -322,6 +335,7 @@ export default function NewOPDPage() {
                   {selectedPet.species}{selectedPet.breed ? ` · ${selectedPet.breed}` : ''}
                   {selectedPet.owner_name ? ` · เจ้าของ: ${selectedPet.owner_name}` : ' · ยังไม่มีเจ้าของ'}
                 </p>
+                <MedicalTags tags={selectedPet.tags || []} />
               </div>
               <div className="text-right text-xs text-primary-600 dark:text-primary-400">
                 <p>{selectedClinic.name}</p>

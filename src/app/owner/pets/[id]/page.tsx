@@ -19,6 +19,7 @@ type Tab = 'info' | 'medical' | 'vaccine' | 'parasite'
 interface Pet {
   id: string; name: string; species: string; breed: string | null
   gender: string; birthdate: string | null; photo_url: string | null; notes: string | null
+  medical_tags: string[]
 }
 interface MedRecord { id: string; pet_id: string; record_date: string; title: string; description: string | null; vet_name: string | null; clinic_name: string | null; next_appointment: string | null }
 interface Vaccine { id: string; vaccine_date: string; vaccine_name: string; next_due_date: string | null; clinic_name: string | null; notes: string | null }
@@ -52,6 +53,7 @@ export default function PetDetailPage() {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [tagInput, setTagInput] = useState('')
   const markSaved = () => { setSaved(true); setTimeout(() => setSaved(false), 2000) }
 
   const [medRecords, setMedRecords] = useState<MedRecord[]>([])
@@ -153,6 +155,23 @@ export default function PetDetailPage() {
     if (error) toast.error('บันทึกไม่สำเร็จ')
     else { toast.success('บันทึกแล้ว!'); markSaved() }
     setSaving(false)
+  }
+
+  const addTag = async (raw: string) => {
+    const tag = raw.trim()
+    if (!tag || !pet) return
+    if ((pet.medical_tags || []).includes(tag)) { setTagInput(''); return }
+    const newTags = [...(pet.medical_tags || []), tag]
+    await supabase.from('pets').update({ medical_tags: newTags }).eq('id', id)
+    setPet(p => p ? { ...p, medical_tags: newTags } : p)
+    setTagInput('')
+  }
+
+  const removeTag = async (tag: string) => {
+    if (!pet) return
+    const newTags = (pet.medical_tags || []).filter(t => t !== tag)
+    await supabase.from('pets').update({ medical_tags: newTags }).eq('id', id)
+    setPet(p => p ? { ...p, medical_tags: newTags } : p)
   }
 
   const handleDeletePet = async () => {
@@ -492,8 +511,39 @@ export default function PetDetailPage() {
           </div>
           <div>
             <label className="label">หมายเหตุ</label>
-            <textarea value={pet.notes || ''} onChange={e => setPet(p => p ? { ...p, notes: e.target.value } : p)} className="input resize-none" rows={2} placeholder="โรคประจำตัว, อาหารที่แพ้, หมายเหตุอื่นๆ" />
+            <textarea value={pet.notes || ''} onChange={e => setPet(p => p ? { ...p, notes: e.target.value } : p)} className="input resize-none" rows={2} placeholder="หมายเหตุทั่วไป..." />
           </div>
+
+          {/* Medical tags */}
+          <div>
+            <label className="label flex items-center gap-1.5">
+              <span className="text-red-500">⚠️</span> ข้อควรระวัง / สิ่งที่แพ้ / โรคประจำตัว
+            </label>
+            {(pet.medical_tags || []).length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {(pet.medical_tags || []).map(tag => (
+                  <span key={tag} className="flex items-center gap-1 bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 text-xs px-2.5 py-1 rounded-full font-medium">
+                    {tag}
+                    <button type="button" onClick={() => removeTag(tag)} className="text-red-400 hover:text-red-600 ml-0.5">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                value={tagInput}
+                onChange={e => setTagInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag(tagInput) } }}
+                className="input flex-1 text-sm"
+                placeholder="เช่น แพ้ penicillin, เบาหวาน, โรคหัวใจ..."
+              />
+              <button type="button" onClick={() => addTag(tagInput)}
+                className="btn-secondary px-4 text-sm shrink-0">เพิ่ม</button>
+            </div>
+          </div>
+
           <div className="flex gap-3">
             <button onClick={handleSavePet} disabled={saving || saved} className="btn-primary flex-1 flex items-center justify-center gap-2">
               {saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}

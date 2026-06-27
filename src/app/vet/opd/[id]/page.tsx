@@ -22,6 +22,17 @@ const OPD_FIELDS = [
   { key: 'ce',      label: 'CE',      title: 'Client Education' },
 ] as const
 
+function MedicalTags({ tags }: { tags: string[] }) {
+  if (!tags?.length) return null
+  return (
+    <div className="flex flex-wrap gap-1 mt-1.5">
+      {tags.map(t => (
+        <span key={t} className="text-xs bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-300 px-2 py-0.5 rounded-full font-medium">⚠️ {t}</span>
+      ))}
+    </div>
+  )
+}
+
 interface OPDRecord {
   id: string
   record_date: string
@@ -34,7 +45,7 @@ interface OPDRecord {
   cc: string | null; hx: string | null; pe: string | null
   diff_dx: string | null; dx: string | null
   tx: string | null; rx: string | null; ce: string | null
-  pets: { name: string; species: string; breed: string | null; profiles: { full_name: string } | null } | null
+  pets: { name: string; species: string; breed: string | null; medical_tags: string[]; profiles: { full_name: string } | null } | null
   clinics: { name: string } | null
 }
 
@@ -47,7 +58,7 @@ export default function OPDDetailPage() {
   useEffect(() => {
     supabase
       .from('opd_records')
-      .select('*, pets(name, species, breed, profiles!owner_id(full_name)), clinics(name)')
+      .select('*, pets(name, species, breed, medical_tags, profiles!owner_id(full_name)), clinics(name)')
       .eq('id', id)
       .single()
       .then(({ data }) => { setRecord(data as any); setLoading(false) })
@@ -92,6 +103,7 @@ export default function OPDDetailPage() {
               ? <p className="text-xs text-gray-400 mt-0.5">เจ้าของ: {ownerName}</p>
               : <p className="text-xs text-amber-500 mt-0.5">ยังไม่มีเจ้าของในระบบ</p>
             }
+            <MedicalTags tags={pet?.medical_tags || []} />
           </div>
           {record.clinics && (
             <p className="text-sm text-gray-500 text-right shrink-0">{record.clinics.name}</p>
