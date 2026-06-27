@@ -10,6 +10,15 @@ import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import type { Profile } from '@/lib/types'
 
+function MobileTab({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+  return (
+    <Link href={href} className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 text-[10px] font-medium transition-colors">
+      {icon}
+      <span>{label}</span>
+    </Link>
+  )
+}
+
 function NavLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   return (
     <div className="relative h-9 flex items-center" style={{ width: '2.25rem' }}>
@@ -119,8 +128,8 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
           )}
         </div>
 
-        {/* Center: Nav links — spread evenly */}
-        <div className="flex-1 flex items-center justify-evenly">
+        {/* Center: Nav links — desktop only */}
+        <div className="flex-1 hidden sm:flex items-center justify-evenly">
           {(profile.role === 'vet' || profile.role === 'admin') && (
             <>
               {ownerMode ? (
@@ -242,7 +251,38 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
             <LogOut className="w-5 h-5" />
           </button>
         </div>
-        {/* end utility buttons */}
+      </div>
+
+      {/* Mobile bottom tab bar */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 z-40 flex safe-area-inset-bottom">
+        {(profile.role === 'vet' || profile.role === 'admin') && (ownerMode ? (
+          <>
+            <MobileTab href="/vets" icon={<Stethoscope className="w-5 h-5" />} label={t.nav.findVet} />
+            <MobileTab href="/clinics" icon={<Hospital className="w-5 h-5" />} label={t.nav.clinics} />
+            <MobileTab href="/owner/pets" icon={<PawPrint className="w-5 h-5" />} label={t.nav.myPets} />
+            <MobileTab href="/owner/settings" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
+            <button onClick={toggleOwnerMode} className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-primary-600 dark:text-primary-400 text-[10px] font-medium">
+              <Stethoscope className="w-5 h-5" />
+              <span>โหมดหมอ</span>
+            </button>
+          </>
+        ) : (
+          <>
+            <MobileTab href="/vets" icon={<Stethoscope className="w-5 h-5" />} label={t.nav.findVet} />
+            <MobileTab href="/clinics" icon={<Hospital className="w-5 h-5" />} label={t.nav.clinics} />
+            <MobileTab href="/clinic/manage" icon={<Building2 className="w-5 h-5" />} label={t.nav.myClinics} />
+            <MobileTab href="/vet/dashboard" icon={<Home className="w-5 h-5" />} label={t.nav.dashboard} />
+            <MobileTab href="/vet/profile" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
+          </>
+        ))}
+        {profile.role === 'owner' && (
+          <>
+            <MobileTab href="/vets" icon={<Stethoscope className="w-5 h-5" />} label={t.nav.findVet} />
+            <MobileTab href="/clinics" icon={<Hospital className="w-5 h-5" />} label={t.nav.clinics} />
+            <MobileTab href="/owner/pets" icon={<PawPrint className="w-5 h-5" />} label={t.nav.myPets} />
+            <MobileTab href="/owner/settings" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
+          </>
+        )}
       </div>
     </nav>
   )
