@@ -14,7 +14,7 @@ function NavLink({ href, icon, label }: { href: string; icon: React.ReactNode; l
   return (
     <Link href={href} className="group nav-icon flex items-center gap-1.5 rounded-lg px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
       <span className="shrink-0">{icon}</span>
-      <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-[7rem] transition-all duration-200 ease-out text-sm font-medium">
+      <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-[7rem] transition-all duration-500 ease-out text-sm font-medium">
         {label}
       </span>
     </Link>
@@ -93,10 +93,10 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
 
   return (
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
-      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-4">
+        {/* Left: Logo */}
+        <div className="flex items-center gap-3 shrink-0">
           <Link href="/home">
-            {/* mobile: icon only, desktop: full logo */}
             <Image src="/FindTheVet.png" alt="FindTheVet" width={160} height={40} className="h-8 w-auto hidden sm:block" priority />
             <Image src="/logo-icon.png" alt="FindTheVet" width={32} height={32} className="h-8 w-8 block sm:hidden rounded-lg" priority />
           </Link>
@@ -114,7 +114,8 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
           )}
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4">
+        {/* Center: Nav links — spread evenly */}
+        <div className="flex-1 flex items-center justify-evenly">
           {(profile.role === 'vet' || profile.role === 'admin') && (
             <>
               {ownerMode ? (
@@ -155,6 +156,10 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
               <NavLink href="/owner/settings" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
             </>
           )}
+        </div>
+
+        {/* Right: Utility buttons */}
+        <div className="flex items-center gap-2 shrink-0">
 
           {/* Notification bell */}
           <div className="relative" ref={notifRef}>
@@ -232,6 +237,7 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
             <LogOut className="w-5 h-5" />
           </button>
         </div>
+        {/* end utility buttons */}
       </div>
     </nav>
   )
