@@ -106,51 +106,21 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
           {(profile.role === 'vet' || profile.role === 'admin') && (
             <>
               {ownerMode ? (
-                /* vet ในโหมดเจ้าของ */
                 <>
-                  <Link href="/vets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                    <Stethoscope className="w-4 h-4" />
-                    <span className="hidden sm:block">{t.nav.findVet}</span>
-                  </Link>
-                  <Link href="/clinics" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                    <Building2 className="w-4 h-4" />
-                    <span className="hidden sm:block">{t.nav.clinics}</span>
-                  </Link>
-                  <Link href="/owner/pets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                    <PawPrint className="w-4 h-4" />
-                    <span className="hidden sm:block">{t.nav.myPets}</span>
-                  </Link>
-                  <Link href="/owner/settings" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                    <User className="w-4 h-4" />
-                    <span className="hidden sm:block">{t.nav.profile}</span>
-                  </Link>
+                  <Link href="/vets" title={t.nav.findVet} className="nav-icon"><Stethoscope className="w-5 h-5" /></Link>
+                  <Link href="/clinics" title={t.nav.clinics} className="nav-icon"><Building2 className="w-5 h-5" /></Link>
+                  <Link href="/owner/pets" title={t.nav.myPets} className="nav-icon"><PawPrint className="w-5 h-5" /></Link>
+                  <Link href="/owner/settings" title={t.nav.profile} className="nav-icon"><User className="w-5 h-5" /></Link>
                 </>
               ) : (
-                /* vet โหมดปกติ */
                 <>
-                  <Link href="/vets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                    <Stethoscope className="w-4 h-4" />
-                    <span className="hidden sm:block">{t.nav.findVet}</span>
-                  </Link>
-                  <Link href="/clinics" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                    <Building2 className="w-4 h-4" />
-                    <span className="hidden sm:block">{t.nav.clinics}</span>
-                  </Link>
-                  <Link href="/vet/dashboard" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                    <Home className="w-4 h-4" />
-                    <span className="hidden sm:block">{t.nav.dashboard}</span>
-                  </Link>
-                  <Link href="/clinic/manage" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                    <Building2 className="w-4 h-4" />
-                    <span className="hidden sm:block">{t.nav.myClinics}</span>
-                  </Link>
-                  <Link href="/vet/profile" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                    <User className="w-4 h-4" />
-                    <span className="hidden sm:block">{t.nav.profile}</span>
-                  </Link>
+                  <Link href="/vets" title={t.nav.findVet} className="nav-icon"><Stethoscope className="w-5 h-5" /></Link>
+                  <Link href="/clinics" title={t.nav.clinics} className="nav-icon"><Building2 className="w-5 h-5" /></Link>
+                  <Link href="/vet/dashboard" title={t.nav.dashboard} className="nav-icon"><Home className="w-5 h-5" /></Link>
+                  <Link href="/clinic/manage" title={t.nav.myClinics} className="nav-icon"><Building2 className="w-5 h-5" /></Link>
+                  <Link href="/vet/profile" title={t.nav.profile} className="nav-icon"><User className="w-5 h-5" /></Link>
                 </>
               )}
-              {/* ปุ่มสลับโหมด */}
               <button
                 onClick={toggleOwnerMode}
                 title={ownerMode ? 'สลับเป็นโหมดหมอ' : 'สลับเป็นโหมดเจ้าของสัตว์'}
@@ -161,37 +131,18 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
                   }`}
               >
                 {ownerMode ? <Stethoscope className="w-3.5 h-3.5" /> : <PawPrint className="w-3.5 h-3.5" />}
-                <span className="hidden sm:block">{ownerMode ? 'โหมดหมอ' : 'โหมดเจ้าของ'}</span>
+                <span className="text-xs">{ownerMode ? 'หมอ' : 'เจ้าของ'}</span>
               </button>
             </>
           )}
           {profile.role === 'owner' && (
             <>
-              <Link href="/vets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                <Stethoscope className="w-4 h-4" />
-                <span className="hidden sm:block">{t.nav.findVet}</span>
-              </Link>
-              <Link href="/clinics" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                <Building2 className="w-4 h-4" />
-                <span className="hidden sm:block">{t.nav.clinics}</span>
-              </Link>
-              <Link href="/owner/pets" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                <PawPrint className="w-4 h-4" />
-                <span className="hidden sm:block">{t.nav.myPets}</span>
-              </Link>
-              <Link href="/owner/settings" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
-                <User className="w-4 h-4" />
-                <span className="hidden sm:block">{t.nav.profile}</span>
-              </Link>
+              <Link href="/vets" title={t.nav.findVet} className="nav-icon"><Stethoscope className="w-5 h-5" /></Link>
+              <Link href="/clinics" title={t.nav.clinics} className="nav-icon"><Building2 className="w-5 h-5" /></Link>
+              <Link href="/owner/pets" title={t.nav.myPets} className="nav-icon"><PawPrint className="w-5 h-5" /></Link>
+              <Link href="/owner/settings" title={t.nav.profile} className="nav-icon"><User className="w-5 h-5" /></Link>
             </>
           )}
-          <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
-            {lang === 'en' && fullNameEn
-              ? fullNameEn
-              : profile.full_name && !profile.full_name.includes('@')
-                ? profile.full_name
-                : profile.full_name?.split('@')[0]}
-          </span>
 
           {/* Notification bell */}
           <div className="relative" ref={notifRef}>
