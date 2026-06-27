@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { ClipboardList, Plus, ChevronRight, Users, Activity, Building2, LogOut, X, Check } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 import LoadingScreen from '@/components/LoadingScreen'
 import toast from 'react-hot-toast'
@@ -24,7 +25,7 @@ const REASON_LABEL: Record<string, string> = {
 interface Patient {
   pet_id: string; latest_id: string; latest_date: string
   dx: string | null; weight: number | null; visits: number
-  name: string; species: string; breed: string | null
+  name: string; species: string; breed: string | null; photo_url: string | null
   tags: string[]; owner_name: string | null; clinic_name: string | null
   discharge?: { reason: string; discharged_at: string }
 }
@@ -60,7 +61,7 @@ export default function OPDPage() {
     const [{ data: records }, { data: discharges }] = await Promise.all([
       supabase
         .from('opd_records')
-        .select('id, pet_id, record_date, dx, weight, pets(name, species, breed, medical_tags, profiles!owner_id(full_name)), clinics(id, name)')
+        .select('id, pet_id, record_date, dx, weight, pets(name, species, breed, photo_url, medical_tags, profiles!owner_id(full_name)), clinics(id, name)')
         .eq('vet_id', user.id)
         .order('record_date', { ascending: false }),
       supabase
@@ -83,7 +84,8 @@ export default function OPDPage() {
           pet_id: r.pet_id, latest_id: r.id, latest_date: r.record_date,
           dx: r.dx, weight: r.weight, visits: 1,
           name: r.pets?.name || '?', species: r.pets?.species || '',
-          breed: r.pets?.breed ?? null, tags: r.pets?.medical_tags || [],
+          breed: r.pets?.breed ?? null, photo_url: r.pets?.photo_url ?? null,
+          tags: r.pets?.medical_tags || [],
           owner_name: r.pets?.profiles?.full_name ?? null,
           clinic_name: r.clinics?.name ?? null,
           discharge: dischargeMap.get(r.pet_id),
@@ -191,7 +193,12 @@ export default function OPDPage() {
           {shown.map(p => (
             <div key={p.pet_id} className="card">
               <div className="flex items-start gap-3">
-                <span className="text-2xl shrink-0 mt-0.5">{EMOJI[p.species] || '🐾'}</span>
+                <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0 mt-0.5">
+                  {p.photo_url
+                    ? <Image src={p.photo_url} alt={p.name} width={40} height={40} className="w-full h-full object-cover" />
+                    : <span className="text-xl">{EMOJI[p.species] || '🐾'}</span>
+                  }
+                </div>
                 <div className="flex-1 min-w-0 cursor-pointer" onClick={() => router.push(`/vet/opd/${p.latest_id}`)}>
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-semibold">{p.name}</p>
