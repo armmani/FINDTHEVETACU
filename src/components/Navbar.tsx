@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
 import { useLang } from '@/contexts/LanguageContext'
-import { LogOut, User, Stethoscope, Home, Sun, Moon, Building2, ShieldCheck, Bell, PawPrint, ArrowLeftRight, Briefcase } from 'lucide-react'
+import { LogOut, User, Stethoscope, Home, Sun, Moon, Building2, Hospital, ShieldCheck, Bell, PawPrint, ArrowLeftRight } from 'lucide-react'
 import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import type { Profile } from '@/lib/types'
@@ -121,15 +121,15 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
               {ownerMode ? (
                 <>
                   <NavLink href="/vets" icon={<Stethoscope className="w-5 h-5" />} label={t.nav.findVet} />
-                  <NavLink href="/clinics" icon={<Building2 className="w-5 h-5" />} label={t.nav.clinics} />
+                  <NavLink href="/clinics" icon={<Hospital className="w-5 h-5" />} label={t.nav.clinics} />
                   <NavLink href="/owner/pets" icon={<PawPrint className="w-5 h-5" />} label={t.nav.myPets} />
                   <NavLink href="/owner/settings" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
                 </>
               ) : (
                 <>
                   <NavLink href="/vets" icon={<Stethoscope className="w-5 h-5" />} label={t.nav.findVet} />
-                  <NavLink href="/clinics" icon={<Building2 className="w-5 h-5" />} label={t.nav.clinics} />
-                  <NavLink href="/clinic/manage" icon={<Briefcase className="w-5 h-5" />} label={t.nav.myClinics} />
+                  <NavLink href="/clinics" icon={<Hospital className="w-5 h-5" />} label={t.nav.clinics} />
+                  <NavLink href="/clinic/manage" icon={<Building2 className="w-5 h-5" />} label={t.nav.myClinics} />
                   <NavLink href="/vet/dashboard" icon={<Home className="w-5 h-5" />} label={t.nav.dashboard} />
                   <NavLink href="/vet/profile" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
                 </>
@@ -151,7 +151,7 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
           {profile.role === 'owner' && (
             <>
               <NavLink href="/vets" icon={<Stethoscope className="w-5 h-5" />} label={t.nav.findVet} />
-              <NavLink href="/clinics" icon={<Building2 className="w-5 h-5" />} label={t.nav.clinics} />
+              <NavLink href="/clinics" icon={<Hospital className="w-5 h-5" />} label={t.nav.clinics} />
               <NavLink href="/owner/pets" icon={<PawPrint className="w-5 h-5" />} label={t.nav.myPets} />
               <NavLink href="/owner/settings" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
             </>
