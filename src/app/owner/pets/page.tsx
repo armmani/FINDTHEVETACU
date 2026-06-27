@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
-import { Plus, PawPrint, ChevronRight, X } from 'lucide-react'
+import { Plus, PawPrint, ChevronRight, X, LinkIcon } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
 import SearchableSelect, { SelectOption } from '@/components/SearchableSelect'
@@ -108,10 +109,15 @@ export default function PetsPage() {
     <div className="max-w-2xl mx-auto space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">สัตว์เลี้ยงของฉัน</h1>
-        <button onClick={() => setShowForm(v => !v)} className="btn-primary flex items-center gap-2">
-          {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          {showForm ? 'ยกเลิก' : 'เพิ่มสัตว์เลี้ยง'}
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/owner/pets/claim" className="btn-secondary flex items-center gap-1.5 text-sm">
+            <LinkIcon className="w-4 h-4" /> เชื่อมสัตว์เลี้ยง
+          </Link>
+          <button onClick={() => setShowForm(v => !v)} className="btn-primary flex items-center gap-2">
+            {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+            {showForm ? 'ยกเลิก' : 'เพิ่มสัตว์เลี้ยง'}
+          </button>
+        </div>
       </div>
 
       {showForm && (
