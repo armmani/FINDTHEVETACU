@@ -46,6 +46,7 @@ export default function PetsPage() {
   const [species, setSpecies] = useState('สุนัข')
   const [breed, setBreed] = useState('')
   const [gender, setGender] = useState('ไม่ระบุ')
+  const [neutered, setNeutered] = useState(false)
   const [birthdate, setBirthdate] = useState('')
 
   const [breeds, setBreeds] = useState<SelectOption[]>([])
@@ -89,11 +90,12 @@ export default function PetsPage() {
       species,
       breed: breed.trim() || null,
       gender,
+      neutered,
       birthdate: birthdate || null,
     }).select().single()
     if (error) { toast.error('บันทึกไม่สำเร็จ'); setSaving(false); return }
     toast.success('เพิ่มสัตว์เลี้ยงแล้ว!')
-    setName(''); setBreed(''); setGender('ไม่ระบุ'); setBirthdate('')
+    setName(''); setBreed(''); setGender('ไม่ระบุ'); setNeutered(false); setBirthdate('')
     setShowForm(false)
     setSaving(false)
     router.push(`/owner/pets/${(data as any).id}`)
@@ -158,6 +160,20 @@ export default function PetsPage() {
                 <select value={gender} onChange={e => setGender(e.target.value)} className="input">
                   {GENDERS.map(g => <option key={g} value={g}>{g}</option>)}
                 </select>
+              </div>
+            </div>
+            <div>
+              <label className="label">การทำหมัน</label>
+              <div className="flex gap-2">
+                {[{ v: false, label: 'ยังไม่ได้ทำหมัน' }, { v: true, label: 'ทำหมันแล้ว' }].map(opt => (
+                  <button key={String(opt.v)} type="button" onClick={() => setNeutered(opt.v)}
+                    className={`flex-1 py-2 rounded-xl border text-sm font-medium transition-colors
+                      ${neutered === opt.v
+                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-300'}`}>
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </div>
             <div>

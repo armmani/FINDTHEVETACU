@@ -18,7 +18,7 @@ type Tab = 'info' | 'medical' | 'vaccine' | 'parasite'
 
 interface Pet {
   id: string; name: string; species: string; breed: string | null
-  gender: string; birthdate: string | null; photo_url: string | null; notes: string | null
+  gender: string; neutered: boolean; birthdate: string | null; photo_url: string | null; notes: string | null
   medical_tags: string[]
 }
 interface MedRecord { id: string; pet_id: string; record_date: string; title: string; description: string | null; vet_name: string | null; clinic_name: string | null; next_appointment: string | null }
@@ -149,7 +149,7 @@ export default function PetDetailPage() {
     setSaving(true)
     const { error } = await supabase.from('pets').update({
       name: pet.name, species: pet.species, breed: pet.breed || null,
-      gender: pet.gender, birthdate: pet.birthdate || null,
+      gender: pet.gender, neutered: pet.neutered, birthdate: pet.birthdate || null,
       notes: pet.notes || null, photo_url: pet.photo_url || null,
     }).eq('id', id)
     if (error) toast.error('บันทึกไม่สำเร็จ')
@@ -500,6 +500,21 @@ export default function PetDetailPage() {
               <select value={pet.gender} onChange={e => setPet(p => p ? { ...p, gender: e.target.value } : p)} className="input">
                 {GENDERS.map(g => <option key={g}>{g}</option>)}
               </select>
+            </div>
+          </div>
+          <div>
+            <label className="label">การทำหมัน</label>
+            <div className="flex gap-2">
+              {[{ v: false, label: 'ยังไม่ได้ทำหมัน' }, { v: true, label: 'ทำหมันแล้ว' }].map(opt => (
+                <button key={String(opt.v)} type="button"
+                  onClick={() => setPet(p => p ? { ...p, neutered: opt.v } : p)}
+                  className={`flex-1 py-2 rounded-xl border text-sm font-medium transition-colors
+                    ${pet.neutered === opt.v
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300'
+                      : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-300'}`}>
+                  {opt.label}
+                </button>
+              ))}
             </div>
           </div>
           <div>

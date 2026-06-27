@@ -61,7 +61,16 @@ export default function NewOPDPage() {
   const [newSpecies, setNewSpecies] = useState('สุนัข')
   const [newBreed, setNewBreed] = useState('')
   const [newGender, setNewGender] = useState('ไม่ระบุ')
+  const [newNeutered, setNewNeutered] = useState(false)
+  const [newTags, setNewTags] = useState<string[]>([])
+  const [newTagInput, setNewTagInput] = useState('')
   const [creatingPet, setCreatingPet] = useState(false)
+
+  const addNewTag = (val: string) => {
+    const t = val.trim()
+    if (t && !newTags.includes(t)) setNewTags(prev => [...prev, t])
+    setNewTagInput('')
+  }
 
   // OPD
   const today = new Date().toISOString().split('T')[0]
@@ -150,12 +159,13 @@ export default function NewOPDPage() {
     setCreatingPet(true)
     const { data, error } = await supabase
       .from('pets')
-      .insert({ name: newName.trim(), species: newSpecies, breed: newBreed.trim() || null, gender: newGender, owner_id: null })
+      .insert({ name: newName.trim(), species: newSpecies, breed: newBreed.trim() || null, gender: newGender, neutered: newNeutered, medical_tags: newTags, owner_id: null })
       .select('id, name, species, breed')
       .single()
     setCreatingPet(false)
     if (error) { toast.error('สร้างไม่สำเร็จ: ' + error.message); return }
-    setSelectedPet({ id: data.id, name: data.name, species: data.species, breed: data.breed, owner_name: null, tags: [] })
+    setSelectedPet({ id: data.id, name: data.name, species: data.species, breed: data.breed, owner_name: null, tags: newTags })
+    setNewTags([]); setNewTagInput(''); setNewNeutered(false)
     setShowCreatePet(false)
     setStep('form')
     toast.success('สร้างสัตว์เลี้ยงแล้ว')
@@ -310,6 +320,43 @@ export default function NewOPDPage() {
               <div>
                 <label className="label">สายพันธุ์</label>
                 <input value={newBreed} onChange={e => setNewBreed(e.target.value)} className="input" placeholder="สายพันธุ์ (ถ้ามี)" />
+              </div>
+              <div>
+                <label className="label">การทำหมัน</label>
+                <div className="flex gap-2">
+                  {[{ v: false, label: 'ยังไม่ได้ทำหมัน' }, { v: true, label: 'ทำหมันแล้ว' }].map(opt => (
+                    <button key={String(opt.v)} type="button" onClick={() => setNewNeutered(opt.v)}
+                      className={`flex-1 py-2 rounded-xl border text-sm font-medium transition-colors
+                        ${newNeutered === opt.v
+                          ? 'border-primary-500 bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300'
+                          : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-300'}`}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="label flex items-center gap-1.5">
+                  <span className="text-red-500">⚠️</span> ข้อควรระวัง / สิ่งที่แพ้ / โรคประจำตัว
+                </label>
+                {newTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {newTags.map(t => (
+                      <span key={t} className="flex items-center gap-1 bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 text-xs px-2.5 py-1 rounded-full font-medium">
+                        {t}
+                        <button type="button" onClick={() => setNewTags(prev => prev.filter(x => x !== t))} className="text-red-400 hover:text-red-600 ml-0.5">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <input value={newTagInput} onChange={e => setNewTagInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addNewTag(newTagInput) } }}
+                    className="input flex-1 text-sm" placeholder="เช่น แพ้ penicillin, เบาหวาน..." />
+                  <button type="button" onClick={() => addNewTag(newTagInput)} className="btn-secondary px-4 text-sm shrink-0">เพิ่ม</button>
+                </div>
               </div>
               <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950 dark:text-amber-400 rounded-lg p-2.5">
                 ⚠️ สัตว์เลี้ยงที่สร้างโดยหมอจะยังไม่ผูกกับเจ้าของ — เจ้าของสามารถขอเชื่อมภายหลังได้
