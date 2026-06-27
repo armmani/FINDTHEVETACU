@@ -262,17 +262,20 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
             <MobileTab href="/owner/pets" icon={<PawPrint className="w-5 h-5" />} label={t.nav.myPets} />
             <MobileTab href="/owner/settings" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
             <button onClick={toggleOwnerMode} className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-primary-600 dark:text-primary-400 text-[10px] font-medium">
-              <Stethoscope className="w-5 h-5" />
+              <ArrowLeftRight className="w-5 h-5" />
               <span>โหมดหมอ</span>
             </button>
           </>
         ) : (
           <>
             <MobileTab href="/vets" icon={<Stethoscope className="w-5 h-5" />} label={t.nav.findVet} />
-            <MobileTab href="/clinics" icon={<Hospital className="w-5 h-5" />} label={t.nav.clinics} />
             <MobileTab href="/clinic/manage" icon={<Building2 className="w-5 h-5" />} label={t.nav.myClinics} />
             <MobileTab href="/vet/dashboard" icon={<Home className="w-5 h-5" />} label={t.nav.dashboard} />
             <MobileTab href="/vet/profile" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
+            <button onClick={toggleOwnerMode} className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 text-[10px] font-medium transition-colors">
+              <ArrowLeftRight className="w-5 h-5" />
+              <span>เจ้าของ</span>
+            </button>
           </>
         ))}
         {profile.role === 'owner' && (
