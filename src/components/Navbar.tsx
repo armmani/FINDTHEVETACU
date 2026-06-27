@@ -12,9 +12,9 @@ import type { Profile } from '@/lib/types'
 
 function NavLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   return (
-    <Link href={href} className="relative group nav-icon">
-      {icon}
-      <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-800 dark:bg-gray-700 text-white text-xs rounded-lg px-2 py-1 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-50">
+    <Link href={href} className="group nav-icon flex items-center gap-1.5 rounded-lg px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+      <span className="shrink-0">{icon}</span>
+      <span className="max-w-0 overflow-hidden whitespace-nowrap group-hover:max-w-[7rem] transition-all duration-200 ease-out text-sm font-medium">
         {label}
       </span>
     </Link>
