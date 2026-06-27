@@ -109,7 +109,7 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-4">
         {/* Left: Logo */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-3 flex-1 sm:flex-none">
           <Link href="/home">
             <Image src="/FindTheVet.png" alt="FindTheVet" width={160} height={40} className="h-8 w-auto hidden sm:block" priority />
             <Image src="/logo-icon.png" alt="FindTheVet" width={32} height={32} className="h-8 w-8 block sm:hidden rounded-lg" priority />
@@ -118,7 +118,7 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
             <Link href="/admin/verify"
               className="relative flex items-center gap-1 text-sm text-orange-600 hover:text-orange-700 font-medium">
               <ShieldCheck className="w-5 h-5" />
-              <span className="hidden sm:block">ตรวจสอบ</span>
+              <span>ตรวจสอบ</span>
               {pendingCount > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                   {pendingCount > 9 ? '9+' : pendingCount}
