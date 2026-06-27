@@ -1,7 +1,6 @@
 'use client'
 
 import LoadingScreen from '@/components/LoadingScreen'
-'use client'
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
