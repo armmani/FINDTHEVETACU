@@ -94,14 +94,12 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
   return (
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href="/home">
-          {/* mobile: icon only, desktop: full logo */}
-          <Image src="/FindTheVet.png" alt="FindTheVet" width={160} height={40} className="h-8 w-auto hidden sm:block" priority />
-          <Image src="/logo-icon.png" alt="FindTheVet" width={32} height={32} className="h-8 w-8 block sm:hidden rounded-lg" priority />
-        </Link>
-
-        <div className="flex items-center gap-2 sm:gap-4">
-          {/* admin badge — แสดงเฉพาะ role=admin */}
+        <div className="flex items-center gap-3">
+          <Link href="/home">
+            {/* mobile: icon only, desktop: full logo */}
+            <Image src="/FindTheVet.png" alt="FindTheVet" width={160} height={40} className="h-8 w-auto hidden sm:block" priority />
+            <Image src="/logo-icon.png" alt="FindTheVet" width={32} height={32} className="h-8 w-8 block sm:hidden rounded-lg" priority />
+          </Link>
           {profile.role === 'admin' && (
             <Link href="/admin/verify"
               className="relative flex items-center gap-1 text-sm text-orange-600 hover:text-orange-700 font-medium">
@@ -114,6 +112,9 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
               )}
             </Link>
           )}
+        </div>
+
+        <div className="flex items-center gap-2 sm:gap-4">
           {(profile.role === 'vet' || profile.role === 'admin') && (
             <>
               {ownerMode ? (
@@ -127,8 +128,8 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
                 <>
                   <NavLink href="/vets" icon={<Stethoscope className="w-5 h-5" />} label={t.nav.findVet} />
                   <NavLink href="/clinics" icon={<Building2 className="w-5 h-5" />} label={t.nav.clinics} />
-                  <NavLink href="/vet/dashboard" icon={<Home className="w-5 h-5" />} label={t.nav.dashboard} />
                   <NavLink href="/clinic/manage" icon={<Briefcase className="w-5 h-5" />} label={t.nav.myClinics} />
+                  <NavLink href="/vet/dashboard" icon={<Home className="w-5 h-5" />} label={t.nav.dashboard} />
                   <NavLink href="/vet/profile" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
                 </>
               )}
