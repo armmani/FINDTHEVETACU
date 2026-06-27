@@ -163,7 +163,18 @@ export default function PetsPage() {
       )}
 
       {loading ? (
-        <div className="text-center py-16 text-gray-400">กำลังโหลด...</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="card flex items-center gap-4 animate-pulse">
+              <div className="w-14 h-14 rounded-xl bg-gray-200 dark:bg-gray-700 shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-2/3" />
+                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/2" />
+                <div className="h-3 bg-gray-100 dark:bg-gray-800 rounded w-1/3" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : pets.length === 0 ? (
         <div className="card text-center py-14">
           <PawPrint className="w-12 h-12 text-gray-300 mx-auto mb-3" />
