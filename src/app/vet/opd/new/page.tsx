@@ -141,7 +141,7 @@ export default function NewOPDPage() {
     const ext = file.name.split('.').pop()
     const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
     const { data, error } = await supabase.storage.from('opd-photos').upload(path, file)
-    if (error) return null
+    if (error) { toast.error('อัพโหลดรูปไม่สำเร็จ: ' + error.message); return null }
     return supabase.storage.from('opd-photos').getPublicUrl(data.path).data.publicUrl
   }
 
