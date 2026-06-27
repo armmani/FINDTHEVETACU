@@ -5,10 +5,21 @@ import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
 import { useLang } from '@/contexts/LanguageContext'
-import { LogOut, User, Stethoscope, Home, Sun, Moon, Building2, ShieldCheck, Bell, PawPrint, ArrowLeftRight } from 'lucide-react'
+import { LogOut, User, Stethoscope, Home, Sun, Moon, Building2, ShieldCheck, Bell, PawPrint, ArrowLeftRight, Briefcase } from 'lucide-react'
 import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import type { Profile } from '@/lib/types'
+
+function NavLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+  return (
+    <Link href={href} className="relative group nav-icon">
+      {icon}
+      <span className="absolute top-full left-1/2 -translate-x-1/2 mt-2 bg-gray-800 dark:bg-gray-700 text-white text-xs rounded-lg px-2 py-1 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-100 pointer-events-none z-50">
+        {label}
+      </span>
+    </Link>
+  )
+}
 
 interface NavbarProps {
   profile: Profile
@@ -107,18 +118,18 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
             <>
               {ownerMode ? (
                 <>
-                  <Link href="/vets" title={t.nav.findVet} className="nav-icon"><Stethoscope className="w-5 h-5" /></Link>
-                  <Link href="/clinics" title={t.nav.clinics} className="nav-icon"><Building2 className="w-5 h-5" /></Link>
-                  <Link href="/owner/pets" title={t.nav.myPets} className="nav-icon"><PawPrint className="w-5 h-5" /></Link>
-                  <Link href="/owner/settings" title={t.nav.profile} className="nav-icon"><User className="w-5 h-5" /></Link>
+                  <NavLink href="/vets" icon={<Stethoscope className="w-5 h-5" />} label={t.nav.findVet} />
+                  <NavLink href="/clinics" icon={<Building2 className="w-5 h-5" />} label={t.nav.clinics} />
+                  <NavLink href="/owner/pets" icon={<PawPrint className="w-5 h-5" />} label={t.nav.myPets} />
+                  <NavLink href="/owner/settings" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
                 </>
               ) : (
                 <>
-                  <Link href="/vets" title={t.nav.findVet} className="nav-icon"><Stethoscope className="w-5 h-5" /></Link>
-                  <Link href="/clinics" title={t.nav.clinics} className="nav-icon"><Building2 className="w-5 h-5" /></Link>
-                  <Link href="/vet/dashboard" title={t.nav.dashboard} className="nav-icon"><Home className="w-5 h-5" /></Link>
-                  <Link href="/clinic/manage" title={t.nav.myClinics} className="nav-icon"><Building2 className="w-5 h-5" /></Link>
-                  <Link href="/vet/profile" title={t.nav.profile} className="nav-icon"><User className="w-5 h-5" /></Link>
+                  <NavLink href="/vets" icon={<Stethoscope className="w-5 h-5" />} label={t.nav.findVet} />
+                  <NavLink href="/clinics" icon={<Building2 className="w-5 h-5" />} label={t.nav.clinics} />
+                  <NavLink href="/vet/dashboard" icon={<Home className="w-5 h-5" />} label={t.nav.dashboard} />
+                  <NavLink href="/clinic/manage" icon={<Briefcase className="w-5 h-5" />} label={t.nav.myClinics} />
+                  <NavLink href="/vet/profile" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
                 </>
               )}
               <button
@@ -137,10 +148,10 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
           )}
           {profile.role === 'owner' && (
             <>
-              <Link href="/vets" title={t.nav.findVet} className="nav-icon"><Stethoscope className="w-5 h-5" /></Link>
-              <Link href="/clinics" title={t.nav.clinics} className="nav-icon"><Building2 className="w-5 h-5" /></Link>
-              <Link href="/owner/pets" title={t.nav.myPets} className="nav-icon"><PawPrint className="w-5 h-5" /></Link>
-              <Link href="/owner/settings" title={t.nav.profile} className="nav-icon"><User className="w-5 h-5" /></Link>
+              <NavLink href="/vets" icon={<Stethoscope className="w-5 h-5" />} label={t.nav.findVet} />
+              <NavLink href="/clinics" icon={<Building2 className="w-5 h-5" />} label={t.nav.clinics} />
+              <NavLink href="/owner/pets" icon={<PawPrint className="w-5 h-5" />} label={t.nav.myPets} />
+              <NavLink href="/owner/settings" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
             </>
           )}
 
