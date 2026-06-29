@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
 import { useLang } from '@/contexts/LanguageContext'
-import { LogOut, LayoutDashboard, Sun, Moon, Home, PawPrint } from 'lucide-react'
+import { LogOut, LayoutDashboard, Sun, Moon, Home, PawPrint, MessageSquarePlus } from 'lucide-react'
 import Image from 'next/image'
 
 export default function AdminNavbar({ fullName, role }: { fullName: string; role: string }) {
@@ -37,6 +37,10 @@ export default function AdminNavbar({ fullName, role }: { fullName: string; role
           <Link href="/admin/ownership" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
             <PawPrint className="w-4 h-4" />
             <span className="hidden sm:block">เชื่อมสัตว์เลี้ยง</span>
+          </Link>
+          <Link href="/admin/feedback" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
+            <MessageSquarePlus className="w-4 h-4" />
+            <span className="hidden sm:block">Feedback</span>
           </Link>
           {role !== 'super_admin' && (
             <Link href="/home" className="text-sm text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1">
