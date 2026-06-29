@@ -54,11 +54,7 @@ interface VetSchedule {
 }
 
 function formatLicense(input: string): string {
-  const d = input.replace(/\D/g, '').slice(0, 10)
-  let r = d.slice(0, 2)
-  if (d.length > 2) r += '-' + d.slice(2, 6)
-  if (d.length > 6) r += '/' + d.slice(6, 10)
-  return r
+  return input.replace(/[^0-9\-\/]/g, '').slice(0, 13)
 }
 
 const ADDITIONAL_EDU_OPTIONS = [
@@ -233,7 +229,7 @@ export default function VetProfilePage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (licenseNumber.replace(/\D/g, '').length < 10) { toast.error('กรุณากรอกเลขใบอนุญาตให้ครบ (xx-xxxx/xxxx)'); return }
+    if (!/^\d{2}-\d{4,5}\/\d{4}$/.test(licenseNumber.trim())) { toast.error('รูปแบบเลขใบอนุญาตไม่ถูกต้อง (เช่น 01-1234/2567 หรือ 01-12345/2567)'); return }
     if (!locationLat || !locationLng) { toast.error('กรุณากดปุ่ม "ค้นหาพิกัด" ก่อนบันทึก'); return }
     if (!licenseDocUrl && !licenseFile) { toast.error('กรุณาแนบรูปใบประกอบวิชาชีพหรือบัตรประจำตัวสัตวแพทย์'); return }
     setSaving(true)
@@ -406,8 +402,8 @@ export default function VetProfilePage() {
               <input type="text" value={licenseNumber}
                 onChange={e => setLicenseNumber(formatLicense(e.target.value))}
                 className="input tracking-widest font-mono"
-                placeholder="01-1234/2567"
-                maxLength={12} />
+                placeholder="01-12345/2567"
+                maxLength={13} />
             </div>
             <div>
               <label className="label">แนะนำตัวเอง</label>
