@@ -30,6 +30,8 @@ export default function NewClinicPage() {
   const supabase = createClient()
   const [saving, setSaving] = useState(false)
   const [specialtyTypes, setSpecialtyTypes] = useState<SpecialtyType[]>([])
+  const [existingNames, setExistingNames] = useState<string[]>([])
+  const [showNameSug, setShowNameSug] = useState(false)
 
   const [name, setName] = useState('')
   const [nameEn, setNameEn] = useState('')
@@ -56,6 +58,8 @@ export default function NewClinicPage() {
   useEffect(() => {
     supabase.from('specialty_types').select('*').order('name_th')
       .then(({ data }) => setSpecialtyTypes(data || []))
+    supabase.from('clinics').select('name').order('name')
+      .then(({ data }) => setExistingNames(Array.from(new Set((data || []).map((c: any) => c.name as string)))))
   }, [])
 
   const handleGeocode = async () => {
@@ -196,9 +200,33 @@ export default function NewClinicPage() {
             ))}
           </div>
         </div>
-        <div>
+        <div className="relative">
           <label className="label">ชื่อ (ภาษาไทย) *</label>
-          <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="เช่น คลินิกสัตว์เลี้ยงสุขใจ" />
+          <input
+            className="input"
+            value={name}
+            onChange={e => { setName(e.target.value); setShowNameSug(true) }}
+            onFocus={() => setShowNameSug(true)}
+            onBlur={() => setTimeout(() => setShowNameSug(false), 150)}
+            placeholder="เช่น คลินิกสัตว์เลี้ยงสุขใจ"
+            autoComplete="off"
+          />
+          {showNameSug && name.length >= 1 && (() => {
+            const sug = existingNames.filter(n => n.toLowerCase().includes(name.toLowerCase()) && n !== name)
+            if (!sug.length) return null
+            return (
+              <ul className="absolute z-20 left-0 right-0 mt-1 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                {sug.map(s => (
+                  <li key={s}
+                    onMouseDown={() => { setName(s); setShowNameSug(false) }}
+                    className="px-4 py-2.5 text-sm cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-950 text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                    <Search className="w-3 h-3 text-gray-400 shrink-0" />
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            )
+          })()}
         </div>
         <div>
           <label className="label">ชื่อ (ภาษาอังกฤษ)</label>
