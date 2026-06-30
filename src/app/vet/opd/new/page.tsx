@@ -179,7 +179,7 @@ export default function NewOPDPage() {
       .single()
     setCreatingPet(false)
     if (error) { toast.error('สร้างไม่สำเร็จ: ' + error.message); return }
-    setSelectedPet({ id: data.id, name: data.name, species: data.species, breed: data.breed, owner_name: null, tags: newTags })
+    setSelectedPet({ id: data.id, name: data.name, species: data.species, breed: data.breed, photo_url: null, owner_name: null, tags: newTags })
     setNewTags([]); setNewTagInput(''); setNewNeutered(false)
     setShowCreatePet(false)
     setStep('form')
