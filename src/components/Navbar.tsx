@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase'
 import { useLang } from '@/contexts/LanguageContext'
-import { LogOut, User, Stethoscope, Sun, Moon, Building2, Hospital, ShieldCheck, Bell, PawPrint, ArrowLeftRight, ClipboardList } from 'lucide-react'
+import { LogOut, User, Stethoscope, Sun, Moon, Building2, Hospital, ShieldCheck, Bell, PawPrint, ArrowLeftRight, ClipboardList, House } from 'lucide-react'
 import { useEffect, useState, useRef } from 'react'
 import Image from 'next/image'
 import type { Profile } from '@/lib/types'
@@ -143,7 +143,7 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
                 <>
                   <NavLink href="/vets" icon={<Stethoscope className="w-5 h-5" />} label={t.nav.findVet} />
                   <NavLink href="/clinics" icon={<Hospital className="w-5 h-5" />} label={t.nav.clinics} />
-                  <NavLink href="/clinic/manage" icon={<Building2 className="w-5 h-5" />} label={t.nav.myClinics} />
+                  <NavLink href="/clinic/manage" icon={<House className="w-5 h-5" />} label={t.nav.myClinics} />
                   <NavLink href="/vet/opd" icon={<ClipboardList className="w-5 h-5" />} label="OPD" />
                   <NavLink href="/vet/profile" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
                 </>
@@ -269,7 +269,7 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
         ) : (
           <>
             <MobileTab href="/vet/opd" icon={<ClipboardList className="w-5 h-5" />} label="OPD" />
-            <MobileTab href="/clinic/manage" icon={<Building2 className="w-5 h-5" />} label={t.nav.myClinics} />
+            <MobileTab href="/clinic/manage" icon={<House className="w-5 h-5" />} label={t.nav.myClinics} />
             <MobileTab href="/vet/profile" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
             <button onClick={toggleOwnerMode} className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 text-[10px] font-medium transition-colors">
               <ArrowLeftRight className="w-5 h-5" />
