@@ -15,7 +15,7 @@ const GENDERS = ['เพศผู้', 'เพศเมีย', 'ไม่ระ
 const EMOJI: Record<string, string> = { สุนัข: '🐕', แมว: '🐈', กระต่าย: '🐇', นก: '🐦', ปลา: '🐟', อื่นๆ: '🐾' }
 
 interface Clinic { id: string; name: string; type: string }
-interface PetResult { id: string; name: string; species: string; breed: string | null; owner_name: string | null; tags: string[] }
+interface PetResult { id: string; name: string; species: string; breed: string | null; photo_url: string | null; owner_name: string | null; tags: string[] }
 
 function MedicalTags({ tags }: { tags: string[] }) {
   if (!tags?.length) return null
@@ -127,11 +127,12 @@ export default function NewOPDPage() {
     searchTimer.current = setTimeout(async () => {
       const { data } = await supabase
         .from('pets')
-        .select('id, name, species, breed, owner_id, medical_tags, profiles!owner_id(full_name)')
+        .select('id, name, species, breed, photo_url, owner_id, medical_tags, profiles!owner_id(full_name)')
         .ilike('name', `%${petQuery.trim()}%`)
         .limit(10)
       setPetResults((data || []).map((p: any) => ({
         id: p.id, name: p.name, species: p.species, breed: p.breed,
+        photo_url: p.photo_url ?? null,
         owner_name: p.profiles?.full_name ?? null,
         tags: p.medical_tags || [],
       })))
@@ -293,7 +294,12 @@ export default function NewOPDPage() {
                   {petResults.map(p => (
                     <button key={p.id} onClick={() => { setSelectedPet(p); setStep('form') }}
                       className="card w-full text-left flex items-center gap-3 hover:shadow-md transition-shadow">
-                      <span className="text-2xl shrink-0">{EMOJI[p.species] || '🐾'}</span>
+                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
+                        {p.photo_url
+                          ? <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover" />
+                          : <span className="text-2xl">{EMOJI[p.species] || '🐾'}</span>
+                        }
+                      </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold">{p.name}</p>
                         <p className="text-sm text-gray-500">{p.species}{p.breed ? ` · ${p.breed}` : ''}</p>
