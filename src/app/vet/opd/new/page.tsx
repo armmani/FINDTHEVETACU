@@ -437,8 +437,8 @@ export default function NewOPDPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="label">วันที่ตรวจ</label>
-              <input type="date" value={recordDate} onChange={e => setRecordDate(e.target.value)}
-                className="input" max={today} />
+              <input type="date" value={recordDate} readOnly
+                className="input bg-gray-50 dark:bg-gray-800 text-gray-500 cursor-not-allowed" />
             </div>
             <div>
               <label className="label flex items-baseline gap-1">
