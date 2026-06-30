@@ -290,35 +290,35 @@ export default function AdminDashboard() {
       <h1 className="text-2xl font-bold">Admin Dashboard</h1>
 
       {/* Stats row 1 */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-3">
         <div className="card text-center">
-          <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-          <p className="text-3xl font-bold">{stats?.totalOwners}</p>
-          <p className="text-sm text-gray-500">เจ้าของสัตว์</p>
+          <Users className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 mx-auto mb-1 sm:mb-2" />
+          <p className="text-2xl sm:text-3xl font-bold">{stats?.totalOwners}</p>
+          <p className="text-xs sm:text-sm text-gray-500">เจ้าของสัตว์</p>
         </div>
         <div className="card text-center">
-          <Building2 className="w-8 h-8 text-indigo-500 mx-auto mb-2" />
-          <p className="text-3xl font-bold">{(stats?.totalClinics ?? 0) + (stats?.totalHospitals ?? 0)}</p>
-          <p className="text-sm text-gray-500">สถานพยาบาลสัตว์</p>
+          <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-500 mx-auto mb-1 sm:mb-2" />
+          <p className="text-2xl sm:text-3xl font-bold">{(stats?.totalClinics ?? 0) + (stats?.totalHospitals ?? 0)}</p>
+          <p className="text-xs sm:text-sm text-gray-500">สถานพยาบาล</p>
         </div>
         <div className="card text-center">
-          <Stethoscope className="w-8 h-8 text-primary-500 mx-auto mb-2" />
-          <p className="text-3xl font-bold">{stats?.totalVets}</p>
-          <p className="text-sm text-gray-500">สัตวแพทย์</p>
+          <Stethoscope className="w-6 h-6 sm:w-8 sm:h-8 text-primary-500 mx-auto mb-1 sm:mb-2" />
+          <p className="text-2xl sm:text-3xl font-bold">{stats?.totalVets}</p>
+          <p className="text-xs sm:text-sm text-gray-500">สัตวแพทย์</p>
         </div>
       </div>
 
       {/* Stats row 2 */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         <div className="card text-center">
-          <Building2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-          <p className="text-3xl font-bold">{stats?.totalClinics}</p>
-          <p className="text-sm text-gray-500">คลินิก</p>
+          <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-500 mx-auto mb-1 sm:mb-2" />
+          <p className="text-2xl sm:text-3xl font-bold">{stats?.totalClinics}</p>
+          <p className="text-xs sm:text-sm text-gray-500">คลินิก</p>
         </div>
         <div className="card text-center">
-          <Building2 className="w-8 h-8 text-cyan-500 mx-auto mb-2" />
-          <p className="text-3xl font-bold">{stats?.totalHospitals}</p>
-          <p className="text-sm text-gray-500">โรงพยาบาลสัตว์</p>
+          <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-cyan-500 mx-auto mb-1 sm:mb-2" />
+          <p className="text-2xl sm:text-3xl font-bold">{stats?.totalHospitals}</p>
+          <p className="text-xs sm:text-sm text-gray-500">โรงพยาบาลสัตว์</p>
         </div>
       </div>
 
@@ -330,17 +330,17 @@ export default function AdminDashboard() {
           จัดการแผนกเฉพาะทาง
         </h2>
         <div className="card space-y-4">
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <input value={newSpTh} onChange={e => setNewSpTh(e.target.value)}
               placeholder="ชื่อภาษาไทย เช่น ฝังเข็ม" className="input flex-1" />
             <input value={newSpEn} onChange={e => setNewSpEn(e.target.value)}
               placeholder="English e.g. Acupuncture" className="input flex-1" />
             <button onClick={handleAddSpecialty} disabled={savingSp || !newSpTh || !newSpEn}
-              className="btn-primary px-4 flex items-center gap-1 shrink-0">
+              className="btn-primary px-4 flex items-center justify-center gap-1 shrink-0">
               <Plus className="w-4 h-4" /> เพิ่ม
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {[...specialtyTypes].sort((a, b) => a.name_th.localeCompare(b.name_th, 'th')).map(sp => (
               <div key={sp.id} className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1.5 rounded-lg text-sm">
                 <span className="flex-1 min-w-0 truncate">{sp.name_th}</span>
