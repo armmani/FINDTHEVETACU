@@ -11,7 +11,12 @@ import LoadingScreen from '@/components/LoadingScreen'
 
 const EMOJI: Record<string, string> = { สุนัข: '🐕', แมว: '🐈', กระต่าย: '🐇', นก: '🐦', ปลา: '🐟', อื่นๆ: '🐾' }
 
-interface UnlinkedPet { id: string; name: string; species: string; breed: string | null }
+interface UnlinkedPet {
+  id: string; name: string; species: string; breed: string | null
+  gender: string | null; neutered: boolean; photo_url: string | null
+  medical_tags: string[]; birthdate: string | null
+  opd_records: { clinics: { name: string } | null }[]
+}
 
 export default function ClaimPetPage() {
   const supabase = createClient()
@@ -42,11 +47,11 @@ export default function ClaimPetPage() {
     timer.current = setTimeout(async () => {
       const { data } = await supabase
         .from('pets')
-        .select('id, name, species, breed')
+        .select('id, name, species, breed, gender, neutered, photo_url, medical_tags, birthdate, opd_records(clinics(name))')
         .is('owner_id', null)
         .ilike('name', `%${query.trim()}%`)
         .limit(10)
-      setResults((data as UnlinkedPet[]) || [])
+      setResults((data as unknown as UnlinkedPet[]) || [])
       setSearching(false)
     }, 350)
   }, [query])
@@ -143,17 +148,39 @@ export default function ClaimPetPage() {
           {results.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs text-gray-400">เลือกสัตว์เลี้ยงของคุณ:</p>
-              {results.map(p => (
-                <button key={p.id} onClick={() => setSelected(p)}
-                  className="card w-full text-left flex items-center gap-3 hover:shadow-md transition-shadow">
-                  <span className="text-2xl shrink-0">{EMOJI[p.species] || '🐾'}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold">{p.name}</p>
-                    <p className="text-sm text-gray-500">{p.species}{p.breed ? ` · ${p.breed}` : ''}</p>
-                    <p className="text-xs text-amber-500 mt-0.5">ยังไม่มีเจ้าของ</p>
-                  </div>
-                </button>
-              ))}
+              {results.map(p => {
+                const clinic = p.opd_records?.[0]?.clinics?.name
+                const age = p.birthdate ? Math.floor((Date.now() - new Date(p.birthdate).getTime()) / (1000 * 60 * 60 * 24 * 365)) : null
+                return (
+                  <button key={p.id} onClick={() => setSelected(p)}
+                    className="card w-full text-left flex items-start gap-3 hover:shadow-md transition-shadow">
+                    <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
+                      {p.photo_url
+                        ? <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover" />
+                        : <span className="text-2xl">{EMOJI[p.species] || '🐾'}</span>
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold">{p.name}</p>
+                      <p className="text-sm text-gray-500">
+                        {p.species}{p.breed ? ` · ${p.breed}` : ''}
+                        {p.gender && p.gender !== 'ไม่ระบุ' ? ` · ${p.gender}` : ''}
+                        {p.neutered ? ' · ทำหมันแล้ว' : ''}
+                        {age !== null ? ` · ${age} ปี` : ''}
+                      </p>
+                      {clinic && <p className="text-xs text-gray-400 mt-0.5">บันทึกโดย: {clinic}</p>}
+                      {p.medical_tags?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {p.medical_tags.map(t => (
+                            <span key={t} className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">⚠️ {t}</span>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-xs text-amber-500 mt-1">ยังไม่มีเจ้าของ</p>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           )}
 
