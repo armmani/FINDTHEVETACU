@@ -161,7 +161,7 @@ export default function OPDPage() {
                 ${tab === t
                   ? 'border-primary-500 text-primary-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}>
-              {t === 'active' ? 'กำลังรักษา' : 'จำหน่ายแล้ว'}
+              {t === 'active' ? 'กำลังรักษา' : 'Discharged'}
               {count > 0 && (
                 <span className={`ml-1.5 text-xs rounded-full px-1.5
                   ${tab === t
@@ -180,7 +180,7 @@ export default function OPDPage() {
         <div className="card text-center py-14">
           <ClipboardList className="w-10 h-10 text-gray-300 mx-auto mb-3" />
           <p className="text-gray-400 text-sm">
-            {tab === 'active' ? 'ยังไม่มีสัตว์ป่วยที่กำลังดูแลอยู่' : 'ยังไม่มีสัตว์ที่จำหน่ายแล้ว'}
+            {tab === 'active' ? 'ยังไม่มีสัตว์ป่วยที่กำลังดูแลอยู่' : 'ยังไม่มีรายการ Discharged'}
           </p>
           {tab === 'active' && (
             <Link href="/vet/opd/new" className="btn-primary inline-flex mt-4 gap-2 text-sm">
