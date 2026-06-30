@@ -62,7 +62,7 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
     const next = !ownerMode
     setOwnerMode(next)
     localStorage.setItem('vetOwnerMode', next ? '1' : '0')
-    router.push(next ? '/vets' : '/vet/dashboard')
+    router.push(next ? '/vets' : '/vet/opd')
   }
 
   useEffect(() => {
