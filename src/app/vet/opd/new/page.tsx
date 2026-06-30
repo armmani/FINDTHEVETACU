@@ -74,9 +74,9 @@ export default function NewOPDPage() {
     if (newSpecies === 'อื่นๆ' || newSpecies === 'ปลา') { setBreedOptions([]); setNewBreed(''); return }
     setLoadingBreeds(true)
     setNewBreed('')
-    supabase.from('pet_breeds').select('id, name').eq('species', newSpecies).order('name')
+    supabase.from('pet_breeds').select('id, name, name_en').eq('species', newSpecies).order('name')
       .then(({ data }) => {
-        setBreedOptions((data || []).map((b: any) => ({ value: b.name, label: b.name })))
+        setBreedOptions((data || []).map((b: any) => ({ value: b.name, label: b.name_en ? `${b.name} / ${b.name_en}` : b.name })))
         setLoadingBreeds(false)
       })
   }, [newSpecies])

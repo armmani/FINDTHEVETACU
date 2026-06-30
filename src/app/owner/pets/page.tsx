@@ -61,10 +61,10 @@ export default function PetsPage() {
       setBreed('')
       const { data } = await supabase
         .from('pet_breeds')
-        .select('id, name')
+        .select('id, name, name_en')
         .eq('species', species)
         .order('name')
-      setBreeds((data || []).map((b: any) => ({ value: b.id, label: b.name })))
+      setBreeds((data || []).map((b: any) => ({ value: b.name, label: b.name_en ? `${b.name} / ${b.name_en}` : b.name })))
       setLoadingBreeds(false)
     }
     fetchBreeds()

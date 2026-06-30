@@ -113,8 +113,8 @@ export default function PetDetailPage() {
     const fetchBreeds = async () => {
       if (pet.species === 'อื่นๆ') { setBreeds([]); return }
       setLoadingBreeds(true)
-      const { data } = await supabase.from('pet_breeds').select('id, name').eq('species', pet.species).order('name')
-      setBreeds((data || []).map((b: any) => ({ value: b.id, label: b.name })))
+      const { data } = await supabase.from('pet_breeds').select('id, name, name_en').eq('species', pet.species).order('name')
+      setBreeds((data || []).map((b: any) => ({ value: b.name, label: b.name_en ? `${b.name} / ${b.name_en}` : b.name })))
       setLoadingBreeds(false)
     }
     fetchBreeds()
