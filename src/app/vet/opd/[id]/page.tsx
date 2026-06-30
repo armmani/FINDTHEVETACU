@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { ArrowLeft, ClipboardList, CalendarDays, Scale, Pencil, X, Check, Plus } from 'lucide-react'
+import { ArrowLeft, ClipboardList, CalendarDays, Scale, Pencil, X, Check, Plus, Lock } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import LoadingScreen from '@/components/LoadingScreen'
@@ -13,18 +13,29 @@ import toast from 'react-hot-toast'
 const EMOJI: Record<string, string> = { สุนัข: '🐕', แมว: '🐈', กระต่าย: '🐇', นก: '🐦', ปลา: '🐟', อื่นๆ: '🐾' }
 const SPECIES = ['สุนัข', 'แมว', 'กระต่าย', 'นก', 'ปลา', 'อื่นๆ']
 const GENDERS = ['เพศผู้', 'เพศเมีย', 'ไม่ระบุ']
+
 const fmtDate = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
+const fmtDatetime = (d: string) => new Date(d).toLocaleString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+
+/** หลัง 03:00 น. ของวันถัดจาก record_date → lock */
+function isEditLocked(recordDate: string): boolean {
+  const cutoff = new Date(recordDate + 'T00:00:00')
+  cutoff.setDate(cutoff.getDate() + 1)
+  cutoff.setHours(3, 0, 0, 0)
+  return new Date() > cutoff
+}
 
 const OPD_FIELDS = [
-  { key: 'cc',      label: 'CC',      title: 'Chief Complaint' },
-  { key: 'hx',      label: 'Hx',      title: 'History Taking' },
-  { key: 'pe',      label: 'PE',      title: 'Physical Examination' },
-  { key: 'diff_dx', label: 'Diff Dx', title: 'Differential Diagnosis' },
-  { key: 'dx',      label: 'Dx',      title: 'Tentative Diagnosis' },
-  { key: 'tx',      label: 'Tx',      title: 'Treatment' },
-  { key: 'rx',      label: 'Rx',      title: 'Prescription' },
-  { key: 'ce',      label: 'CE',      title: 'Client Education' },
+  { key: 'cc',      label: 'CC',      title: 'Chief Complaint',        hint: 'อาการหลักที่นำมาพบ' },
+  { key: 'hx',      label: 'Hx',      title: 'History Taking',         hint: 'ประวัติการเลี้ยง อาหาร วัคซีน' },
+  { key: 'pe',      label: 'PE',       title: 'Physical Examination',  hint: 'ผลการตรวจร่างกาย' },
+  { key: 'diff_dx', label: 'Diff Dx', title: 'Differential Diagnosis', hint: 'การวินิจฉัยแยกโรค' },
+  { key: 'dx',      label: 'Dx',      title: 'Tentative Diagnosis',    hint: 'การวินิจฉัยโรค' },
+  { key: 'tx',      label: 'Tx',      title: 'Treatment',              hint: 'การรักษา หัตถการ' },
+  { key: 'rx',      label: 'Rx',      title: 'Prescription',           hint: 'ยาที่สั่ง ขนาด วิธีใช้' },
+  { key: 'ce',      label: 'CE',      title: 'Client Education',       hint: 'คำแนะนำสำหรับเจ้าของ' },
 ] as const
+type OPDKey = typeof OPD_FIELDS[number]['key']
 
 function MedicalTags({ tags }: { tags: string[] }) {
   if (!tags?.length) return null
@@ -38,26 +49,15 @@ function MedicalTags({ tags }: { tags: string[] }) {
 }
 
 interface PetInfo {
-  id: string
-  name: string
-  species: string
-  breed: string | null
-  gender: string | null
-  neutered: boolean
-  photo_url: string | null
-  medical_tags: string[]
-  profiles: { full_name: string } | null
+  id: string; name: string; species: string; breed: string | null
+  gender: string | null; neutered: boolean; photo_url: string | null
+  medical_tags: string[]; profiles: { full_name: string } | null
 }
-
 interface OPDRecord {
-  id: string
-  record_date: string
-  weight: number | null
-  next_appointment: string | null
-  photo1_url: string | null
-  photo1_caption: string | null
-  photo2_url: string | null
-  photo2_caption: string | null
+  id: string; record_date: string; created_at: string
+  weight: number | null; next_appointment: string | null
+  photo1_url: string | null; photo1_caption: string | null
+  photo2_url: string | null; photo2_caption: string | null
   cc: string | null; hx: string | null; pe: string | null
   diff_dx: string | null; dx: string | null
   tx: string | null; rx: string | null; ce: string | null
@@ -71,7 +71,7 @@ export default function OPDDetailPage() {
   const [record, setRecord] = useState<OPDRecord | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Pet edit state
+  // Pet edit
   const [editingPet, setEditingPet] = useState(false)
   const [editName, setEditName] = useState('')
   const [editSpecies, setEditSpecies] = useState('')
@@ -82,7 +82,14 @@ export default function OPDDetailPage() {
   const [tagInput, setTagInput] = useState('')
   const [breedOptions, setBreedOptions] = useState<SelectOption[]>([])
   const [loadingBreeds, setLoadingBreeds] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const [savingPet, setSavingPet] = useState(false)
+
+  // OPD edit
+  const [editingOPD, setEditingOPD] = useState(false)
+  const [editFields, setEditFields] = useState<Record<OPDKey, string>>({ cc: '', hx: '', pe: '', diff_dx: '', dx: '', tx: '', rx: '', ce: '' })
+  const [editWeight, setEditWeight] = useState('')
+  const [editNextAppt, setEditNextAppt] = useState('')
+  const [savingOPD, setSavingOPD] = useState(false)
 
   useEffect(() => {
     supabase
@@ -104,16 +111,21 @@ export default function OPDDetailPage() {
       })
   }, [editSpecies, editingPet])
 
-  const openEdit = () => {
+  const openEditPet = () => {
     const pet = record?.pets
     if (!pet) return
-    setEditName(pet.name)
-    setEditSpecies(pet.species)
-    setEditBreed(pet.breed || '')
-    setEditGender(pet.gender || 'ไม่ระบุ')
-    setEditNeutered(pet.neutered || false)
+    setEditName(pet.name); setEditSpecies(pet.species); setEditBreed(pet.breed || '')
+    setEditGender(pet.gender || 'ไม่ระบุ'); setEditNeutered(pet.neutered || false)
     setEditTags(pet.medical_tags || [])
     setEditingPet(true)
+  }
+
+  const openEditOPD = () => {
+    if (!record) return
+    setEditFields({ cc: record.cc || '', hx: record.hx || '', pe: record.pe || '', diff_dx: record.diff_dx || '', dx: record.dx || '', tx: record.tx || '', rx: record.rx || '', ce: record.ce || '' })
+    setEditWeight(record.weight != null ? String(record.weight) : '')
+    setEditNextAppt(record.next_appointment || '')
+    setEditingOPD(true)
   }
 
   const addTag = (val: string) => {
@@ -123,35 +135,35 @@ export default function OPDDetailPage() {
   }
 
   const handleSavePet = async () => {
-    if (!record?.pets?.id) return
-    if (!editName.trim()) { toast.error('กรุณาใส่ชื่อสัตว์เลี้ยง'); return }
-    setSaving(true)
+    if (!record?.pets?.id || !editName.trim()) { toast.error('กรุณาใส่ชื่อสัตว์เลี้ยง'); return }
+    setSavingPet(true)
     const { error } = await supabase.from('pets').update({
-      name: editName.trim(),
-      species: editSpecies,
-      breed: editBreed.trim() || null,
-      gender: editGender,
-      neutered: editNeutered,
-      medical_tags: editTags,
+      name: editName.trim(), species: editSpecies, breed: editBreed.trim() || null,
+      gender: editGender, neutered: editNeutered, medical_tags: editTags,
     }).eq('id', record.pets.id)
+    if (error) { toast.error('บันทึกไม่สำเร็จ'); setSavingPet(false); return }
+    setRecord(prev => prev ? { ...prev, pets: prev.pets ? { ...prev.pets, name: editName.trim(), species: editSpecies, breed: editBreed.trim() || null, gender: editGender, neutered: editNeutered, medical_tags: editTags } : null } : null)
+    toast.success('แก้ไขข้อมูลสัตว์เลี้ยงแล้ว')
+    setEditingPet(false); setSavingPet(false)
+  }
 
-    if (error) { toast.error('บันทึกไม่สำเร็จ'); setSaving(false); return }
-
+  const handleSaveOPD = async () => {
+    if (!record) return
+    setSavingOPD(true)
+    const { error } = await supabase.from('opd_records').update({
+      ...Object.fromEntries(OPD_FIELDS.map(f => [f.key, editFields[f.key].trim() || null])),
+      weight: editWeight ? parseFloat(editWeight) : null,
+      next_appointment: editNextAppt || null,
+    }).eq('id', record.id)
+    if (error) { toast.error('บันทึกไม่สำเร็จ'); setSavingOPD(false); return }
     setRecord(prev => prev ? {
       ...prev,
-      pets: prev.pets ? {
-        ...prev.pets,
-        name: editName.trim(),
-        species: editSpecies,
-        breed: editBreed.trim() || null,
-        gender: editGender,
-        neutered: editNeutered,
-        medical_tags: editTags,
-      } : null
+      ...Object.fromEntries(OPD_FIELDS.map(f => [f.key, editFields[f.key].trim() || null])),
+      weight: editWeight ? parseFloat(editWeight) : null,
+      next_appointment: editNextAppt || null,
     } : null)
-    toast.success('แก้ไขข้อมูลแล้ว')
-    setEditingPet(false)
-    setSaving(false)
+    toast.success('แก้ไขบันทึก OPD แล้ว')
+    setEditingOPD(false); setSavingOPD(false)
   }
 
   if (loading) return <LoadingScreen />
@@ -164,6 +176,7 @@ export default function OPDDetailPage() {
 
   const pet = record.pets
   const ownerName = (pet?.profiles as any)?.full_name ?? null
+  const locked = isEditLocked(record.record_date)
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
@@ -176,11 +189,16 @@ export default function OPDDetailPage() {
           <h1 className="text-xl font-bold flex items-center gap-2">
             <ClipboardList className="w-5 h-5 text-primary-600" /> บันทึก OPD
           </h1>
-          <p className="text-sm text-gray-500">{fmtDate(record.record_date)}</p>
+          <p className="text-sm text-gray-500">{fmtDatetime(record.created_at)}</p>
         </div>
+        {locked && (
+          <div className="flex items-center gap-1 text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-lg">
+            <Lock className="w-3 h-3" /> ล็อกแล้ว
+          </div>
+        )}
       </div>
 
-      {/* Pet + clinic summary */}
+      {/* Pet card */}
       <div className="card space-y-3">
         <div className="flex items-center gap-3">
           <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
@@ -203,17 +221,15 @@ export default function OPDDetailPage() {
             <MedicalTags tags={pet?.medical_tags || []} />
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
-            {record.clinics && (
-              <p className="text-sm text-gray-500">{record.clinics.name}</p>
-            )}
-            <button onClick={openEdit}
+            {record.clinics && <p className="text-sm text-gray-500">{record.clinics.name}</p>}
+            <button onClick={openEditPet}
               className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 border border-primary-200 dark:border-primary-700 rounded-lg px-2 py-1 hover:bg-primary-50 dark:hover:bg-primary-950 transition-colors">
               <Pencil className="w-3 h-3" /> แก้ไข
             </button>
           </div>
         </div>
 
-        {record.weight != null || record.next_appointment ? (
+        {(record.weight != null || record.next_appointment) && (
           <div className="flex flex-wrap gap-3 pt-1 border-t border-gray-100 dark:border-gray-800">
             {record.weight != null && (
               <div className="flex items-center gap-1.5 text-sm font-medium text-primary-700 dark:text-primary-300">
@@ -227,13 +243,12 @@ export default function OPDDetailPage() {
               </div>
             )}
           </div>
-        ) : null}
+        )}
 
-        {/* Inline pet edit form */}
+        {/* Inline pet edit */}
         {editingPet && (
           <div className="border-t border-gray-100 dark:border-gray-800 pt-4 space-y-3">
             <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">แก้ไขข้อมูลสัตว์เลี้ยง</p>
-
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label">ชื่อ *</label>
@@ -246,17 +261,14 @@ export default function OPDDetailPage() {
                 </select>
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label">สายพันธุ์</label>
                 {editSpecies === 'อื่นๆ' || editSpecies === 'ปลา' ? (
                   <input value={editBreed} onChange={e => setEditBreed(e.target.value)} className="input" placeholder="ระบุสายพันธุ์" />
                 ) : (
-                  <SearchableSelect value={editBreed} onChange={setEditBreed}
-                    options={breedOptions} loading={loadingBreeds}
-                    placeholder="ค้นหาสายพันธุ์..." freeTextPlaceholder="ระบุสายพันธุ์..."
-                    notInListLabel="ไม่มีในรายการ — กรอกเอง" />
+                  <SearchableSelect value={editBreed} onChange={setEditBreed} options={breedOptions} loading={loadingBreeds}
+                    placeholder="ค้นหาสายพันธุ์..." freeTextPlaceholder="ระบุสายพันธุ์..." notInListLabel="ไม่มีในรายการ — กรอกเอง" />
                 )}
               </div>
               <div>
@@ -266,29 +278,23 @@ export default function OPDDetailPage() {
                 </select>
               </div>
             </div>
-
             <div>
               <label className="label">การทำหมัน</label>
               <div className="flex gap-2">
                 {[{ v: false, label: 'ยังไม่ได้ทำหมัน' }, { v: true, label: 'ทำหมันแล้ว' }].map(opt => (
                   <button key={String(opt.v)} type="button" onClick={() => setEditNeutered(opt.v)}
-                    className={`flex-1 py-2 rounded-xl border text-sm font-medium transition-colors
-                      ${editNeutered === opt.v
-                        ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-950 dark:text-primary-300'
-                        : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-gray-300'}`}>
+                    className={`flex-1 py-2 rounded-xl border text-sm font-medium transition-colors ${editNeutered === opt.v ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-950 dark:text-primary-300' : 'border-gray-200 dark:border-gray-700 text-gray-500'}`}>
                     {opt.label}
                   </button>
                 ))}
               </div>
             </div>
-
             <div>
               <label className="label">Medical Tags</label>
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {editTags.map(t => (
                   <span key={t} className="inline-flex items-center gap-1 text-xs bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-300 px-2 py-0.5 rounded-full font-medium">
-                    ⚠️ {t}
-                    <button onClick={() => setEditTags(prev => prev.filter(x => x !== t))}><X className="w-3 h-3" /></button>
+                    ⚠️ {t} <button onClick={() => setEditTags(prev => prev.filter(x => x !== t))}><X className="w-3 h-3" /></button>
                   </span>
                 ))}
               </div>
@@ -296,19 +302,15 @@ export default function OPDDetailPage() {
                 <input value={tagInput} onChange={e => setTagInput(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag(tagInput) } }}
                   className="input flex-1 text-sm" placeholder="เช่น แพ้ยา Penicillin" />
-                <button type="button" onClick={() => addTag(tagInput)}
-                  className="btn-secondary px-3"><Plus className="w-4 h-4" /></button>
+                <button type="button" onClick={() => addTag(tagInput)} className="btn-secondary px-3"><Plus className="w-4 h-4" /></button>
               </div>
             </div>
-
             <div className="flex gap-2 pt-1">
-              <button onClick={() => setEditingPet(false)}
-                className="flex-1 btn-secondary flex items-center justify-center gap-1">
+              <button onClick={() => setEditingPet(false)} className="flex-1 btn-secondary flex items-center justify-center gap-1">
                 <X className="w-4 h-4" /> ยกเลิก
               </button>
-              <button onClick={handleSavePet} disabled={saving}
-                className="flex-1 btn-primary flex items-center justify-center gap-1">
-                <Check className="w-4 h-4" /> {saving ? 'กำลังบันทึก...' : 'บันทึก'}
+              <button onClick={handleSavePet} disabled={savingPet} className="flex-1 btn-primary flex items-center justify-center gap-1">
+                <Check className="w-4 h-4" /> {savingPet ? 'กำลังบันทึก...' : 'บันทึก'}
               </button>
             </div>
           </div>
@@ -317,7 +319,57 @@ export default function OPDDetailPage() {
 
       {/* OPD fields */}
       <div className="space-y-3">
-        {OPD_FIELDS.map(({ key, label, title }) => {
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-gray-500">รายละเอียดการรักษา</p>
+          {locked ? (
+            <div className="flex items-center gap-1 text-xs text-gray-400">
+              <Lock className="w-3 h-3" />
+              <span>ล็อกแล้ว — แก้ไขได้ถึง 03.00 น. ของวันถัดไป</span>
+            </div>
+          ) : (
+            <button onClick={openEditOPD}
+              className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 dark:text-primary-400 border border-primary-200 dark:border-primary-700 rounded-lg px-2 py-1 hover:bg-primary-50 dark:hover:bg-primary-950 transition-colors">
+              <Pencil className="w-3 h-3" /> แก้ไข
+            </button>
+          )}
+        </div>
+
+        {/* OPD inline edit form */}
+        {editingOPD && !locked && (
+          <div className="card space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="label">น้ำหนัก (kg)</label>
+                <input type="number" step="0.1" value={editWeight} onChange={e => setEditWeight(e.target.value)} className="input" placeholder="0.0" />
+              </div>
+              <div>
+                <label className="label">นัดหมายถัดไป</label>
+                <input type="date" value={editNextAppt} onChange={e => setEditNextAppt(e.target.value)} className="input" />
+              </div>
+            </div>
+            {OPD_FIELDS.map(f => (
+              <div key={f.key}>
+                <label className="label">
+                  <span className="font-bold text-primary-600">{f.label}</span>
+                  <span className="text-gray-400 font-normal ml-1">— {f.title}</span>
+                  <span className="text-gray-300 text-xs font-normal ml-1">({f.hint})</span>
+                </label>
+                <textarea rows={3} value={editFields[f.key]} onChange={e => setEditFields(prev => ({ ...prev, [f.key]: e.target.value }))}
+                  className="input resize-none" placeholder={f.hint} />
+              </div>
+            ))}
+            <div className="flex gap-2 pt-1">
+              <button onClick={() => setEditingOPD(false)} className="flex-1 btn-secondary flex items-center justify-center gap-1">
+                <X className="w-4 h-4" /> ยกเลิก
+              </button>
+              <button onClick={handleSaveOPD} disabled={savingOPD} className="flex-1 btn-primary flex items-center justify-center gap-1">
+                <Check className="w-4 h-4" /> {savingOPD ? 'กำลังบันทึก...' : 'บันทึก'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!editingOPD && OPD_FIELDS.map(({ key, label, title }) => {
           const value = record[key as keyof OPDRecord]
           if (!value) return null
           return (
@@ -326,9 +378,7 @@ export default function OPDDetailPage() {
                 <span className="font-bold text-primary-600 dark:text-primary-400">{label}</span>
                 <span className="text-gray-400"> — {title}</span>
               </p>
-              <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-gray-300 leading-relaxed">
-                {value as string}
-              </p>
+              <p className="text-sm whitespace-pre-wrap text-gray-700 dark:text-gray-300 leading-relaxed">{value as string}</p>
             </div>
           )
         })}
@@ -339,18 +389,16 @@ export default function OPDDetailPage() {
         <div>
           <p className="label mb-2">รูปภาพ</p>
           <div className="grid grid-cols-2 gap-3">
-            {[
-              { url: record.photo1_url, caption: record.photo1_caption },
-              { url: record.photo2_url, caption: record.photo2_caption },
-            ].filter(p => p.url).map((p, i) => (
-              <div key={i} className="space-y-1.5">
-                <a href={p.url!} target="_blank" rel="noopener noreferrer"
-                  className="block relative h-44 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
-                  <Image src={p.url!} alt={p.caption || ''} fill className="object-cover hover:opacity-90 transition-opacity" />
-                </a>
-                {p.caption && <p className="text-xs text-gray-500 text-center">{p.caption}</p>}
-              </div>
-            ))}
+            {[{ url: record.photo1_url, caption: record.photo1_caption }, { url: record.photo2_url, caption: record.photo2_caption }]
+              .filter(p => p.url).map((p, i) => (
+                <div key={i} className="space-y-1.5">
+                  <a href={p.url!} target="_blank" rel="noopener noreferrer"
+                    className="block relative h-44 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
+                    <Image src={p.url!} alt={p.caption || ''} fill className="object-cover hover:opacity-90 transition-opacity" />
+                  </a>
+                  {p.caption && <p className="text-xs text-gray-500 text-center">{p.caption}</p>}
+                </div>
+              ))}
           </div>
         </div>
       )}
