@@ -173,16 +173,16 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
         </div>
 
         {/* Right: Utility buttons */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center shrink-0">
 
           {/* Notification bell */}
           <div className="relative" ref={notifRef}>
             <button
               onClick={handleOpenNotif}
-              className="relative text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+              className="relative p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
               title="การแจ้งเตือน"
             >
-              <Bell className="w-5 h-5" />
+              <Bell className="w-4 h-4" />
               {unreadCount > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
                   {unreadCount > 9 ? '9+' : unreadCount}
@@ -229,17 +229,22 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
             )}
           </div>
 
+          {/* Divider */}
+          <div className="w-px h-5 bg-gray-200 dark:bg-gray-700 mx-2" />
+
           {/* Dark mode toggle */}
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+            className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             title={t.nav.changeTheme}
           >
-            {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
-          <button onClick={handleSignOut} className="text-gray-500 dark:text-gray-400 hover:text-red-500 transition-colors" title={t.nav.signOut}>
-            <LogOut className="w-5 h-5" />
+          <button onClick={handleSignOut}
+            className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+            title={t.nav.signOut}>
+            <LogOut className="w-4 h-4" />
           </button>
         </div>
       </div>
