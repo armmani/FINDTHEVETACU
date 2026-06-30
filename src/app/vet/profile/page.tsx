@@ -348,7 +348,18 @@ export default function VetProfilePage() {
         </div>
       )}
 
-      {/* สถานะรับงาน — ซ่อนไว้ก่อน */}
+      {/* สถานะรับงาน — inactive ก่อน */}
+      <div className="card mb-4 opacity-50 cursor-not-allowed select-none">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-semibold text-sm">สถานะรับงาน</p>
+            <p className="text-xs text-gray-400 mt-0.5">ฟีเจอร์นี้ยังไม่เปิดใช้งาน</p>
+          </div>
+          <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full relative">
+            <div className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow" />
+          </div>
+        </div>
+      </div>
 
       <form onSubmit={handleSave} className="space-y-5">
 

@@ -115,11 +115,6 @@ export default function VetDetailPage() {
         )}
         <div>
           <h2 className="text-xl font-bold text-gray-900">{vet.full_name}</h2>
-          <span className={`inline-block text-sm px-3 py-0.5 rounded-full font-medium mt-1 ${
-            vet.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-          }`}>
-            {vet.is_available ? '🟢 รับงาน' : '🔴 ไม่ว่าง'}
-          </span>
         </div>
 
         {vet.additional_education?.length > 0 && (
