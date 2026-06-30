@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Phone, Shield, Search } from 'lucide-react'
+import { Phone, Shield, Search, ClipboardList, Building2, UserCircle } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useEffect } from 'react'
 
@@ -49,38 +49,60 @@ export default function LandingPage() {
       {/* How it works */}
       <section className="max-w-5xl mx-auto px-4 py-20">
         <h2 className="text-2xl font-bold text-center mb-12 text-gray-900">วิธีการใช้งาน</h2>
-        <div className="grid md:grid-cols-3 gap-8">
-          {[
-            {
-              icon: Search,
-              step: '1',
-              title: 'ค้นหาหมอใกล้คุณ',
-              desc: 'ค้นหาสัตวแพทย์ฝังเข็มตามจังหวัดหรือเขต ดูโปรไฟล์และตารางออกตรวจของแต่ละหมอ',
-            },
-            {
-              icon: Shield,
-              step: '2',
-              title: 'ตรวจสอบใบอนุญาต',
-              desc: 'หมอทุกคนแสดงเลขใบอนุญาต พร้อมลิงก์ตรวจสอบตรงจากเว็บสัตวแพทยสภา',
-            },
-            {
-              icon: Phone,
-              step: '3',
-              title: 'ติดต่อหมอได้เลย',
-              desc: 'ดูเบอร์โทรและตารางออกตรวจ แล้วติดต่อนัดหมายกับหมอโดยตรง',
-            },
-          ].map(({ icon: Icon, step, title, desc }) => (
-            <div key={step} className="text-center">
-              <div className="bg-primary-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 relative">
-                <Icon className="w-8 h-8 text-primary-600" />
-                <span className="absolute -top-1 -right-1 bg-primary-600 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold">
-                  {step}
-                </span>
-              </div>
-              <h3 className="font-semibold text-lg mb-2 text-gray-900">{title}</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">{desc}</p>
+        <div className="grid md:grid-cols-2 gap-8">
+
+          {/* เจ้าของสัตว์ */}
+          <div className="bg-gray-50 rounded-2xl p-8">
+            <div className="flex items-center gap-2 mb-6">
+              <span className="text-2xl">🐾</span>
+              <h3 className="text-lg font-bold text-gray-900">สำหรับเจ้าของสัตว์</h3>
             </div>
-          ))}
+            <div className="space-y-5">
+              {[
+                { icon: Search, step: '1', title: 'ค้นหาหมอใกล้คุณ', desc: 'ค้นหาสัตวแพทย์ฝังเข็มตามจังหวัด ดูโปรไฟล์และตารางออกตรวจ' },
+                { icon: Shield, step: '2', title: 'ตรวจสอบใบอนุญาต', desc: 'หมอทุกคนแสดงเลขใบอนุญาต พร้อมลิงก์ตรวจสอบจากสัตวแพทยสภา' },
+                { icon: Phone, step: '3', title: 'ติดต่อหมอได้เลย', desc: 'ดูเบอร์โทรและตารางออกตรวจ แล้วติดต่อนัดหมายโดยตรง' },
+              ].map(({ icon: Icon, step, title, desc }) => (
+                <div key={step} className="flex gap-4 items-start">
+                  <div className="bg-white w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm relative">
+                    <Icon className="w-5 h-5 text-primary-600" />
+                    <span className="absolute -top-1 -right-1 bg-primary-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{step}</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">{title}</p>
+                    <p className="text-gray-500 text-xs leading-relaxed mt-0.5">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* สัตวแพทย์ */}
+          <div className="bg-primary-50 rounded-2xl p-8">
+            <div className="flex items-center gap-2 mb-6">
+              <span className="text-2xl">🩺</span>
+              <h3 className="text-lg font-bold text-gray-900">สำหรับสัตวแพทย์</h3>
+            </div>
+            <div className="space-y-5">
+              {[
+                { icon: UserCircle, step: '1', title: 'สร้างโปรไฟล์หมอ', desc: 'กรอกข้อมูล ใบอนุญาต ตารางออกตรวจ และประวัติการฝึกอบรม' },
+                { icon: Building2, step: '2', title: 'เพิ่มคลินิก / รพ.สัตว์', desc: 'ลงทะเบียนสถานพยาบาลที่ทำงาน รอ Admin ตรวจสอบและอนุมัติ' },
+                { icon: ClipboardList, step: '3', title: 'บันทึก OPD', desc: 'จัดการข้อมูลสัตว์ป่วย บันทึกการรักษา และติดตามผลในระบบ' },
+              ].map(({ icon: Icon, step, title, desc }) => (
+                <div key={step} className="flex gap-4 items-start">
+                  <div className="bg-white w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm relative">
+                    <Icon className="w-5 h-5 text-primary-600" />
+                    <span className="absolute -top-1 -right-1 bg-primary-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{step}</span>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">{title}</p>
+                    <p className="text-gray-500 text-xs leading-relaxed mt-0.5">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
       </section>
 
