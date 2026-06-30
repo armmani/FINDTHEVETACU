@@ -8,6 +8,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
 import LoadingScreen from '@/components/LoadingScreen'
+import SearchableSelect, { SelectOption } from '@/components/SearchableSelect'
 
 const SPECIES = ['สุนัข', 'แมว', 'กระต่าย', 'นก', 'ปลา', 'อื่นๆ']
 const GENDERS = ['เพศผู้', 'เพศเมีย', 'ไม่ระบุ']
@@ -61,11 +62,24 @@ export default function NewOPDPage() {
   const [newName, setNewName] = useState('')
   const [newSpecies, setNewSpecies] = useState('สุนัข')
   const [newBreed, setNewBreed] = useState('')
+  const [breedOptions, setBreedOptions] = useState<SelectOption[]>([])
+  const [loadingBreeds, setLoadingBreeds] = useState(false)
   const [newGender, setNewGender] = useState('ไม่ระบุ')
   const [newNeutered, setNewNeutered] = useState(false)
   const [newTags, setNewTags] = useState<string[]>([])
   const [newTagInput, setNewTagInput] = useState('')
   const [creatingPet, setCreatingPet] = useState(false)
+
+  useEffect(() => {
+    if (newSpecies === 'อื่นๆ' || newSpecies === 'ปลา') { setBreedOptions([]); setNewBreed(''); return }
+    setLoadingBreeds(true)
+    setNewBreed('')
+    supabase.from('pet_breeds').select('id, name').eq('species', newSpecies).order('name')
+      .then(({ data }) => {
+        setBreedOptions((data || []).map((b: any) => ({ value: b.name, label: b.name })))
+        setLoadingBreeds(false)
+      })
+  }, [newSpecies])
 
   const addNewTag = (val: string) => {
     const t = val.trim()
@@ -328,7 +342,19 @@ export default function NewOPDPage() {
               </div>
               <div>
                 <label className="label">สายพันธุ์</label>
-                <input value={newBreed} onChange={e => setNewBreed(e.target.value)} className="input" placeholder="สายพันธุ์ (ถ้ามี)" />
+                {newSpecies === 'อื่นๆ' || newSpecies === 'ปลา' ? (
+                  <input value={newBreed} onChange={e => setNewBreed(e.target.value)} className="input" placeholder="ระบุสายพันธุ์ (ถ้ามี)" />
+                ) : (
+                  <SearchableSelect
+                    value={newBreed}
+                    onChange={setNewBreed}
+                    options={breedOptions}
+                    loading={loadingBreeds}
+                    placeholder="ค้นหาสายพันธุ์..."
+                    freeTextPlaceholder="ระบุสายพันธุ์..."
+                    notInListLabel="ไม่มีในรายการ — กรอกเอง"
+                  />
+                )}
               </div>
               <div>
                 <label className="label">การทำหมัน</label>
