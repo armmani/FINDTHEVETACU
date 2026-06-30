@@ -50,12 +50,6 @@ export default function AdminNavbar({ fullName, role }: { fullName: string; role
           )}
           <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">{fullName}</span>
           <button
-            onClick={() => setLang(lang === 'th' ? 'en' : 'th')}
-            className="text-xs font-bold px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-primary-400 hover:text-primary-600 transition-colors"
-          >
-            {lang === 'th' ? 'EN' : 'TH'}
-          </button>
-          <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
           >

@@ -229,15 +229,6 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
             )}
           </div>
 
-          {/* Language toggle */}
-          <button
-            onClick={() => setLang(lang === 'th' ? 'en' : 'th')}
-            className="text-xs font-bold px-2 py-1 rounded-md border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-            title={t.nav.changeTheme}
-          >
-            {lang === 'th' ? 'EN' : 'TH'}
-          </button>
-
           {/* Dark mode toggle */}
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
