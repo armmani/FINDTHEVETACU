@@ -49,6 +49,7 @@ export default function NewOPDPage() {
 
   // Clinic
   const [clinics, setClinics] = useState<Clinic[]>([])
+  const [clinicQuery, setClinicQuery] = useState('')
   const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null)
 
   // Pet
@@ -95,7 +96,6 @@ export default function NewOPDPage() {
       const { data } = await supabase
         .from('clinics')
         .select('id, name, type')
-        .eq('owner_vet_id', user.id)
         .eq('status', 'approved')
         .order('name')
       const list = (data as Clinic[]) || []
@@ -227,13 +227,22 @@ export default function NewOPDPage() {
       {/* ── Step 1: Clinic ── */}
       {step === 'clinic' && (
         <div className="space-y-3">
-          {clinics.length === 0 ? (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              value={clinicQuery}
+              onChange={e => setClinicQuery(e.target.value)}
+              placeholder="ค้นหาคลินิก / โรงพยาบาล..."
+              className="input pl-9 w-full"
+              autoFocus
+            />
+          </div>
+          {clinics.filter(c => c.name.toLowerCase().includes(clinicQuery.toLowerCase())).length === 0 ? (
             <div className="card text-center py-12">
               <Hospital className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 mb-1">ยังไม่มีคลินิกที่ได้รับการอนุมัติ</p>
-              <Link href="/clinic/manage/new" className="btn-primary inline-flex mt-3 text-sm">เพิ่มคลินิก</Link>
+              <p className="text-gray-500 mb-1">{clinicQuery ? 'ไม่พบคลินิกที่ค้นหา' : 'ยังไม่มีคลินิกในระบบ'}</p>
             </div>
-          ) : clinics.map(c => (
+          ) : clinics.filter(c => c.name.toLowerCase().includes(clinicQuery.toLowerCase())).map(c => (
             <button key={c.id} onClick={() => { setSelectedClinic(c); setStep('pet') }}
               className="card w-full text-left flex items-center gap-3 hover:shadow-md transition-shadow">
               <Hospital className="w-5 h-5 text-primary-600 shrink-0" />
