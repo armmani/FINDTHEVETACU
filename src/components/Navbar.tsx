@@ -268,6 +268,7 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
           </>
         ) : (
           <>
+            <MobileTab href="/vets" icon={<Stethoscope className="w-5 h-5" />} label={t.nav.findVet} />
             <MobileTab href="/vet/opd" icon={<ClipboardList className="w-5 h-5" />} label="OPD" />
             <MobileTab href="/clinic/manage" icon={<House className="w-5 h-5" />} label={t.nav.myClinics} />
             <MobileTab href="/vet/profile" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
