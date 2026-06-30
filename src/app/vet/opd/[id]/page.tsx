@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { ArrowLeft, ClipboardList, CalendarDays, Scale, Pencil, X, Check, Plus, Lock } from 'lucide-react'
+import { ArrowLeft, ClipboardList, CalendarDays, Scale, Pencil, X, Check, Plus, Lock, UserPlus, Search } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import LoadingScreen from '@/components/LoadingScreen'
@@ -84,6 +84,14 @@ export default function OPDDetailPage() {
   const [loadingBreeds, setLoadingBreeds] = useState(false)
   const [savingPet, setSavingPet] = useState(false)
 
+  // Link owner
+  const [showLinkOwner, setShowLinkOwner] = useState(false)
+  const [ownerQuery, setOwnerQuery] = useState('')
+  const [ownerResults, setOwnerResults] = useState<{ id: string; full_name: string; phone: string | null }[]>([])
+  const [searchingOwner, setSearchingOwner] = useState(false)
+  const [sendingLink, setSendingLink] = useState(false)
+  const [linkSent, setLinkSent] = useState(false)
+
   // OPD edit
   const [editingOPD, setEditingOPD] = useState(false)
   const [editFields, setEditFields] = useState<Record<OPDKey, string>>({ cc: '', hx: '', pe: '', diff_dx: '', dx: '', tx: '', rx: '', ce: '' })
@@ -110,6 +118,49 @@ export default function OPDDetailPage() {
         setLoadingBreeds(false)
       })
   }, [editSpecies, editingPet])
+
+  useEffect(() => {
+    if (!showLinkOwner || ownerQuery.trim().length < 2) { setOwnerResults([]); return }
+    setSearchingOwner(true)
+    const t = setTimeout(async () => {
+      const { data } = await supabase.from('profiles')
+        .select('id, full_name, phone')
+        .eq('role', 'owner')
+        .ilike('full_name', `%${ownerQuery.trim()}%`)
+        .limit(8)
+      setOwnerResults((data as any) || [])
+      setSearchingOwner(false)
+    }, 350)
+    return () => clearTimeout(t)
+  }, [ownerQuery, showLinkOwner])
+
+  const handleSendLinkRequest = async (owner: { id: string; full_name: string }) => {
+    if (!record?.pets?.id) return
+    setSendingLink(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { error } = await supabase.from('pet_ownership_requests').insert({
+      pet_id: record.pets.id,
+      requester_id: owner.id,
+      target_owner_id: owner.id,
+      vet_initiator_id: user.id,
+      status: 'pending',
+    })
+    if (error) { toast.error('ส่งคำขอไม่สำเร็จ'); setSendingLink(false); return }
+
+    await supabase.from('notifications').insert({
+      user_id: owner.id,
+      title: 'สัตวแพทย์ขอเชื่อมสัตว์เลี้ยงกับคุณ',
+      body: `สัตวแพทย์ส่งคำขอเชื่อมสัตว์เลี้ยง "${record.pets.name}" กับบัญชีของคุณ กรุณายืนยันในหน้าสัตว์เลี้ยง`,
+      link: '/owner/pets',
+    })
+
+    setSendingLink(false)
+    setLinkSent(true)
+    setShowLinkOwner(false)
+    toast.success(`ส่งคำขอให้ ${owner.full_name} แล้ว`)
+  }
 
   const openEditPet = () => {
     const pet = record?.pets
@@ -216,7 +267,16 @@ export default function OPDDetailPage() {
             </p>
             {ownerName
               ? <p className="text-xs text-gray-400 mt-0.5">เจ้าของ: {ownerName}</p>
-              : <p className="text-xs text-amber-500 mt-0.5">ยังไม่มีเจ้าของในระบบ</p>
+              : <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-xs text-amber-500">ยังไม่มีเจ้าของในระบบ</p>
+                  {!linkSent
+                    ? <button onClick={() => setShowLinkOwner(true)}
+                        className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 border border-primary-200 rounded-md px-1.5 py-0.5 hover:bg-primary-50 transition-colors">
+                        <UserPlus className="w-3 h-3" /> ส่งคำขอ
+                      </button>
+                    : <span className="text-xs text-green-600">✓ ส่งแล้ว รอเจ้าของยืนยัน</span>
+                  }
+                </div>
             }
             <MedicalTags tags={pet?.medical_tags || []} />
           </div>
@@ -241,6 +301,44 @@ export default function OPDDetailPage() {
                 <CalendarDays className="w-4 h-4" />
                 นัดหมายถัดไป: {fmtDate(record.next_appointment)}
               </div>
+            )}
+          </div>
+        )}
+
+        {/* Link owner modal */}
+        {showLinkOwner && (
+          <div className="border-t border-gray-100 dark:border-gray-800 pt-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">ค้นหาเจ้าของเพื่อส่งคำขอ</p>
+              <button onClick={() => { setShowLinkOwner(false); setOwnerQuery(''); setOwnerResults([]) }}>
+                <X className="w-4 h-4 text-gray-400" />
+              </button>
+            </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input value={ownerQuery} onChange={e => setOwnerQuery(e.target.value)}
+                className="input pl-9" placeholder="ค้นหาชื่อเจ้าของ..." autoFocus />
+            </div>
+            {searchingOwner && <p className="text-xs text-center text-gray-400">กำลังค้นหา...</p>}
+            {ownerResults.length > 0 && (
+              <div className="space-y-1.5">
+                {ownerResults.map(o => (
+                  <div key={o.id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5">
+                    <div>
+                      <p className="text-sm font-medium">{o.full_name}</p>
+                      {o.phone && <p className="text-xs text-gray-400">{o.phone}</p>}
+                    </div>
+                    <button onClick={() => handleSendLinkRequest(o)} disabled={sendingLink}
+                      className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1">
+                      <UserPlus className="w-3 h-3" />
+                      {sendingLink ? '...' : 'ส่งคำขอ'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {ownerQuery.trim().length >= 2 && !searchingOwner && ownerResults.length === 0 && (
+              <p className="text-xs text-center text-gray-400">ไม่พบเจ้าของชื่อ "{ownerQuery}"</p>
             )}
           </div>
         )}

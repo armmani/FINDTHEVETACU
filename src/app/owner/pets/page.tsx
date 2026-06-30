@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase'
-import { Plus, PawPrint, ChevronRight, X, LinkIcon } from 'lucide-react'
+import { Plus, PawPrint, ChevronRight, X, LinkIcon, Bell, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Image from 'next/image'
 import SearchableSelect, { SelectOption } from '@/components/SearchableSelect'
@@ -34,11 +34,20 @@ function calcAge(birthdate: string): string {
   return m > 0 ? `${y} ปี ${m} เดือน` : `${y} ปี`
 }
 
+interface VetLinkRequest {
+  id: string
+  status: string
+  pets: { id: string; name: string; species: string; breed: string | null } | null
+  profiles: { full_name: string } | null
+}
+
 export default function PetsPage() {
   const supabase = createClient()
   const router = useRouter()
   const [pets, setPets] = useState<Pet[]>([])
   const [loading, setLoading] = useState(true)
+  const [vetRequests, setVetRequests] = useState<VetLinkRequest[]>([])
+  const [respondingId, setRespondingId] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -73,9 +82,38 @@ export default function PetsPage() {
   const load = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { data } = await supabase.from('pets').select('*').eq('owner_id', user.id).order('created_at')
-    setPets((data as Pet[]) || [])
+    const [{ data: petsData }, { data: reqData }] = await Promise.all([
+      supabase.from('pets').select('*').eq('owner_id', user.id).order('created_at'),
+      supabase.from('pet_ownership_requests')
+        .select('id, status, pets(id, name, species, breed), profiles!vet_initiator_id(full_name)')
+        .eq('target_owner_id', user.id)
+        .eq('status', 'pending')
+        .not('vet_initiator_id', 'is', null),
+    ])
+    setPets((petsData as Pet[]) || [])
+    setVetRequests((reqData as unknown as VetLinkRequest[]) || [])
     setLoading(false)
+  }
+
+  const handleVetRequest = async (req: VetLinkRequest, accept: boolean) => {
+    if (!req.pets) return
+    setRespondingId(req.id)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    if (accept) {
+      await supabase.from('pets').update({ owner_id: user.id }).eq('id', req.pets.id)
+    }
+    await supabase.from('pet_ownership_requests').update({ status: accept ? 'approved' : 'rejected' }).eq('id', req.id)
+
+    setVetRequests(prev => prev.filter(r => r.id !== req.id))
+    if (accept) {
+      toast.success(`เชื่อมสัตว์เลี้ยง "${req.pets.name}" แล้ว`)
+      load()
+    } else {
+      toast('ปฏิเสธคำขอแล้ว')
+    }
+    setRespondingId(null)
   }
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -184,6 +222,39 @@ export default function PetsPage() {
               {saving ? 'กำลังบันทึก...' : 'บันทึก'}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* Vet-initiated link requests */}
+      {vetRequests.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Bell className="w-4 h-4 text-amber-500" />
+            <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">สัตวแพทย์ส่งคำขอเชื่อมสัตว์เลี้ยง</p>
+          </div>
+          {vetRequests.map(req => (
+            <div key={req.id} className="card border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 flex items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-amber-900 dark:text-amber-100">{req.pets?.name}</p>
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  {req.pets?.species}{req.pets?.breed ? ` · ${req.pets.breed}` : ''}
+                </p>
+                {req.profiles?.full_name && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">โดย สพ. {req.profiles.full_name}</p>
+                )}
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <button onClick={() => handleVetRequest(req, false)} disabled={respondingId === req.id}
+                  className="flex items-center gap-1 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                  <X className="w-3 h-3" /> ปฏิเสธ
+                </button>
+                <button onClick={() => handleVetRequest(req, true)} disabled={respondingId === req.id}
+                  className="flex items-center gap-1 text-xs bg-primary-600 hover:bg-primary-700 text-white px-3 py-1.5 rounded-lg transition-colors">
+                  <Check className="w-3 h-3" /> {respondingId === req.id ? '...' : 'ยืนยัน'}
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
