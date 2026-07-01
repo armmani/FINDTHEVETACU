@@ -55,19 +55,16 @@ export default function OwnershipRequestsPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setProcessing(null); return }
 
-    const { error } = await supabase
-      .from('pet_ownership_requests')
-      .update({ status: decision, admin_note: note || null, reviewed_by: user.id, reviewed_at: new Date().toISOString() })
-      .eq('id', req.id)
+    // ใช้ RPC (security definer) เพื่อให้ set owner_id ได้จริงโดยไม่ติด RLS
+    const { error } = await supabase.rpc('admin_decide_claim', {
+      p_request_id: req.id,
+      p_decision: decision,
+      p_note: note || null,
+    })
 
-    if (error) { toast.error('เกิดข้อผิดพลาด'); setProcessing(null); return }
+    if (error) { toast.error('เกิดข้อผิดพลาด: ' + error.message); setProcessing(null); return }
 
     if (decision === 'approved' && req.pets) {
-      await supabase
-        .from('pets')
-        .update({ owner_id: req.requester_id })
-        .eq('id', req.pets.id)
-
       await supabase.from('notifications').insert({
         user_id: req.requester_id,
         title: `✅ อนุมัติการเชื่อมสัตว์เลี้ยง "${req.pets.name}"`,

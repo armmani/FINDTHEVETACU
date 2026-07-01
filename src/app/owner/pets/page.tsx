@@ -102,9 +102,12 @@ export default function PetsPage() {
     if (!user) return
 
     if (accept) {
-      await supabase.from('pets').update({ owner_id: user.id }).eq('id', req.pets.id)
+      // RPC (security definer) — set owner_id + status ได้จริงโดยไม่ติด RLS
+      const { error } = await supabase.rpc('accept_vet_link', { p_request_id: req.id })
+      if (error) { toast.error('เชื่อมไม่สำเร็จ: ' + error.message); setRespondingId(null); return }
+    } else {
+      await supabase.from('pet_ownership_requests').update({ status: 'rejected' }).eq('id', req.id)
     }
-    await supabase.from('pet_ownership_requests').update({ status: accept ? 'approved' : 'rejected' }).eq('id', req.id)
 
     setVetRequests(prev => prev.filter(r => r.id !== req.id))
     if (accept) {
