@@ -20,6 +20,11 @@ export default function FeedbackButton() {
 
   const [changelog, setChangelog] = useState<ChangelogItem[]>([])
   const [showAllChangelog, setShowAllChangelog] = useState(false)
+  const [loggedIn, setLoggedIn] = useState(false)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setLoggedIn(!!data.user))
+  }, [])
 
   useEffect(() => {
     if (!open) return
@@ -60,6 +65,8 @@ export default function FeedbackButton() {
     toast.success('ส่ง Feedback แล้ว ขอบคุณครับ!')
     setMessage(''); setImageFile(null); setImagePreview(null); setOpen(false)
   }
+
+  if (!loggedIn) return null
 
   return (
     <>

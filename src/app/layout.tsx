@@ -4,6 +4,7 @@ import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import ThemeProvider from '@/components/ThemeProvider'
 import { LanguageProvider } from '@/contexts/LanguageContext'
+import FeedbackButton from '@/components/FeedbackButton'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <LanguageProvider>
             {children}
+            <FeedbackButton />
             <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
           </LanguageProvider>
         </ThemeProvider>
