@@ -85,3 +85,17 @@
     @apply block text-sm font-medium text-gray-700 mb-1 dark:text-gray-300;
   }
 }
+
+/* ---------- Print / Save-as-PDF (OPD summary) ---------- */
+.print-only { display: none; }
+
+@media print {
+  @page { size: A4; margin: 12mm; }
+  html, body { background: #fff !important; }
+  /* hide app chrome */
+  nav, .no-print, .fixed { display: none !important; }
+  /* show the printable summary */
+  .print-only { display: block !important; }
+  /* keep colors/images as designed */
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}

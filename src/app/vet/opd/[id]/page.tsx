@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { ArrowLeft, ClipboardList, CalendarDays, Scale, Pencil, X, Check, Plus, Lock, UserPlus, Search } from 'lucide-react'
+import { ArrowLeft, ClipboardList, CalendarDays, Scale, Pencil, X, Check, Plus, Lock, UserPlus, Search, Printer } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import LoadingScreen from '@/components/LoadingScreen'
@@ -230,7 +230,8 @@ export default function OPDDetailPage() {
   const locked = isEditLocked(record.record_date)
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5">
+    <>
+    <div className="max-w-2xl mx-auto space-y-5 no-print">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link href="/vet/opd" className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
@@ -242,6 +243,11 @@ export default function OPDDetailPage() {
           </h1>
           <p className="text-sm text-gray-500">{fmtDatetime(record.created_at)}</p>
         </div>
+        <button onClick={() => window.print()}
+          className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          title="พิมพ์ หรือบันทึกเป็น PDF">
+          <Printer className="w-4 h-4" /> พิมพ์ / PDF
+        </button>
         {locked && (
           <div className="flex items-center gap-1 text-xs text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-lg">
             <Lock className="w-3 h-3" /> ล็อกแล้ว
@@ -498,6 +504,99 @@ export default function OPDDetailPage() {
                 </div>
               ))}
           </div>
+        </div>
+      )}
+    </div>
+
+    <OPDPrintView record={record} />
+    </>
+  )
+}
+
+/* ---------- Printable A4 summary (hidden on screen) ---------- */
+function OPDPrintView({ record }: { record: OPDRecord }) {
+  const pet = record.pets
+  const ownerName = (pet?.profiles as any)?.full_name ?? null
+  const photos = [
+    { url: record.photo1_url, caption: record.photo1_caption },
+    { url: record.photo2_url, caption: record.photo2_caption },
+  ].filter(p => p.url)
+
+  const InfoRow = ({ label, value }: { label: string; value: string }) => (
+    <div style={{ display: 'flex', gap: 6, fontSize: 11 }}>
+      <span style={{ color: '#666', minWidth: 52 }}>{label}</span>
+      <span style={{ fontWeight: 600 }}>{value}</span>
+    </div>
+  )
+
+  return (
+    <div className="print-only" style={{ color: '#111', fontFamily: 'inherit', lineHeight: 1.35 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #111', paddingBottom: 6, marginBottom: 8 }}>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>บันทึกการตรวจรักษา (OPD)</div>
+          {record.clinics && <div style={{ fontSize: 12, color: '#444' }}>{record.clinics.name}</div>}
+        </div>
+        <div style={{ textAlign: 'right', fontSize: 11, color: '#444' }}>
+          <div>วันที่ตรวจ: {fmtDate(record.record_date)}</div>
+          <div>บันทึก: {fmtDatetime(record.created_at)}</div>
+        </div>
+      </div>
+
+      {/* Pet info + photo */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
+        {pet?.photo_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={pet.photo_url} alt={pet.name} style={{ width: 70, height: 70, objectFit: 'cover', borderRadius: 8, border: '1px solid #ccc' }} />
+        )}
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 2 }}>{pet?.name}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px 16px' }}>
+            <InfoRow label="ชนิด" value={`${pet?.species || '-'}${pet?.breed ? ` / ${pet.breed}` : ''}`} />
+            <InfoRow label="เพศ" value={`${pet?.gender || '-'}${pet?.neutered ? ' (ทำหมันแล้ว)' : ''}`} />
+            {ownerName && <InfoRow label="เจ้าของ" value={ownerName} />}
+            {record.weight != null && <InfoRow label="น้ำหนัก" value={`${record.weight} kg`} />}
+          </div>
+          {pet?.medical_tags?.length ? (
+            <div style={{ fontSize: 11, color: '#b91c1c', marginTop: 3 }}>
+              ⚠️ {pet.medical_tags.join(', ')}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {/* OPD fields */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px', marginBottom: 8 }}>
+        {OPD_FIELDS.map(({ key, label, title }) => {
+          const val = (record as any)[key] as string | null
+          if (!val) return null
+          return (
+            <div key={key} style={{ fontSize: 11, breakInside: 'avoid' }}>
+              <div style={{ fontWeight: 700, borderBottom: '1px solid #ddd', marginBottom: 2 }}>
+                {label} <span style={{ color: '#888', fontWeight: 400 }}>· {title}</span>
+              </div>
+              <div style={{ whiteSpace: 'pre-wrap' }}>{val}</div>
+            </div>
+          )
+        })}
+      </div>
+
+      {record.next_appointment && (
+        <div style={{ fontSize: 11, marginBottom: 8 }}>
+          <b>นัดหมายถัดไป:</b> {fmtDate(record.next_appointment)}
+        </div>
+      )}
+
+      {/* Attached photos */}
+      {photos.length > 0 && (
+        <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+          {photos.map((p, i) => (
+            <div key={i} style={{ textAlign: 'center' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={p.url!} alt={p.caption || ''} style={{ height: 110, maxWidth: 200, objectFit: 'contain', border: '1px solid #ccc', borderRadius: 6 }} />
+              {p.caption && <div style={{ fontSize: 10, color: '#555' }}>{p.caption}</div>}
+            </div>
+          ))}
         </div>
       )}
     </div>
