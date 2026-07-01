@@ -98,6 +98,7 @@ export default function VetProfilePage() {
   const [locationLat, setLocationLat] = useState<number | null>(null)
   const [locationLng, setLocationLng] = useState<number | null>(null)
   const [isAvailable, setIsAvailable] = useState(true)
+  const [showPhone, setShowPhone] = useState(true)
   const [isVerified, setIsVerified] = useState(false)
   const [vetStatus, setVetStatus] = useState<'pending' | 'reviewing' | 'approved' | 'rejected'>('pending')
   const [rejectReason, setRejectReason] = useState<string | null>(null)
@@ -141,6 +142,7 @@ export default function VetProfilePage() {
       setLocationLat(data.location_lat)
       setLocationLng(data.location_lng)
       setIsAvailable(data.is_available)
+      setShowPhone(data.show_phone ?? true)
       setIsVerified(data.is_verified || false)
       setVetStatus(data.status || 'pending')
       setRejectReason(data.reject_reason || null)
@@ -271,7 +273,7 @@ export default function VetProfilePage() {
         additional_education: additionalEdu,
         acupuncture_fee: PLATFORM_ACUPUNCTURE_FEE, travel_rate: 8,
         location_name: locationName, location_lat: locationLat, location_lng: locationLng,
-        is_available: isAvailable,
+        is_available: isAvailable, show_phone: showPhone,
         license_doc_url: finalDocUrl,
         ...(wasRejected ? { status: 'pending', reject_reason: null } : {}),
       }, { onConflict: 'user_id' }),
@@ -362,6 +364,22 @@ export default function VetProfilePage() {
           <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full relative">
             <div className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow" />
           </div>
+        </div>
+      </div>
+
+      {/* แสดงเบอร์โทรในหน้าค้นหา */}
+      <div className="card mb-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-semibold text-sm">แสดงเบอร์โทรในหน้าค้นหา</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {showPhone ? 'เจ้าของสัตว์เห็นเบอร์โทรของคุณได้' : 'ซ่อนเบอร์โทรจากหน้าค้นหา'}
+            </p>
+          </div>
+          <button type="button" onClick={() => setShowPhone(v => !v)}
+            className={`w-11 h-6 rounded-full relative transition-colors ${showPhone ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'}`}>
+            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${showPhone ? 'left-6' : 'left-1'}`} />
+          </button>
         </div>
       </div>
 

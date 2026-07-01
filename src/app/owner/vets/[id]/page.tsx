@@ -36,6 +36,7 @@ interface VetDetail {
   full_name: string
   avatar_url: string | null
   phone: string | null
+  show_phone: boolean
   schedules: VetSchedule[]
 }
 
@@ -64,7 +65,7 @@ export default function VetDetailPage() {
           .from('vet_profiles')
           .select(`
             user_id, bio, license_number, additional_education,
-            is_available, location_name, acupuncture_fee, travel_rate,
+            is_available, location_name, acupuncture_fee, travel_rate, show_phone,
             profiles!inner(full_name, avatar_url, phone)
           `)
           .eq('user_id', id)
@@ -78,6 +79,7 @@ export default function VetDetailPage() {
         full_name: (vp as any).profiles?.full_name || '',
         avatar_url: (vp as any).profiles?.avatar_url || null,
         phone: (vp as any).profiles?.phone || null,
+        show_phone: (vp as any).show_phone ?? true,
         schedules: (schedules as VetSchedule[]) || [],
       })
       setLoading(false)
@@ -152,7 +154,7 @@ export default function VetDetailPage() {
       )}
 
       {/* เบอร์ติดต่อหมอ */}
-      {vet.phone && (
+      {vet.phone && vet.show_phone && (
         <div className="card flex items-center gap-3">
           <Phone className="w-4 h-4 text-primary-500 shrink-0" />
           <div>
