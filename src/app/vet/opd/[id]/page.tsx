@@ -557,7 +557,7 @@ function OPDPrintView({ record }: { record: OPDRecord }) {
       </div>
 
       {/* Pet info + photo */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 6 }}>
         {pet?.photo_url && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={pet.photo_url} alt={pet.name} style={{ width: 70, height: 70, objectFit: 'cover', borderRadius: 8, border: '1px solid #ccc' }} />
@@ -581,12 +581,12 @@ function OPDPrintView({ record }: { record: OPDRecord }) {
       </div>
 
       {/* OPD fields — fixed layout: all 8 shown, uniform height for booklet binding */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', marginBottom: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', marginBottom: 6 }}>
         {OPD_FIELDS.map(({ key, label, title }) => {
           const val = (record as any)[key] as string | null
           return (
-            <div key={key} style={{ fontSize: 11, breakInside: 'avoid', minHeight: '20mm' }}>
-              <div style={{ fontWeight: 700, borderBottom: '1px solid #ddd', marginBottom: 3 }}>
+            <div key={key} style={{ fontSize: 10.5, breakInside: 'avoid', minHeight: '13mm' }}>
+              <div style={{ fontWeight: 700, borderBottom: '1px solid #ddd', marginBottom: 2 }}>
                 {label} <span style={{ color: '#888', fontWeight: 400 }}>· {title}</span>
               </div>
               <div style={{ whiteSpace: 'pre-wrap' }}>{val || ' '}</div>
@@ -596,7 +596,7 @@ function OPDPrintView({ record }: { record: OPDRecord }) {
       </div>
 
       {record.next_appointment && (
-        <div style={{ fontSize: 11, marginBottom: 10 }}>
+        <div style={{ fontSize: 11, marginBottom: 6 }}>
           <b>นัดหมายถัดไป:</b> {fmtDate(record.next_appointment)}
         </div>
       )}
@@ -608,7 +608,7 @@ function OPDPrintView({ record }: { record: OPDRecord }) {
             <div key={i} style={{ flex: 1, textAlign: 'center' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={p.url!} alt={p.caption || ''}
-                style={{ width: '100%', height: '120mm', objectFit: 'contain', border: '1px solid #ccc', borderRadius: 6 }} />
+                style={{ width: '100%', height: '105mm', objectFit: 'contain', border: '1px solid #ccc', borderRadius: 6 }} />
               {p.caption && <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>{p.caption}</div>}
             </div>
           ))}

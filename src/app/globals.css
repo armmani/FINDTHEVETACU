@@ -90,10 +90,12 @@
 .print-only { display: none; }
 
 @media print {
-  @page { size: A4; margin: 12mm; }
+  @page { size: A4; margin: 10mm; }
   html, body { background: #fff !important; }
   /* hide app chrome */
   nav, .no-print, .fixed { display: none !important; }
+  /* reclaim vertical space eaten by layout padding/max-width */
+  main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
   /* show the printable summary */
   .print-only { display: block !important; }
   /* keep colors/images as designed */
