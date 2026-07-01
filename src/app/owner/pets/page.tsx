@@ -26,7 +26,8 @@ const GENDERS = ['เพศผู้', 'เพศเมีย', 'ไม่ระ
 function calcAge(birthdate: string): string {
   const birth = new Date(birthdate)
   const now = new Date()
-  const totalMonths = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth())
+  let totalMonths = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth())
+  if (now.getDate() < birth.getDate()) totalMonths--   // ยังไม่ถึงวันครบเดือน
   if (totalMonths < 1) return 'แรกเกิด'
   if (totalMonths < 12) return `${totalMonths} เดือน`
   const y = Math.floor(totalMonths / 12)

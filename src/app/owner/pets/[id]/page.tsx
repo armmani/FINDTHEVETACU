@@ -29,7 +29,8 @@ interface RawVet { id: string; full_name: string; title: string | null; full_nam
 function calcAge(birthdate: string): string {
   const birth = new Date(birthdate)
   const now = new Date()
-  const totalMonths = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth())
+  let totalMonths = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth())
+  if (now.getDate() < birth.getDate()) totalMonths--   // ยังไม่ถึงวันครบเดือน
   if (totalMonths < 1) return 'แรกเกิด'
   if (totalMonths < 12) return `${totalMonths} เดือน`
   const y = Math.floor(totalMonths / 12)
@@ -152,9 +153,9 @@ export default function PetDetailPage() {
       gender: pet.gender, neutered: pet.neutered, birthdate: pet.birthdate || null,
       notes: pet.notes || null, photo_url: pet.photo_url || null,
     }).eq('id', id)
-    if (error) toast.error('บันทึกไม่สำเร็จ')
-    else { toast.success('บันทึกแล้ว!'); markSaved() }
-    setSaving(false)
+    if (error) { toast.error('บันทึกไม่สำเร็จ'); setSaving(false); return }
+    toast.success('บันทึกแล้ว!')
+    router.push('/owner/pets')
   }
 
   const addTag = async (raw: string) => {
