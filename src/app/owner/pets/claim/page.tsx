@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { Search, Upload, X, ArrowLeft, PawPrint } from 'lucide-react'
+import { Search, Upload, X, ArrowLeft, PawPrint, Hospital, Stethoscope, ClipboardList } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
@@ -15,8 +15,13 @@ interface UnlinkedPet {
   id: string; name: string; species: string; breed: string | null
   gender: string | null; neutered: boolean; photo_url: string | null
   medical_tags: string[]; birthdate: string | null
-  opd_records: { clinics: { name: string } | null }[]
+  visits: number
+  created_by_vet: string | null
+  latest_clinic: string | null
+  latest_date: string | null
 }
+
+const fmtShort = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
 
 export default function ClaimPetPage() {
   const supabase = createClient()
@@ -45,12 +50,7 @@ export default function ClaimPetPage() {
     if (query.trim().length < 2) { setResults([]); setSearching(false); return }
     setSearching(true)
     timer.current = setTimeout(async () => {
-      const { data } = await supabase
-        .from('pets')
-        .select('id, name, species, breed, gender, neutered, photo_url, medical_tags, birthdate, opd_records(clinics(name))')
-        .is('owner_id', null)
-        .ilike('name', `%${query.trim()}%`)
-        .limit(10)
+      const { data } = await supabase.rpc('search_unlinked_pets', { q: query.trim() })
       setResults((data as unknown as UnlinkedPet[]) || [])
       setSearching(false)
     }, 350)
@@ -149,8 +149,8 @@ export default function ClaimPetPage() {
             <div className="space-y-2">
               <p className="text-xs text-gray-400">เลือกสัตว์เลี้ยงของคุณ:</p>
               {results.map(p => {
-                const clinic = p.opd_records?.[0]?.clinics?.name
                 const age = p.birthdate ? Math.floor((Date.now() - new Date(p.birthdate).getTime()) / (1000 * 60 * 60 * 24 * 365)) : null
+                const { visits, created_by_vet: createdByVet, latest_clinic: latestClinic, latest_date: latestDate } = p
                 return (
                   <button key={p.id} onClick={() => setSelected(p)}
                     className="card w-full text-left flex items-start gap-3 hover:shadow-md transition-shadow">
@@ -168,15 +168,39 @@ export default function ClaimPetPage() {
                         {p.neutered ? ' · ทำหมันแล้ว' : ''}
                         {age !== null ? ` · ${age} ปี` : ''}
                       </p>
-                      {clinic && <p className="text-xs text-gray-400 mt-0.5">บันทึกโดย: {clinic}</p>}
+
                       {p.medical_tags?.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1">
+                        <div className="flex flex-wrap gap-1 mt-1.5">
                           {p.medical_tags.map(t => (
                             <span key={t} className="text-xs bg-red-100 text-red-600 px-1.5 py-0.5 rounded-full">⚠️ {t}</span>
                           ))}
                         </div>
                       )}
-                      <p className="text-xs text-amber-500 mt-1">ยังไม่มีเจ้าของ</p>
+
+                      {/* ประวัติการรักษา */}
+                      <div className="mt-2 space-y-0.5 text-xs text-gray-500">
+                        {latestClinic && (
+                          <p className="flex items-center gap-1">
+                            <Hospital className="w-3 h-3 text-gray-400 shrink-0" />
+                            รพ./คลินิกล่าสุด: <span className="font-medium text-gray-600 dark:text-gray-300">{latestClinic}</span>
+                            {latestDate && <span className="text-gray-400">({fmtShort(latestDate)})</span>}
+                          </p>
+                        )}
+                        {createdByVet && (
+                          <p className="flex items-center gap-1">
+                            <Stethoscope className="w-3 h-3 text-gray-400 shrink-0" />
+                            สร้างโดย: <span className="font-medium text-gray-600 dark:text-gray-300">{createdByVet}</span>
+                          </p>
+                        )}
+                        {visits > 0 && (
+                          <p className="flex items-center gap-1">
+                            <ClipboardList className="w-3 h-3 text-gray-400 shrink-0" />
+                            เข้ารับบริการ {visits} ครั้ง
+                          </p>
+                        )}
+                      </div>
+
+                      <p className="text-xs text-amber-500 mt-2">ยังไม่มีเจ้าของ</p>
                     </div>
                   </button>
                 )
