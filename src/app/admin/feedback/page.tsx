@@ -6,6 +6,7 @@ import { createNotification } from '@/lib/notifications'
 import { MessageSquarePlus, CheckCircle, Clock, ChevronDown, ChevronUp, HandHeart } from 'lucide-react'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
+import ClinicEditReviewList from '@/components/admin/ClinicEditReviewList'
 
 type FeedbackStatus = 'pending' | 'acknowledged' | 'resolved'
 
@@ -37,6 +38,7 @@ export default function AdminFeedbackPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [noteInputs, setNoteInputs] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState<string | null>(null)
+  const [typeTab, setTypeTab] = useState<'app' | 'clinic'>('app')
 
   useEffect(() => { load() }, [])
 
@@ -89,15 +91,32 @@ export default function AdminFeedbackPage() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <MessageSquarePlus className="w-6 h-6 text-primary-600" /> Feedback
-          {pendingCount > 0 && (
-            <span className="text-sm bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400 px-2 py-0.5 rounded-full font-medium">
-              {pendingCount} ใหม่
-            </span>
-          )}
-        </h1>
+      <h1 className="text-2xl font-bold flex items-center gap-2">
+        <MessageSquarePlus className="w-6 h-6 text-primary-600" /> Feedback
+        {pendingCount > 0 && (
+          <span className="text-sm bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400 px-2 py-0.5 rounded-full font-medium">
+            {pendingCount} ใหม่
+          </span>
+        )}
+      </h1>
+
+      {/* Type tabs */}
+      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1 max-w-md">
+        <button onClick={() => setTypeTab('app')}
+          className={`flex-1 text-sm font-medium py-1.5 rounded-lg transition-colors ${typeTab === 'app' ? 'bg-white dark:bg-gray-900 shadow-sm text-primary-600' : 'text-gray-500'}`}>
+          แจ้งปัญหา / ฟีเจอร์
+        </button>
+        <button onClick={() => setTypeTab('clinic')}
+          className={`flex-1 text-sm font-medium py-1.5 rounded-lg transition-colors ${typeTab === 'clinic' ? 'bg-white dark:bg-gray-900 shadow-sm text-primary-600' : 'text-gray-500'}`}>
+          ขอแก้ข้อมูล รพ.
+        </button>
+      </div>
+
+      {typeTab === 'clinic' ? (
+        <ClinicEditReviewList />
+      ) : (
+      <>
+      <div className="flex justify-end">
         <div className="flex gap-1 text-sm flex-wrap">
           {(['pending', 'acknowledged', 'resolved', 'all'] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)}
@@ -198,6 +217,8 @@ export default function AdminFeedbackPage() {
             )
           })}
         </div>
+      )}
+      </>
       )}
     </div>
   )

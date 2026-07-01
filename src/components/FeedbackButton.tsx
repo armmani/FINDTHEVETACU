@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { MessageSquarePlus, X, Send, Image as ImageIcon, Loader2, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import toast from 'react-hot-toast'
+import ClinicEditRequestForm from '@/components/ClinicEditRequestForm'
 
 interface ChangelogItem { id: string; summary: string; resolved_at: string }
 
@@ -21,6 +22,7 @@ export default function FeedbackButton() {
   const [changelog, setChangelog] = useState<ChangelogItem[]>([])
   const [showAllChangelog, setShowAllChangelog] = useState(false)
   const [loggedIn, setLoggedIn] = useState(false)
+  const [tab, setTab] = useState<'app' | 'clinic'>('app')
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setLoggedIn(!!data.user))
@@ -86,14 +88,29 @@ export default function FeedbackButton() {
           <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md p-5 space-y-4 max-h-[85vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}>
             <div className="flex items-start justify-between">
-              <div>
-                <h3 className="font-semibold text-lg">แจ้ง Feedback</h3>
-                <p className="text-xs text-gray-400 mt-0.5">ทดลองใช้แล้วติดขัดตรงไหน อยากให้เพิ่มหรือลดตรงไหน บอกได้เลยครับ</p>
-              </div>
+              <h3 className="font-semibold text-lg">แจ้ง Feedback</h3>
               <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600 ml-3 shrink-0">
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Tabs */}
+            <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
+              <button onClick={() => setTab('app')}
+                className={`flex-1 text-sm font-medium py-1.5 rounded-lg transition-colors ${tab === 'app' ? 'bg-white dark:bg-gray-900 shadow-sm text-primary-600' : 'text-gray-500'}`}>
+                แจ้งปัญหา / ขอฟีเจอร์
+              </button>
+              <button onClick={() => setTab('clinic')}
+                className={`flex-1 text-sm font-medium py-1.5 rounded-lg transition-colors ${tab === 'clinic' ? 'bg-white dark:bg-gray-900 shadow-sm text-primary-600' : 'text-gray-500'}`}>
+                ขอแก้ข้อมูล รพ.
+              </button>
+            </div>
+
+            {tab === 'clinic' ? (
+              <ClinicEditRequestForm onDone={() => setOpen(false)} />
+            ) : (
+            <>
+            <p className="text-xs text-gray-400">ทดลองใช้แล้วติดขัดตรงไหน อยากให้เพิ่มหรือลดตรงไหน บอกได้เลยครับ</p>
 
             <textarea
               value={message}
@@ -159,6 +176,8 @@ export default function FeedbackButton() {
                   </button>
                 )}
               </div>
+            )}
+            </>
             )}
           </div>
         </div>
