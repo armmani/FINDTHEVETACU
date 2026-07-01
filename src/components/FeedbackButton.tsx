@@ -1,9 +1,14 @@
 'use client'
 
-import { useState } from 'react'
-import { MessageSquarePlus, X, Send, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { MessageSquarePlus, X, Send, Image as ImageIcon, Loader2, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import toast from 'react-hot-toast'
+
+interface ChangelogItem { id: string; summary: string; resolved_at: string }
+
+const fmtChangelog = (d: string) =>
+  new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
 
 export default function FeedbackButton() {
   const supabase = createClient()
@@ -12,6 +17,19 @@ export default function FeedbackButton() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
+
+  const [changelog, setChangelog] = useState<ChangelogItem[]>([])
+  const [showAllChangelog, setShowAllChangelog] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    supabase
+      .from('public_changelog')
+      .select('*')
+      .order('resolved_at', { ascending: false })
+      .limit(50)
+      .then(({ data }) => setChangelog((data as ChangelogItem[]) || []))
+  }, [open])
 
   const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -58,7 +76,7 @@ export default function FeedbackButton() {
       {open && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-4"
           onClick={() => setOpen(false)}>
-          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md p-5 space-y-4"
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md p-5 space-y-4 max-h-[85vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}>
             <div className="flex items-start justify-between">
               <div>
@@ -104,6 +122,37 @@ export default function FeedbackButton() {
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               {sending ? 'กำลังส่ง...' : 'ส่ง Feedback'}
             </button>
+
+            {/* Recent changelog */}
+            {changelog.length > 0 && (
+              <div className="pt-3 border-t border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Sparkles className="w-4 h-4 text-primary-500" />
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">อัปเดตล่าสุด</p>
+                </div>
+                <ul className="space-y-2">
+                  {(showAllChangelog ? changelog : changelog.slice(0, 5)).map(c => (
+                    <li key={c.id} className="flex gap-2 text-sm">
+                      <span className="text-primary-500 shrink-0">✓</span>
+                      <div className="min-w-0">
+                        <p className="text-gray-700 dark:text-gray-300 leading-snug">{c.summary}</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">{fmtChangelog(c.resolved_at)}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                {changelog.length > 5 && (
+                  <button
+                    onClick={() => setShowAllChangelog(v => !v)}
+                    className="mt-2 text-xs text-primary-600 hover:text-primary-700 flex items-center gap-1">
+                    {showAllChangelog
+                      ? <><ChevronUp className="w-3.5 h-3.5" /> ย่อ</>
+                      : <><ChevronDown className="w-3.5 h-3.5" /> ดูทั้งหมด ({changelog.length})</>
+                    }
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

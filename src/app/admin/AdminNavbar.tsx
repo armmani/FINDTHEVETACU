@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase'
 import { useLang } from '@/contexts/LanguageContext'
 import { LogOut, LayoutDashboard, Sun, Moon, Home, PawPrint, MessageSquarePlus } from 'lucide-react'
 import Image from 'next/image'
+import NotificationBell from '@/components/NotificationBell'
 
 export default function AdminNavbar({ fullName, role }: { fullName: string; role: string }) {
   const router = useRouter()
@@ -49,6 +50,7 @@ export default function AdminNavbar({ fullName, role }: { fullName: string; role
             </Link>
           )}
           <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:block">{fullName}</span>
+          <NotificationBell />
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
