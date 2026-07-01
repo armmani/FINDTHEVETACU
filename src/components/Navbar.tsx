@@ -175,6 +175,13 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
         {/* Right: Utility buttons */}
         <div className="flex items-center shrink-0">
 
+          {/* User first name — desktop only */}
+          {profile.full_name && (
+            <span className="hidden sm:block text-sm text-gray-500 dark:text-gray-400 mr-2 max-w-[8rem] truncate">
+              {profile.full_name.trim().split(/\s+/)[0]}
+            </span>
+          )}
+
           {/* Notification bell */}
           <div className="relative" ref={notifRef}>
             <button
