@@ -17,6 +17,18 @@ const GENDERS = ['เพศผู้', 'เพศเมีย', 'ไม่ระ
 const fmtDate = (d: string) => new Date(d + 'T00:00:00').toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
 const fmtDatetime = (d: string) => new Date(d).toLocaleString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 
+function calcAge(birthdate: string): string {
+  const birth = new Date(birthdate)
+  const now = new Date()
+  let totalMonths = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth())
+  if (now.getDate() < birth.getDate()) totalMonths--
+  if (totalMonths < 1) return 'แรกเกิด'
+  if (totalMonths < 12) return `${totalMonths} เดือน`
+  const y = Math.floor(totalMonths / 12)
+  const m = totalMonths % 12
+  return m > 0 ? `${y} ปี ${m} เดือน` : `${y} ปี`
+}
+
 /** หลัง 03:00 น. ของวันถัดจาก record_date → lock */
 function isEditLocked(recordDate: string): boolean {
   const cutoff = new Date(recordDate + 'T00:00:00')
@@ -51,6 +63,7 @@ function MedicalTags({ tags }: { tags: string[] }) {
 interface PetInfo {
   id: string; name: string; species: string; breed: string | null
   gender: string | null; neutered: boolean; photo_url: string | null
+  birthdate: string | null
   medical_tags: string[]; profiles: { full_name: string } | null
 }
 interface OPDRecord {
@@ -102,7 +115,7 @@ export default function OPDDetailPage() {
   useEffect(() => {
     supabase
       .from('opd_records')
-      .select('*, pets(id, name, species, breed, gender, neutered, photo_url, medical_tags, profiles!owner_id(full_name)), clinics(name)')
+      .select('*, pets(id, name, species, breed, gender, neutered, photo_url, birthdate, medical_tags, profiles!owner_id(full_name)), clinics(name)')
       .eq('id', id)
       .single()
       .then(({ data }) => { setRecord(data as any); setLoading(false) })
@@ -544,7 +557,7 @@ function OPDPrintView({ record }: { record: OPDRecord }) {
       </div>
 
       {/* Pet info + photo */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 8 }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
         {pet?.photo_url && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={pet.photo_url} alt={pet.name} style={{ width: 70, height: 70, objectFit: 'cover', borderRadius: 8, border: '1px solid #ccc' }} />
@@ -554,6 +567,8 @@ function OPDPrintView({ record }: { record: OPDRecord }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px 16px' }}>
             <InfoRow label="ชนิด" value={`${pet?.species || '-'}${pet?.breed ? ` / ${pet.breed}` : ''}`} />
             <InfoRow label="เพศ" value={`${pet?.gender || '-'}${pet?.neutered ? ' (ทำหมันแล้ว)' : ''}`} />
+            {pet?.birthdate && <InfoRow label="วันเกิด" value={fmtDate(pet.birthdate)} />}
+            {pet?.birthdate && <InfoRow label="อายุ" value={calcAge(pet.birthdate)} />}
             {ownerName && <InfoRow label="เจ้าของ" value={ownerName} />}
             {record.weight != null && <InfoRow label="น้ำหนัก" value={`${record.weight} kg`} />}
           </div>
@@ -565,36 +580,36 @@ function OPDPrintView({ record }: { record: OPDRecord }) {
         </div>
       </div>
 
-      {/* OPD fields */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px', marginBottom: 8 }}>
+      {/* OPD fields — fixed layout: all 8 shown, uniform height for booklet binding */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', marginBottom: 10 }}>
         {OPD_FIELDS.map(({ key, label, title }) => {
           const val = (record as any)[key] as string | null
-          if (!val) return null
           return (
-            <div key={key} style={{ fontSize: 11, breakInside: 'avoid' }}>
-              <div style={{ fontWeight: 700, borderBottom: '1px solid #ddd', marginBottom: 2 }}>
+            <div key={key} style={{ fontSize: 11, breakInside: 'avoid', minHeight: '20mm' }}>
+              <div style={{ fontWeight: 700, borderBottom: '1px solid #ddd', marginBottom: 3 }}>
                 {label} <span style={{ color: '#888', fontWeight: 400 }}>· {title}</span>
               </div>
-              <div style={{ whiteSpace: 'pre-wrap' }}>{val}</div>
+              <div style={{ whiteSpace: 'pre-wrap' }}>{val || ' '}</div>
             </div>
           )
         })}
       </div>
 
       {record.next_appointment && (
-        <div style={{ fontSize: 11, marginBottom: 8 }}>
+        <div style={{ fontSize: 11, marginBottom: 10 }}>
           <b>นัดหมายถัดไป:</b> {fmtDate(record.next_appointment)}
         </div>
       )}
 
-      {/* Attached photos */}
+      {/* Attached photos — half page each, portrait, left & right */}
       {photos.length > 0 && (
-        <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+        <div style={{ display: 'flex', gap: '6mm', marginTop: 4, breakInside: 'avoid' }}>
           {photos.map((p, i) => (
-            <div key={i} style={{ textAlign: 'center' }}>
+            <div key={i} style={{ flex: 1, textAlign: 'center' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.url!} alt={p.caption || ''} style={{ height: 110, maxWidth: 200, objectFit: 'contain', border: '1px solid #ccc', borderRadius: 6 }} />
-              {p.caption && <div style={{ fontSize: 10, color: '#555' }}>{p.caption}</div>}
+              <img src={p.url!} alt={p.caption || ''}
+                style={{ width: '100%', height: '120mm', objectFit: 'contain', border: '1px solid #ccc', borderRadius: 6 }} />
+              {p.caption && <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>{p.caption}</div>}
             </div>
           ))}
         </div>
