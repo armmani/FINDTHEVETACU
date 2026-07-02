@@ -67,7 +67,7 @@ interface PetInfo {
   medical_tags: string[]; profiles: { full_name: string } | null
 }
 interface OPDRecord {
-  id: string; record_date: string; created_at: string
+  id: string; vet_id: string; record_date: string; created_at: string
   weight: number | null; next_appointment: string | null
   photo1_url: string | null; photo1_caption: string | null
   photo2_url: string | null; photo2_caption: string | null
@@ -83,6 +83,7 @@ export default function OPDDetailPage() {
   const { id } = useParams<{ id: string }>()
   const supabase = createClient()
   const [record, setRecord] = useState<OPDRecord | null>(null)
+  const [vetTitle, setVetTitle] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   // Pet edit
@@ -119,7 +120,14 @@ export default function OPDDetailPage() {
       .select('*, pets(id, name, species, breed, gender, neutered, photo_url, birthdate, medical_tags, profiles!owner_id(full_name)), clinics(name), vet:profiles!vet_id(full_name)')
       .eq('id', id)
       .single()
-      .then(({ data }) => { setRecord(data as any); setLoading(false) })
+      .then(({ data }) => {
+        setRecord(data as any); setLoading(false)
+        const vetId = (data as any)?.vet_id
+        if (vetId) {
+          supabase.from('vet_profiles').select('title').eq('user_id', vetId).single()
+            .then(({ data: vp }) => setVetTitle((vp as any)?.title || null))
+        }
+      })
   }, [id])
 
   useEffect(() => {
@@ -522,13 +530,13 @@ export default function OPDDetailPage() {
       )}
     </div>
 
-    <OPDPrintView record={record} />
+    <OPDPrintView record={record} vetTitle={vetTitle} />
     </>
   )
 }
 
 /* ---------- Printable A4 summary (hidden on screen) ---------- */
-function OPDPrintView({ record }: { record: OPDRecord }) {
+function OPDPrintView({ record, vetTitle }: { record: OPDRecord; vetTitle: string | null }) {
   const pet = record.pets
   const ownerName = (pet?.profiles as any)?.full_name ?? null
   const photos = [
@@ -611,7 +619,7 @@ function OPDPrintView({ record }: { record: OPDRecord }) {
 
           {/* ผู้ตรวจรักษา */}
           <div style={{ fontSize: 10, marginTop: 6, paddingTop: 5, borderTop: '0.5px solid #ccc', display: 'flex', justifyContent: 'space-between' }}>
-            <span><b>ผู้ตรวจรักษา:</b> {record.vet?.full_name || '—'}</span>
+            <span><b>ผู้ตรวจรักษา:</b> {record.vet?.full_name ? `${vetTitle ? vetTitle + ' ' : ''}${record.vet.full_name}` : '—'}</span>
             <span style={{ color: '#888' }}>ลงชื่อ ..............................</span>
           </div>
         </div>
