@@ -76,6 +76,7 @@ interface OPDRecord {
   tx: string | null; rx: string | null; ce: string | null
   pets: PetInfo | null
   clinics: { name: string } | null
+  vet: { full_name: string } | null
 }
 
 export default function OPDDetailPage() {
@@ -115,7 +116,7 @@ export default function OPDDetailPage() {
   useEffect(() => {
     supabase
       .from('opd_records')
-      .select('*, pets(id, name, species, breed, gender, neutered, photo_url, birthdate, medical_tags, profiles!owner_id(full_name)), clinics(name)')
+      .select('*, pets(id, name, species, breed, gender, neutered, photo_url, birthdate, medical_tags, profiles!owner_id(full_name)), clinics(name), vet:profiles!vet_id(full_name)')
       .eq('id', id)
       .single()
       .then(({ data }) => { setRecord(data as any); setLoading(false) })
@@ -607,6 +608,12 @@ function OPDPrintView({ record }: { record: OPDRecord }) {
               <b>นัดหมายถัดไป:</b> {fmtDate(record.next_appointment)}
             </div>
           )}
+
+          {/* ผู้ตรวจรักษา */}
+          <div style={{ fontSize: 10, marginTop: 6, paddingTop: 5, borderTop: '0.5px solid #ccc', display: 'flex', justifyContent: 'space-between' }}>
+            <span><b>ผู้ตรวจรักษา:</b> {record.vet?.full_name || '—'}</span>
+            <span style={{ color: '#888' }}>ลงชื่อ ..............................</span>
+          </div>
         </div>
       </div>
 
