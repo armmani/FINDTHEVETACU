@@ -312,7 +312,7 @@ export default function VetProfilePage() {
     <div className="max-w-lg mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">ตั้งค่าโปรไฟล์หมอ</h1>
-        <p className="text-gray-500 text-sm mt-0.5">กำหนดค่าบริการและที่ตั้งของคุณ</p>
+        <p className="text-gray-500 text-sm mt-0.5">กำหนดข้อมูลและที่ตั้งของคุณ</p>
       </div>
 
       {/* สถานะการยืนยัน */}
@@ -507,21 +507,7 @@ export default function VetProfilePage() {
           </div>
         )}
 
-        {/* ค่าบริการ */}
-        <div className="card">
-          <h2 className="font-semibold text-gray-800 mb-3">ค่าบริการ</h2>
-          <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3">
-            <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-700">
-              <p className="font-semibold mb-1">อัตราค่าบริการ (กำหนดโดยแพลตฟอร์ม)</p>
-              <div className="space-y-0.5 text-blue-600">
-                <p>ค่าฝังเข็ม: <span className="font-bold text-blue-800">{PLATFORM_ACUPUNCTURE_FEE.toLocaleString()} บาท / ครั้ง</span></p>
-                <p>ค่าเดินทาง: <span className="font-medium">{PLATFORM_RATE_LABEL}</span></p>
-              </div>
-              <p className="mt-2 text-xs text-blue-500">อัตรานี้กำหนดกลางเพื่อป้องกันการตัดราคา</p>
-            </div>
-          </div>
-        </div>
+        {/* ค่าบริการ — ซ่อนไว้ก่อน (ฟีเจอร์คิดเงินยังไม่เปิด) */}
 
         {/* ที่ตั้ง */}
         <div className="card">

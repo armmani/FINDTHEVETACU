@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Users, Stethoscope, CalendarCheck, XCircle, CheckCircle, ShieldCheck, ShieldX, Building2, Plus, Trash2, Eye, FileText, ChevronDown, ChevronUp, UserCog } from 'lucide-react'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 import { AdminDashboardSkeleton } from '@/components/AdminSkeleton'
 
 interface Stats {
@@ -189,6 +190,10 @@ export default function AdminDashboard() {
   }
 
   const handleVetAction = async (vetId: string, approve: boolean) => {
+    if (approve) {
+      const v = vets.find(x => x.user_id === vetId)
+      if (!v?.license_doc_url) { toast.error('หมอยังไม่ได้แนบเอกสารใบอนุญาต ไม่สามารถอนุมัติได้'); return }
+    }
     setApprovingVet(vetId)
     const ok = await adminUpdate('vet_profiles', vetId, approve ? 'approved' : 'rejected', vetRejectReason[vetId])
     if (!ok) { setApprovingVet(null); return }
@@ -561,6 +566,9 @@ export default function AdminDashboard() {
                         </div>
                         {vet.license_number && (
                           <p className="text-xs text-gray-400 mt-0.5">ใบอนุญาต: {vet.license_number}</p>
+                        )}
+                        {!vet.license_doc_url && (
+                          <p className="text-xs text-amber-600 mt-0.5">⚠️ ยังไม่แนบเอกสารใบอนุญาต</p>
                         )}
                         {vet.status === 'approved' && vet.verified_by_name && (
                           <p className="text-xs text-gray-400 mt-0.5">ยืนยันโดย: {vet.verified_by_name}</p>

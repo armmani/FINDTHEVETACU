@@ -93,6 +93,7 @@ export default function AdminVetDetailPage() {
 
   const handleApprove = async (approve: boolean) => {
     if (!approve && !rejectReason.trim()) { toast.error('กรุณาระบุเหตุผล'); return }
+    if (approve && !vet?.license_doc_url) { toast.error('หมอยังไม่ได้แนบเอกสารใบอนุญาต ไม่สามารถอนุมัติได้'); return }
     setActing(true)
     const { data: { user: adminUser } } = await supabase.auth.getUser()
     await supabase.from('vet_profiles').update({
