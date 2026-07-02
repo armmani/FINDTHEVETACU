@@ -97,7 +97,7 @@
   /* reclaim vertical space eaten by layout padding/max-width */
   main { padding: 0 !important; margin: 0 !important; max-width: none !important; }
   /* show the printable summary */
-  .print-only { display: block !important; }
+  .print-only { display: flex !important; flex-direction: column; height: 277mm; }
   /* keep colors/images as designed */
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }

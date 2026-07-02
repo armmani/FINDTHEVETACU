@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { ArrowLeft, ClipboardList, CalendarDays, Scale, Pencil, X, Check, Plus, Lock, UserPlus, Search, Printer } from 'lucide-react'
+import { ArrowLeft, ClipboardList, CalendarDays, Scale, Pencil, X, Check, Plus, Lock, UserPlus, Search, Printer, Upload } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import LoadingScreen from '@/components/LoadingScreen'
@@ -113,6 +113,11 @@ export default function OPDDetailPage() {
   const [editWeight, setEditWeight] = useState('')
   const [editNextAppt, setEditNextAppt] = useState('')
   const [savingOPD, setSavingOPD] = useState(false)
+  type EditPhoto = { url: string | null; caption: string; file: File | null; preview: string | null }
+  const [editPhotos, setEditPhotos] = useState<EditPhoto[]>([
+    { url: null, caption: '', file: null, preview: null },
+    { url: null, caption: '', file: null, preview: null },
+  ])
 
   useEffect(() => {
     supabase
@@ -198,7 +203,29 @@ export default function OPDDetailPage() {
     setEditFields({ cc: record.cc || '', hx: record.hx || '', pe: record.pe || '', diff_dx: record.diff_dx || '', dx: record.dx || '', tx: record.tx || '', rx: record.rx || '', ce: record.ce || '' })
     setEditWeight(record.weight != null ? String(record.weight) : '')
     setEditNextAppt(record.next_appointment || '')
+    setEditPhotos([
+      { url: record.photo1_url, caption: record.photo1_caption || '', file: null, preview: null },
+      { url: record.photo2_url, caption: record.photo2_caption || '', file: null, preview: null },
+    ])
     setEditingOPD(true)
+  }
+
+  const uploadOPDPhoto = async (file: File) => {
+    const ext = file.name.split('.').pop()
+    const path = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+    const { data, error } = await supabase.storage.from('opd-photos').upload(path, file)
+    if (error) { toast.error('อัพโหลดรูปไม่สำเร็จ: ' + error.message); return null }
+    return supabase.storage.from('opd-photos').getPublicUrl(data.path).data.publicUrl
+  }
+
+  const pickEditPhoto = (i: number, file: File) => {
+    setEditPhotos(prev => prev.map((p, idx) => idx === i ? { ...p, file, preview: URL.createObjectURL(file) } : p))
+  }
+  const clearEditPhoto = (i: number) => {
+    setEditPhotos(prev => prev.map((p, idx) => idx === i ? { url: null, caption: '', file: null, preview: null } : p))
+  }
+  const setEditPhotoCaption = (i: number, caption: string) => {
+    setEditPhotos(prev => prev.map((p, idx) => idx === i ? { ...p, caption } : p))
   }
 
   const addTag = (val: string) => {
@@ -223,10 +250,24 @@ export default function OPDDetailPage() {
   const handleSaveOPD = async () => {
     if (!record) return
     setSavingOPD(true)
+
+    // resolve photos: upload new files, keep/clear existing
+    const resolved: { url: string | null; caption: string | null }[] = []
+    for (const p of editPhotos) {
+      let url = p.url
+      if (p.file) { url = await uploadOPDPhoto(p.file); if (!url) { setSavingOPD(false); return } }
+      resolved.push({ url, caption: url ? (p.caption.trim() || null) : null })
+    }
+
+    const photoFields = {
+      photo1_url: resolved[0].url, photo1_caption: resolved[0].caption,
+      photo2_url: resolved[1].url, photo2_caption: resolved[1].caption,
+    }
     const { error } = await supabase.from('opd_records').update({
       ...Object.fromEntries(OPD_FIELDS.map(f => [f.key, editFields[f.key].trim() || null])),
       weight: editWeight ? parseFloat(editWeight) : null,
       next_appointment: editNextAppt || null,
+      ...photoFields,
     }).eq('id', record.id)
     if (error) { toast.error('บันทึกไม่สำเร็จ'); setSavingOPD(false); return }
     setRecord(prev => prev ? {
@@ -234,6 +275,7 @@ export default function OPDDetailPage() {
       ...Object.fromEntries(OPD_FIELDS.map(f => [f.key, editFields[f.key].trim() || null])),
       weight: editWeight ? parseFloat(editWeight) : null,
       next_appointment: editNextAppt || null,
+      ...photoFields,
     } : null)
     toast.success('แก้ไขบันทึก OPD แล้ว')
     setEditingOPD(false); setSavingOPD(false)
@@ -484,6 +526,41 @@ export default function OPDDetailPage() {
                   className="input resize-none" placeholder={f.hint} />
               </div>
             ))}
+            {/* Photos */}
+            <div>
+              <label className="label">รูปภาพ (สูงสุด 2 รูป)</label>
+              <div className="grid grid-cols-2 gap-3">
+                {editPhotos.map((p, i) => {
+                  const src = p.preview || p.url
+                  return (
+                    <div key={i} className="space-y-1.5">
+                      {src ? (
+                        <div className="relative">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={src} alt="" className="w-full h-32 object-cover rounded-xl border border-gray-200 dark:border-gray-700" />
+                          <button type="button" onClick={() => clearEditPhoto(i)}
+                            className="absolute top-1.5 right-1.5 bg-black/50 text-white rounded-full p-1 hover:bg-black/70">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center h-32 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700 hover:border-primary-300 cursor-pointer text-gray-400">
+                          <Upload className="w-5 h-5 mb-1" />
+                          <span className="text-xs">เพิ่มรูป</span>
+                          <input type="file" accept="image/*" className="hidden"
+                            onChange={e => { const f = e.target.files?.[0]; if (f) pickEditPhoto(i, f); e.target.value = '' }} />
+                        </label>
+                      )}
+                      {src && (
+                        <input value={p.caption} onChange={e => setEditPhotoCaption(i, e.target.value)}
+                          className="input text-xs" placeholder="คำอธิบายรูป (ถ้ามี)" />
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
             <div className="flex gap-2 pt-1">
               <button onClick={() => setEditingOPD(false)} className="flex-1 btn-secondary flex items-center justify-center gap-1">
                 <X className="w-4 h-4" /> ยกเลิก
@@ -556,7 +633,7 @@ function OPDPrintView({ record, vetTitle }: { record: OPDRecord; vetTitle: strin
   )
 
   return (
-    <div className="print-only" style={{ color: '#111', fontFamily: 'inherit', lineHeight: 1.3, height: '277mm', display: 'flex', flexDirection: 'column' }}>
+    <div className="print-only" style={{ color: '#111', fontFamily: 'inherit', lineHeight: 1.3 }}>
 
       {/* ===== TOP 60%: sidebar (pet) + main (SOAP) ===== */}
       <div style={{ flex: hasPhotos ? '0 0 60%' : '1 1 auto', display: 'flex', gap: '5mm', minHeight: 0 }}>
