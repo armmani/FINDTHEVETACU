@@ -535,81 +535,90 @@ function OPDPrintView({ record }: { record: OPDRecord }) {
     { url: record.photo2_url, caption: record.photo2_caption },
   ].filter(p => p.url)
 
-  const InfoRow = ({ label, value }: { label: string; value: string }) => (
-    <div style={{ display: 'flex', gap: 6, fontSize: 11 }}>
-      <span style={{ color: '#666', minWidth: 52 }}>{label}</span>
-      <span style={{ fontWeight: 600 }}>{value}</span>
+  const TEAL_TINT = '#e8f4ef'
+  const TEAL_TEXT = '#0f5f4a'
+  const hasPhotos = photos.length > 0
+
+  const SideRow = ({ label, value }: { label: string; value: string }) => (
+    <div style={{ fontSize: 10.5, marginBottom: 4 }}>
+      <div style={{ color: TEAL_TEXT, fontSize: 9 }}>{label}</div>
+      <div style={{ fontWeight: 600, color: '#111' }}>{value}</div>
     </div>
   )
 
   return (
-    <div className="print-only" style={{ color: '#111', fontFamily: 'inherit', lineHeight: 1.35 }}>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #111', paddingBottom: 6, marginBottom: 8 }}>
-        <div>
-          <div style={{ fontSize: 16, fontWeight: 700 }}>บันทึกการตรวจรักษา (OPD)</div>
-          {record.clinics && <div style={{ fontSize: 12, color: '#444' }}>{record.clinics.name}</div>}
-        </div>
-        <div style={{ textAlign: 'right', fontSize: 11, color: '#444' }}>
-          <div>วันที่ตรวจ: {fmtDate(record.record_date)}</div>
-          <div>บันทึก: {fmtDatetime(record.created_at)}</div>
-        </div>
-      </div>
+    <div className="print-only" style={{ color: '#111', fontFamily: 'inherit', lineHeight: 1.3, height: '277mm', display: 'flex', flexDirection: 'column' }}>
 
-      {/* Pet info + photo */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 6 }}>
-        {pet?.photo_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={pet.photo_url} alt={pet.name} style={{ width: 70, height: 70, objectFit: 'cover', borderRadius: 8, border: '1px solid #ccc' }} />
-        )}
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 2 }}>{pet?.name}</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px 16px' }}>
-            <InfoRow label="ชนิด" value={`${pet?.species || '-'}${pet?.breed ? ` / ${pet.breed}` : ''}`} />
-            <InfoRow label="เพศ" value={`${pet?.gender || '-'}${pet?.neutered ? ' (ทำหมันแล้ว)' : ''}`} />
-            {pet?.birthdate && <InfoRow label="วันเกิด" value={fmtDate(pet.birthdate)} />}
-            {pet?.birthdate && <InfoRow label="อายุ" value={calcAge(pet.birthdate)} />}
-            {ownerName && <InfoRow label="เจ้าของ" value={ownerName} />}
-            {record.weight != null && <InfoRow label="น้ำหนัก" value={`${record.weight} kg`} />}
+      {/* ===== TOP 60%: sidebar (pet) + main (SOAP) ===== */}
+      <div style={{ flex: hasPhotos ? '0 0 60%' : '1 1 auto', display: 'flex', gap: '5mm', minHeight: 0 }}>
+
+        {/* Sidebar — pet info */}
+        <div style={{ flex: '0 0 44mm', background: TEAL_TINT, borderRadius: 8, padding: '8px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {pet?.photo_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={pet.photo_url} alt={pet.name} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 6, border: '1px solid #cdddd6' }} />
+          )}
+          <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.15 }}>{pet?.name}</div>
+          <div>
+            <SideRow label="ชนิด / พันธุ์" value={`${pet?.species || '-'}${pet?.breed ? ` / ${pet.breed}` : ''}`} />
+            <SideRow label="เพศ" value={`${pet?.gender || '-'}${pet?.neutered ? ' · ทำหมันแล้ว' : ''}`} />
+            {pet?.birthdate && <SideRow label="วันเกิด" value={fmtDate(pet.birthdate)} />}
+            {pet?.birthdate && <SideRow label="อายุ" value={calcAge(pet.birthdate)} />}
+            {ownerName && <SideRow label="เจ้าของ" value={ownerName} />}
+            {record.weight != null && <SideRow label="น้ำหนัก" value={`${record.weight} kg`} />}
           </div>
           {pet?.medical_tags?.length ? (
-            <div style={{ fontSize: 11, color: '#b91c1c', marginTop: 3 }}>
+            <div style={{ fontSize: 9.5, color: '#b91c1c', marginTop: 'auto' }}>
               ⚠️ {pet.medical_tags.join(', ')}
             </div>
           ) : null}
         </div>
-      </div>
 
-      {/* OPD fields — fixed layout: all 8 shown, uniform height for booklet binding */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', marginBottom: 6 }}>
-        {OPD_FIELDS.map(({ key, label, title }) => {
-          const val = (record as any)[key] as string | null
-          return (
-            <div key={key} style={{ fontSize: 10.5, breakInside: 'avoid', minHeight: '13mm' }}>
-              <div style={{ fontWeight: 700, borderBottom: '1px solid #ddd', marginBottom: 2 }}>
-                {label} <span style={{ color: '#888', fontWeight: 400 }}>· {title}</span>
-              </div>
-              <div style={{ whiteSpace: 'pre-wrap' }}>{val || ' '}</div>
+        {/* Main — header + SOAP */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+          {/* Header */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #111', paddingBottom: 5, marginBottom: 6 }}>
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700 }}>บันทึกการตรวจรักษา (OPD)</div>
+              {record.clinics && <div style={{ fontSize: 11, color: '#444' }}>{record.clinics.name}</div>}
             </div>
-          )
-        })}
+            <div style={{ textAlign: 'right', fontSize: 10, color: '#444' }}>
+              <div>วันที่ตรวจ: {fmtDate(record.record_date)}</div>
+              <div>บันทึก: {fmtDatetime(record.created_at)}</div>
+            </div>
+          </div>
+
+          {/* SOAP — all 8, evenly distributed to fill the zone */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            {OPD_FIELDS.map(({ key, label, title }) => {
+              const val = (record as any)[key] as string | null
+              return (
+                <div key={key} style={{ flex: 1, fontSize: 10, borderBottom: '0.5px solid #e2e2e2', padding: '2px 0', overflow: 'hidden' }}>
+                  <span style={{ fontWeight: 700 }}>{label}</span>
+                  <span style={{ color: '#999', fontSize: 8.5 }}> · {title}</span>
+                  <span style={{ whiteSpace: 'pre-wrap' }}>{val ? `  ${val}` : ''}</span>
+                </div>
+              )
+            })}
+          </div>
+
+          {record.next_appointment && (
+            <div style={{ fontSize: 10, marginTop: 4 }}>
+              <b>นัดหมายถัดไป:</b> {fmtDate(record.next_appointment)}
+            </div>
+          )}
+        </div>
       </div>
 
-      {record.next_appointment && (
-        <div style={{ fontSize: 11, marginBottom: 6 }}>
-          <b>นัดหมายถัดไป:</b> {fmtDate(record.next_appointment)}
-        </div>
-      )}
-
-      {/* Attached photos — half page each, portrait, left & right */}
-      {photos.length > 0 && (
-        <div style={{ display: 'flex', gap: '6mm', marginTop: 4, breakInside: 'avoid' }}>
+      {/* ===== BOTTOM 40%: attached photos ===== */}
+      {hasPhotos && (
+        <div style={{ flex: '0 0 40%', display: 'flex', gap: '5mm', paddingTop: '5mm', minHeight: 0 }}>
           {photos.map((p, i) => (
-            <div key={i} style={{ flex: 1, textAlign: 'center' }}>
+            <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={p.url!} alt={p.caption || ''}
-                style={{ width: '100%', height: '105mm', objectFit: 'contain', border: '1px solid #ccc', borderRadius: 6 }} />
-              {p.caption && <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>{p.caption}</div>}
+                style={{ width: '100%', flex: 1, objectFit: 'cover', borderRadius: 6, border: '1px solid #ccc', minHeight: 0 }} />
+              {p.caption && <div style={{ fontSize: 9.5, color: '#555', textAlign: 'center', marginTop: 2 }}>{p.caption}</div>}
             </div>
           ))}
         </div>
