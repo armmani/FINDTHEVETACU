@@ -239,7 +239,8 @@ export default function NewClinicPage() {
         <h2 className="font-semibold text-gray-700">ช่องทางติดต่อ</h2>
         <div>
           <label className="label">เบอร์โทรศัพท์</label>
-          <input className="input" value={phone} onChange={e => setPhone(formatPhone(e.target.value))} placeholder="02-xxx-xxxx" inputMode="numeric" />
+          <input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="เช่น 02-123-4567 ต่อ 3" />
+          <p className="text-xs text-gray-400 mt-1">พิมพ์ได้อิสระ ใส่เบอร์ต่อ/สาขาได้ เช่น 081-123-6969 ต่อ 3</p>
         </div>
         <div>
           <label className="label">LINE ID</label>

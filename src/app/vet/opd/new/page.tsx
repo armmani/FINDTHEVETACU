@@ -447,7 +447,7 @@ export default function NewOPDPage() {
                   <span className="text-xs text-gray-400 font-normal">(ครั้งก่อน: {lastWeight} kg)</span>
                 )}
               </label>
-              <input type="number" step="0.1" min="0" max="999"
+              <input type="number" step="0.01" min="0" max="999"
                 value={weight} onChange={e => setWeight(e.target.value)}
                 className="input" placeholder="0.0" />
             </div>

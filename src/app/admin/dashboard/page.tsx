@@ -320,6 +320,8 @@ export default function AdminDashboard() {
     .sort((a, b) => rankOf(a.status) - rankOf(b.status))
   const listedClinics = [...clinics].sort((a, b) => rankOf(a.status) - rankOf(b.status))
   const pendingVetCount = listedVets.filter(v => v.status === 'pending' || v.status === 'reviewing').length
+  const verifiedVetCount = vets.filter(v => v.status === 'approved').length
+  const unverifiedVetCount = listedVets.filter(v => v.status !== 'approved').length
 
   return (
     <div className="space-y-8">
@@ -355,6 +357,20 @@ export default function AdminDashboard() {
           <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-cyan-500 mx-auto mb-1 sm:mb-2" />
           <p className="text-2xl sm:text-3xl font-bold">{stats?.totalHospitals}</p>
           <p className="text-xs sm:text-sm text-gray-500">โรงพยาบาลสัตว์</p>
+        </div>
+      </div>
+
+      {/* Stats row 3 — vet verification */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="card text-center">
+          <ShieldCheck className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 mx-auto mb-1 sm:mb-2" />
+          <p className="text-2xl sm:text-3xl font-bold">{verifiedVetCount}</p>
+          <p className="text-xs sm:text-sm text-gray-500">สัตวแพทย์ยืนยันตัวตนแล้ว</p>
+        </div>
+        <div className="card text-center">
+          <ShieldX className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500 mx-auto mb-1 sm:mb-2" />
+          <p className="text-2xl sm:text-3xl font-bold">{unverifiedVetCount}</p>
+          <p className="text-xs sm:text-sm text-gray-500">ยังไม่ยืนยันตัวตน</p>
         </div>
       </div>
 

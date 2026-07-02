@@ -508,7 +508,7 @@ export default function OPDDetailPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="label">น้ำหนัก (kg)</label>
-                <input type="number" step="0.1" value={editWeight} onChange={e => setEditWeight(e.target.value)} className="input" placeholder="0.0" />
+                <input type="number" step="0.01" value={editWeight} onChange={e => setEditWeight(e.target.value)} className="input" placeholder="0.00" />
               </div>
               <div>
                 <label className="label">นัดหมายถัดไป</label>

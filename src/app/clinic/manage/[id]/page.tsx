@@ -75,7 +75,7 @@ export default function EditClinicPage() {
       setName(data.name || '')
       setNameEn(data.name_en || '')
       setType(data.type || 'clinic')
-      setPhone(formatPhone(data.phone || ''))
+      setPhone(data.phone || '')
       setLineId(data.line_id || '')
       setFacebook(data.facebook || '')
       setWebsite(data.website || '')
@@ -267,8 +267,8 @@ export default function EditClinicPage() {
         <div>
           <label className="label">เบอร์โทรศัพท์</label>
           <input disabled={isLocked} className="input disabled:opacity-60 disabled:cursor-not-allowed"
-            value={phone} onChange={e => setPhone(formatPhone(e.target.value))}
-            inputMode="numeric" placeholder="08x-xxx-xxxx" />
+            value={phone} onChange={e => setPhone(e.target.value)}
+            placeholder="เช่น 02-123-4567 ต่อ 3" />
         </div>
         {[
           { label: 'LINE ID', val: lineId, set: setLineId },
