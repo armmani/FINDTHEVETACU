@@ -43,7 +43,13 @@ export async function POST(request: NextRequest) {
       updates = { status, reject_reason: status === 'rejected' || status === 'suspended' ? rejectReason : null }
     } else {
       idField = 'user_id'
-      updates = { status, reject_reason: status === 'rejected' ? rejectReason : null, is_verified: status === 'approved' }
+      updates = {
+        status,
+        reject_reason: status === 'rejected' ? rejectReason : null,
+        is_verified: status === 'approved',
+        verified_by: status === 'approved' ? user.id : null,
+        verified_at: status === 'approved' ? new Date().toISOString() : null,
+      }
     }
 
     const { error } = await adminSupabase.from(table).update(updates).eq(idField, id)

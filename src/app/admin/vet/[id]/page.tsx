@@ -94,10 +94,13 @@ export default function AdminVetDetailPage() {
   const handleApprove = async (approve: boolean) => {
     if (!approve && !rejectReason.trim()) { toast.error('กรุณาระบุเหตุผล'); return }
     setActing(true)
+    const { data: { user: adminUser } } = await supabase.auth.getUser()
     await supabase.from('vet_profiles').update({
       status: approve ? 'approved' : 'rejected',
       is_verified: approve,
       reject_reason: approve ? null : rejectReason.trim(),
+      verified_by: approve ? adminUser?.id ?? null : null,
+      verified_at: approve ? new Date().toISOString() : null,
     }).eq('user_id', id)
 
     if (approve) {

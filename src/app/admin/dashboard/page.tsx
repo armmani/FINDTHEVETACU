@@ -45,6 +45,8 @@ interface VetRow {
   avatar_url: string | null
   status: string
   reject_reason: string | null
+  verified_by: string | null
+  verified_by_name?: string | null
 }
 
 interface ClinicRow {
@@ -168,8 +170,21 @@ export default function AdminDashboard() {
 
   const handleVerify = async (vetId: string, currentVal: boolean) => {
     setVerifying(vetId)
-    await supabase.from('vet_profiles').update({ is_verified: !currentVal }).eq('user_id', vetId)
-    setVets(prev => prev.map(v => v.user_id === vetId ? { ...v, is_verified: !currentVal } : v))
+    const turningOn = !currentVal
+    const { data: { user } } = await supabase.auth.getUser()
+    await supabase.from('vet_profiles').update({
+      is_verified: turningOn,
+      verified_by: turningOn ? user?.id ?? null : null,
+      verified_at: turningOn ? new Date().toISOString() : null,
+    }).eq('user_id', vetId)
+    let name: string | null = null
+    if (turningOn && user) {
+      const { data } = await supabase.from('profiles').select('full_name').eq('id', user.id).single()
+      name = (data as any)?.full_name ?? null
+    }
+    setVets(prev => prev.map(v => v.user_id === vetId
+      ? { ...v, is_verified: turningOn, verified_by: turningOn ? user?.id ?? null : null, verified_by_name: turningOn ? name : null }
+      : v))
     setVerifying(null)
   }
 
@@ -205,7 +220,7 @@ export default function AdminDashboard() {
         vet_profile:profiles!bookings_vet_id_fkey(full_name)
       `).order('created_at', { ascending: false }),
       supabase.from('vet_profiles').select(
-        'user_id, university, graduation_year, additional_education, is_available, is_verified, license_number, license_doc_url, status, reject_reason'
+        'user_id, university, graduation_year, additional_education, is_available, is_verified, license_number, license_doc_url, status, reject_reason, verified_by'
       ),
       supabase.from('specialty_types').select('*').order('name_th'),
       supabase.from('clinics').select('id, name, type, province, phone, status, license_doc_url, created_at, owner_vet_id').order('created_at', { ascending: false }),
@@ -215,10 +230,16 @@ export default function AdminDashboard() {
 
     // ดึง profiles ของ vet แยก (รวม role สำหรับแสดง admin badge)
     const vetIds = (vetData || []).map((v: any) => v.user_id)
+    const verifierIds = Array.from(new Set((vetData || []).map((v: any) => v.verified_by).filter(Boolean))) as string[]
     let vetProfileMap: Record<string, { full_name: string; avatar_url: string | null; role: string }> = {}
-    if (vetIds.length > 0) {
-      const { data: vetProfiles } = await supabase.from('profiles').select('id, full_name, avatar_url, role').in('id', vetIds)
-      ;(vetProfiles || []).forEach((p: any) => { vetProfileMap[p.id] = p })
+    let verifierNameMap: Record<string, string> = {}
+    const lookupIds = Array.from(new Set([...vetIds, ...verifierIds]))
+    if (lookupIds.length > 0) {
+      const { data: vetProfiles } = await supabase.from('profiles').select('id, full_name, avatar_url, role').in('id', lookupIds)
+      ;(vetProfiles || []).forEach((p: any) => {
+        vetProfileMap[p.id] = p
+        verifierNameMap[p.id] = p.full_name
+      })
     }
     const roleMap: Record<string, string> = {}
     vetIds.forEach(id => { roleMap[id] = vetProfileMap[id]?.role || 'vet' })
@@ -229,6 +250,7 @@ export default function AdminDashboard() {
       avatar_url: vetProfileMap[v.user_id]?.avatar_url || null,
       is_verified: v.is_verified || false,
       status: v.status || 'pending',
+      verified_by_name: v.verified_by ? (verifierNameMap[v.verified_by] || null) : null,
     }))
     setVets(mappedVets)
 
@@ -539,6 +561,9 @@ export default function AdminDashboard() {
                         </div>
                         {vet.license_number && (
                           <p className="text-xs text-gray-400 mt-0.5">ใบอนุญาต: {vet.license_number}</p>
+                        )}
+                        {vet.status === 'approved' && vet.verified_by_name && (
+                          <p className="text-xs text-gray-400 mt-0.5">ยืนยันโดย: {vet.verified_by_name}</p>
                         )}
                       </div>
                     </div>
