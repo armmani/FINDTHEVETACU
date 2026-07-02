@@ -26,7 +26,8 @@ interface Patient {
   pet_id: string; latest_id: string; latest_date: string
   dx: string | null; weight: number | null; visits: number
   name: string; species: string; breed: string | null; photo_url: string | null
-  tags: string[]; owner_name: string | null; clinic_name: string | null
+  tags: string[]; owner_name: string | null
+  clinic_id: string | null; clinic_name: string | null
   discharge?: { reason: string; discharged_at: string }
 }
 
@@ -48,7 +49,8 @@ export default function OPDPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [patients, setPatients] = useState<Patient[]>([])
-  const [clinicCount, setClinicCount] = useState(0)
+  const [clinics, setClinics] = useState<{ id: string; name: string }[]>([])
+  const [selectedClinic, setSelectedClinic] = useState<string>('all')
   const [tab, setTab] = useState<'active' | 'discharged'>('active')
   const [discharging, setDischarging] = useState<Patient | null>(null)
   const [dischargeReason, setDischargeReason] = useState<'recovered' | 'deceased' | 'lost_contact'>('recovered')
@@ -74,11 +76,11 @@ export default function OPDPage() {
       (discharges || []).map((d: any) => [d.pet_id, { reason: d.reason, discharged_at: d.discharged_at }])
     )
 
-    const clinicSet = new Set<string>()
+    const clinicMap = new Map<string, string>()
     const patientMap = new Map<string, Patient>()
 
     for (const r of (records || []) as any[]) {
-      if (r.clinics?.id) clinicSet.add(r.clinics.id)
+      if (r.clinics?.id) clinicMap.set(r.clinics.id, r.clinics.name)
       if (!patientMap.has(r.pet_id)) {
         patientMap.set(r.pet_id, {
           pet_id: r.pet_id, latest_id: r.id, latest_date: r.record_date,
@@ -87,6 +89,7 @@ export default function OPDPage() {
           breed: r.pets?.breed ?? null, photo_url: r.pets?.photo_url ?? null,
           tags: r.pets?.medical_tags || [],
           owner_name: r.pets?.profiles?.full_name ?? null,
+          clinic_id: r.clinics?.id ?? null,
           clinic_name: r.clinics?.name ?? null,
           discharge: dischargeMap.get(r.pet_id),
         })
@@ -96,7 +99,7 @@ export default function OPDPage() {
     }
 
     setPatients(Array.from(patientMap.values()))
-    setClinicCount(clinicSet.size)
+    setClinics(Array.from(clinicMap, ([id, name]) => ({ id, name })))
     setLoading(false)
   }, [])
 
@@ -121,8 +124,9 @@ export default function OPDPage() {
 
   if (loading) return <LoadingScreen />
 
-  const active = patients.filter(p => !p.discharge)
-  const discharged = patients.filter(p => p.discharge)
+  const inClinic = selectedClinic === 'all' ? patients : patients.filter(p => p.clinic_id === selectedClinic)
+  const active = inClinic.filter(p => !p.discharge)
+  const discharged = inClinic.filter(p => p.discharge)
   const shown = tab === 'active' ? active : discharged
 
   return (
@@ -139,9 +143,9 @@ export default function OPDPage() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'สัตว์ป่วยทั้งหมด', value: patients.length, icon: <Users className="w-5 h-5" />, color: 'text-primary-600' },
+          { label: 'สัตว์ป่วยทั้งหมด', value: inClinic.length, icon: <Users className="w-5 h-5" />, color: 'text-primary-600' },
           { label: 'Active',        value: active.length,    icon: <Activity className="w-5 h-5" />, color: 'text-green-600' },
-          { label: 'คลินิก/รพ.',        value: clinicCount,       icon: <Building2 className="w-5 h-5" />, color: 'text-blue-600' },
+          { label: 'คลินิก/รพ.',        value: clinics.length,    icon: <Building2 className="w-5 h-5" />, color: 'text-blue-600' },
         ].map(s => (
           <div key={s.label} className="card text-center py-4 space-y-1">
             <div className={`flex justify-center ${s.color}`}>{s.icon}</div>
@@ -150,6 +154,33 @@ export default function OPDPage() {
           </div>
         ))}
       </div>
+
+      {/* Clinic filter — shown when the vet works at more than one clinic */}
+      {clinics.length > 1 && (
+        <div>
+          <p className="text-xs text-gray-400 mb-1.5 flex items-center gap-1">
+            <Building2 className="w-3.5 h-3.5" /> เลือกคลินิก / รพ.
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            <button onClick={() => setSelectedClinic('all')}
+              className={`text-sm px-3 py-1.5 rounded-lg border transition-colors
+                ${selectedClinic === 'all'
+                  ? 'border-primary-500 bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 font-medium'
+                  : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-primary-300'}`}>
+              ทั้งหมด
+            </button>
+            {clinics.map(c => (
+              <button key={c.id} onClick={() => setSelectedClinic(c.id)}
+                className={`text-sm px-3 py-1.5 rounded-lg border transition-colors
+                  ${selectedClinic === c.id
+                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300 font-medium'
+                    : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-primary-300'}`}>
+                {c.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-gray-200 dark:border-gray-800">
