@@ -321,7 +321,7 @@ export default function AdminDashboard() {
   const listedClinics = [...clinics].sort((a, b) => rankOf(a.status) - rankOf(b.status))
   const pendingVetCount = listedVets.filter(v => v.status === 'pending' || v.status === 'reviewing').length
   const verifiedVetCount = vets.filter(v => v.status === 'approved').length
-  const unverifiedVetCount = listedVets.filter(v => v.status !== 'approved').length
+  const unverifiedVetCount = vets.length - verifiedVetCount
 
   return (
     <div className="space-y-8">
@@ -341,7 +341,7 @@ export default function AdminDashboard() {
         </div>
         <div className="card text-center">
           <Stethoscope className="w-6 h-6 sm:w-8 sm:h-8 text-primary-500 mx-auto mb-1 sm:mb-2" />
-          <p className="text-2xl sm:text-3xl font-bold">{stats?.totalVets}</p>
+          <p className="text-2xl sm:text-3xl font-bold">{vets.length}</p>
           <p className="text-xs sm:text-sm text-gray-500">สัตวแพทย์</p>
         </div>
       </div>
