@@ -99,6 +99,8 @@ export default function AdminDashboard() {
   const [rejectReason, setRejectReason] = useState<Record<string, string>>({})
   const [expandedClinic, setExpandedClinic] = useState<string | null>(null)
   const [expandedVet, setExpandedVet] = useState<string | null>(null)
+  const [showAllApprovedClinics, setShowAllApprovedClinics] = useState(false)
+  const [showAllApprovedVets, setShowAllApprovedVets] = useState(false)
   const [vetRejectReason, setVetRejectReason] = useState<Record<string, string>>({})
   const [approvingVet, setApprovingVet] = useState<string | null>(null)
   const [togglingAdmin, setTogglingAdmin] = useState<string | null>(null)
@@ -323,23 +325,259 @@ export default function AdminDashboard() {
   const verifiedVetCount = vets.filter(v => v.status === 'approved').length
   const unverifiedVetCount = vets.length - verifiedVetCount
 
+  // แยกกลุ่ม: รอตรวจสอบ (ยังไม่ approved) กับ ยืนยันแล้ว
+  const pendingClinicsList = listedClinics.filter(c => c.status !== 'approved')
+  const approvedClinicsList = listedClinics.filter(c => c.status === 'approved')
+  const pendingVetsList = listedVets.filter(v => v.status !== 'approved')
+  const approvedVetsList = listedVets.filter(v => v.status === 'approved')
+
+  const scrollTo = (elId: string) =>
+    document.getElementById(elId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+  const renderClinicCard = (clinic: ClinicRow) => {
+    const statusColor = clinic.status === 'approved'
+      ? 'border-l-primary-400 bg-primary-50/30'
+      : clinic.status === 'rejected'
+      ? 'border-l-red-400 bg-red-50/30'
+      : clinic.status === 'reviewing'
+      ? 'border-l-blue-400 bg-blue-50/30'
+      : 'border-l-amber-400 bg-amber-50/30'
+    const statusBadge = clinic.status === 'approved'
+      ? 'bg-green-100 text-green-700'
+      : clinic.status === 'rejected'
+      ? 'bg-red-100 text-red-600'
+      : clinic.status === 'reviewing'
+      ? 'bg-blue-100 text-blue-700'
+      : 'bg-amber-100 text-amber-700'
+    const statusLabel = clinic.status === 'approved' ? 'ยืนยันแล้ว'
+      : clinic.status === 'rejected' ? 'ไม่ผ่าน'
+      : clinic.status === 'reviewing' ? 'กำลังตรวจสอบ'
+      : 'รอตรวจสอบ'
+    const isExpanded = expandedClinic === clinic.id
+    const needsAction = clinic.status === 'pending' || clinic.status === 'reviewing'
+    return (
+      <div key={clinic.id} className={`card border-l-4 ${statusColor}`}>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold">{clinic.name}</span>
+              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                {clinic.type === 'clinic' ? 'คลินิก' : 'โรงพยาบาลสัตว์'}
+              </span>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusBadge}`}>
+                {statusLabel}
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {clinic.province} · {clinic.owner_name || '-'}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {needsAction && (
+              <button onClick={() => setExpandedClinic(isExpanded ? null : clinic.id)}
+                className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 font-medium transition-colors">
+                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                ตรวจสอบ
+              </button>
+            )}
+            <Link href={`/admin/clinic/${clinic.id}`}
+              className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium transition-colors">
+              <Eye className="w-4 h-4" /> รายละเอียด
+            </Link>
+          </div>
+        </div>
+
+        {isExpanded && (
+          <div className="mt-4 pt-4 border-t border-gray-100 space-y-4">
+            {clinic.license_doc_url ? (
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-2">เอกสารใบอนุญาต</p>
+                {clinic.license_doc_url.match(/\.(jpg|jpeg|png|webp)$/i) ? (
+                  <img src={clinic.license_doc_url} alt="ใบอนุญาต"
+                    className="max-h-96 rounded-lg border border-gray-200 object-contain bg-gray-50" />
+                ) : (
+                  <a href={clinic.license_doc_url} target="_blank" rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
+                    <FileText className="w-4 h-4" /> เปิดเอกสาร PDF
+                  </a>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 italic">ยังไม่มีเอกสารแนบ</p>
+            )}
+
+            {clinic.status === 'pending' && (
+              <button onClick={() => handleStartReview(clinic.id)}
+                disabled={approvingClinic === clinic.id}
+                className="text-sm px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
+                เริ่มตรวจสอบ
+              </button>
+            )}
+
+            {clinic.status === 'reviewing' && (
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <button onClick={() => handleClinicApprove(clinic.id, true)}
+                    disabled={approvingClinic === clinic.id}
+                    className="flex items-center gap-1 text-sm px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors font-medium">
+                    <CheckCircle className="w-4 h-4" /> ยืนยัน
+                  </button>
+                  <button onClick={() => handleClinicApprove(clinic.id, false)}
+                    disabled={approvingClinic === clinic.id || !rejectReason[clinic.id]?.trim()}
+                    className="flex items-center gap-1 text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors font-medium">
+                    <XCircle className="w-4 h-4" /> ปฏิเสธ
+                  </button>
+                </div>
+                <textarea
+                  placeholder="ระบุเหตุผลปฏิเสธ (จำเป็นก่อนกดปฏิเสธ)"
+                  value={rejectReason[clinic.id] || ''}
+                  onChange={e => setRejectReason(prev => ({ ...prev, [clinic.id]: e.target.value }))}
+                  rows={2}
+                  className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-red-300"
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const renderVetCard = (vet: VetRow) => {
+    const vetStatusColor = vet.status === 'approved'
+      ? 'border-l-primary-400 bg-primary-50/30'
+      : vet.status === 'rejected'
+      ? 'border-l-red-400 bg-red-50/30'
+      : vet.status === 'reviewing'
+      ? 'border-l-blue-400 bg-blue-50/30'
+      : 'border-l-amber-400 bg-amber-50/30'
+    const vetNeedsAction = vet.status === 'pending' || vet.status === 'reviewing'
+    const isVetExpanded = expandedVet === vet.user_id
+    return (
+      <div key={vet.user_id} className={`card border-l-4 ${vetStatusColor}`}>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            {vet.avatar_url ? (
+              <img src={vet.avatar_url} alt={vet.full_name}
+                className="w-10 h-10 rounded-full object-cover shrink-0" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold shrink-0 text-sm">
+                {vet.full_name?.[0] || 'H'}
+              </div>
+            )}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-semibold">{vet.full_name}</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                  vet.status === 'approved' ? 'bg-green-100 text-green-700'
+                  : vet.status === 'reviewing' ? 'bg-blue-100 text-blue-700'
+                  : vet.status === 'rejected' ? 'bg-red-100 text-red-500'
+                  : 'bg-amber-100 text-amber-700'
+                }`}>
+                  {vet.status === 'approved' ? <ShieldCheck className="w-3 h-3" /> : <ShieldX className="w-3 h-3" />}
+                  {vet.status === 'approved' ? 'ยืนยันแล้ว' : vet.status === 'reviewing' ? 'กำลังตรวจสอบ' : vet.status === 'rejected' ? 'ไม่ผ่าน' : 'รอตรวจสอบ'}
+                </span>
+              </div>
+              {vet.license_number && (
+                <p className="text-xs text-gray-400 mt-0.5">ใบอนุญาต: {vet.license_number}</p>
+              )}
+              {!vet.license_doc_url && (
+                <p className="text-xs text-amber-600 mt-0.5">⚠️ ยังไม่แนบเอกสารใบอนุญาต</p>
+              )}
+              {vet.status === 'approved' && vet.verified_by_name && (
+                <p className="text-xs text-gray-400 mt-0.5">ยืนยันโดย: {vet.verified_by_name}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {vetNeedsAction && (
+              <button onClick={() => setExpandedVet(isVetExpanded ? null : vet.user_id)}
+                className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 font-medium transition-colors">
+                {isVetExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                ตรวจสอบ
+              </button>
+            )}
+            <button
+              onClick={() => handleToggleAdmin(vet.user_id)}
+              disabled={togglingAdmin === vet.user_id}
+              title={vetRoles[vet.user_id] === 'admin' ? 'ถอด Admin' : 'แต่งตั้งเป็น Admin'}
+              className={`flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 ${
+                vetRoles[vet.user_id] === 'admin'
+                  ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}>
+              <UserCog className="w-4 h-4" />
+              <span className="hidden sm:block">{vetRoles[vet.user_id] === 'admin' ? 'Admin ✓' : 'Admin'}</span>
+            </button>
+            <Link href={`/admin/vet/${vet.user_id}`}
+              className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium transition-colors">
+              <Eye className="w-4 h-4" /> รายละเอียด
+            </Link>
+          </div>
+        </div>
+
+        {isVetExpanded && (
+          <div className="mt-4 pt-4 border-t border-gray-100 space-y-4">
+            {vet.license_doc_url ? (
+              <div>
+                <p className="text-xs font-medium text-gray-500 mb-2">เอกสารใบอนุญาต</p>
+                {vet.license_doc_url.match(/\.(jpg|jpeg|png|webp)$/i) ? (
+                  <img src={vet.license_doc_url} alt="ใบอนุญาต"
+                    className="max-h-96 rounded-lg border border-gray-200 object-contain bg-gray-50" />
+                ) : (
+                  <a href={vet.license_doc_url} target="_blank" rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
+                    <FileText className="w-4 h-4" /> เปิดเอกสาร PDF
+                  </a>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 italic">ยังไม่มีเอกสารแนบ</p>
+            )}
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <button onClick={() => handleVetAction(vet.user_id, true)}
+                  disabled={approvingVet === vet.user_id}
+                  className="flex items-center gap-1 text-sm px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors font-medium">
+                  <CheckCircle className="w-4 h-4" /> ยืนยัน
+                </button>
+                <button onClick={() => handleVetAction(vet.user_id, false)}
+                  disabled={approvingVet === vet.user_id || !vetRejectReason[vet.user_id]?.trim()}
+                  className="flex items-center gap-1 text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors font-medium">
+                  <XCircle className="w-4 h-4" /> ปฏิเสธ
+                </button>
+              </div>
+              <textarea
+                placeholder="ระบุเหตุผลปฏิเสธ (จำเป็นก่อนกดปฏิเสธ)"
+                value={vetRejectReason[vet.user_id] || ''}
+                onChange={e => setVetRejectReason(prev => ({ ...prev, [vet.user_id]: e.target.value }))}
+                rows={2}
+                className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-red-300"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold">Admin Dashboard</h1>
 
       {/* Stats row 1 */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="card text-center">
+        <div onClick={() => scrollTo('sec-owners')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
           <Users className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 mx-auto mb-1 sm:mb-2" />
           <p className="text-2xl sm:text-3xl font-bold">{stats?.totalOwners}</p>
           <p className="text-xs sm:text-sm text-gray-500">เจ้าของสัตว์</p>
         </div>
-        <div className="card text-center">
+        <div onClick={() => scrollTo('sec-clinics-pending')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
           <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-500 mx-auto mb-1 sm:mb-2" />
           <p className="text-2xl sm:text-3xl font-bold">{(stats?.totalClinics ?? 0) + (stats?.totalHospitals ?? 0)}</p>
           <p className="text-xs sm:text-sm text-gray-500">สถานพยาบาล</p>
         </div>
-        <div className="card text-center">
+        <div onClick={() => scrollTo('sec-vets-pending')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
           <Stethoscope className="w-6 h-6 sm:w-8 sm:h-8 text-primary-500 mx-auto mb-1 sm:mb-2" />
           <p className="text-2xl sm:text-3xl font-bold">{vets.length}</p>
           <p className="text-xs sm:text-sm text-gray-500">สัตวแพทย์</p>
@@ -348,12 +586,12 @@ export default function AdminDashboard() {
 
       {/* Stats row 2 */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="card text-center">
+        <div onClick={() => scrollTo('sec-clinics-pending')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
           <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-500 mx-auto mb-1 sm:mb-2" />
           <p className="text-2xl sm:text-3xl font-bold">{stats?.totalClinics}</p>
           <p className="text-xs sm:text-sm text-gray-500">คลินิก</p>
         </div>
-        <div className="card text-center">
+        <div onClick={() => scrollTo('sec-clinics-pending')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
           <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-cyan-500 mx-auto mb-1 sm:mb-2" />
           <p className="text-2xl sm:text-3xl font-bold">{stats?.totalHospitals}</p>
           <p className="text-xs sm:text-sm text-gray-500">โรงพยาบาลสัตว์</p>
@@ -362,12 +600,12 @@ export default function AdminDashboard() {
 
       {/* Stats row 3 — vet verification */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="card text-center">
+        <div onClick={() => scrollTo('sec-vets-approved')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
           <ShieldCheck className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 mx-auto mb-1 sm:mb-2" />
           <p className="text-2xl sm:text-3xl font-bold">{verifiedVetCount}</p>
           <p className="text-xs sm:text-sm text-gray-500">สัตวแพทย์ยืนยันตัวตนแล้ว</p>
         </div>
-        <div className="card text-center">
+        <div onClick={() => scrollTo('sec-vets-pending')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
           <ShieldX className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500 mx-auto mb-1 sm:mb-2" />
           <p className="text-2xl sm:text-3xl font-bold">{unverifiedVetCount}</p>
           <p className="text-xs sm:text-sm text-gray-500">ยังไม่ยืนยันตัวตน</p>
@@ -408,277 +646,83 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* All Clinics */}
-      <div>
+      {/* Clinics — pending */}
+      <div id="sec-clinics-pending">
         <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <Building2 className="w-5 h-5 text-primary-500" />
-          รายชื่อคลินิก ({clinics.length})
-          {clinics.filter(c => c.status === 'pending').length > 0 && (
-            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-              รอตรวจสอบ {clinics.filter(c => c.status === 'pending').length}
-            </span>
-          )}
+          <Building2 className="w-5 h-5 text-amber-500" />
+          คลินิก / รพ. รอตรวจสอบ ({pendingClinicsList.length})
         </h2>
-        {clinics.length === 0 ? (
-          <div className="card text-center py-8 text-gray-400">ยังไม่มีคลินิกในระบบ</div>
+        {pendingClinicsList.length === 0 ? (
+          <div className="card text-center py-8 text-gray-400">ไม่มีคลินิก/รพ. รอตรวจสอบ</div>
         ) : (
-          <div className="space-y-3">
-            {listedClinics.map(clinic => {
-              const statusColor = clinic.status === 'approved'
-                ? 'border-l-primary-400 bg-primary-50/30'
-                : clinic.status === 'rejected'
-                ? 'border-l-red-400 bg-red-50/30'
-                : clinic.status === 'reviewing'
-                ? 'border-l-blue-400 bg-blue-50/30'
-                : 'border-l-amber-400 bg-amber-50/30'
-              const statusBadge = clinic.status === 'approved'
-                ? 'bg-green-100 text-green-700'
-                : clinic.status === 'rejected'
-                ? 'bg-red-100 text-red-600'
-                : clinic.status === 'reviewing'
-                ? 'bg-blue-100 text-blue-700'
-                : 'bg-amber-100 text-amber-700'
-              const statusLabel = clinic.status === 'approved' ? 'ยืนยันแล้ว'
-                : clinic.status === 'rejected' ? 'ไม่ผ่าน'
-                : clinic.status === 'reviewing' ? 'กำลังตรวจสอบ'
-                : 'รอตรวจสอบ'
-              const isExpanded = expandedClinic === clinic.id
-              const needsAction = clinic.status === 'pending' || clinic.status === 'reviewing'
-              return (
-                <div key={clinic.id} className={`card border-l-4 ${statusColor}`}>
-                  {/* Header row */}
-                  <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold">{clinic.name}</span>
-                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                          {clinic.type === 'clinic' ? 'คลินิก' : 'โรงพยาบาลสัตว์'}
-                        </span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusBadge}`}>
-                          {statusLabel}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-500 mt-0.5">
-                        {clinic.province} · {clinic.owner_name || '-'}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {needsAction && (
-                        <button onClick={() => setExpandedClinic(isExpanded ? null : clinic.id)}
-                          className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 font-medium transition-colors">
-                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                          ตรวจสอบ
-                        </button>
-                      )}
-                      <Link href={`/admin/clinic/${clinic.id}`}
-                        className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium transition-colors">
-                        <Eye className="w-4 h-4" /> รายละเอียด
-                      </Link>
-                    </div>
-                  </div>
-
-                  {/* Expandable review panel */}
-                  {isExpanded && (
-                    <div className="mt-4 pt-4 border-t border-gray-100 space-y-4">
-                      {/* License doc */}
-                      {clinic.license_doc_url ? (
-                        <div>
-                          <p className="text-xs font-medium text-gray-500 mb-2">เอกสารใบอนุญาต</p>
-                          {clinic.license_doc_url.match(/\.(jpg|jpeg|png|webp)$/i) ? (
-                            <img src={clinic.license_doc_url} alt="ใบอนุญาต"
-                              className="max-h-96 rounded-lg border border-gray-200 object-contain bg-gray-50" />
-                          ) : (
-                            <a href={clinic.license_doc_url} target="_blank" rel="noreferrer"
-                              className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
-                              <FileText className="w-4 h-4" /> เปิดเอกสาร PDF
-                            </a>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-400 italic">ยังไม่มีเอกสารแนบ</p>
-                      )}
-
-                      {/* Start review button (for pending) */}
-                      {clinic.status === 'pending' && (
-                        <button onClick={() => handleStartReview(clinic.id)}
-                          disabled={approvingClinic === clinic.id}
-                          className="text-sm px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors">
-                          เริ่มตรวจสอบ
-                        </button>
-                      )}
-
-                      {/* Approve / Reject (for reviewing) */}
-                      {clinic.status === 'reviewing' && (
-                        <div className="space-y-3">
-                          <div className="flex gap-2">
-                            <button onClick={() => handleClinicApprove(clinic.id, true)}
-                              disabled={approvingClinic === clinic.id}
-                              className="flex items-center gap-1 text-sm px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors font-medium">
-                              <CheckCircle className="w-4 h-4" /> ยืนยัน
-                            </button>
-                            <button onClick={() => handleClinicApprove(clinic.id, false)}
-                              disabled={approvingClinic === clinic.id || !rejectReason[clinic.id]?.trim()}
-                              className="flex items-center gap-1 text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors font-medium">
-                              <XCircle className="w-4 h-4" /> ปฏิเสธ
-                            </button>
-                          </div>
-                          <textarea
-                            placeholder="ระบุเหตุผลปฏิเสธ (จำเป็นก่อนกดปฏิเสธ)"
-                            value={rejectReason[clinic.id] || ''}
-                            onChange={e => setRejectReason(prev => ({ ...prev, [clinic.id]: e.target.value }))}
-                            rows={2}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-red-300"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+          <div className="space-y-3">{pendingClinicsList.map(renderClinicCard)}</div>
         )}
       </div>
 
-      {/* Vet profiles */}
-      <div>
-        <h2 className="text-lg font-bold mb-4">
-          รายชื่อสัตวแพทย์ ({listedVets.length})
-          {pendingVetCount > 0 && (
-            <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-              รอตรวจสอบ {pendingVetCount}
-            </span>
-          )}
+      {/* Clinics — approved */}
+      <div id="sec-clinics-approved">
+        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <Building2 className="w-5 h-5 text-green-500" />
+          คลินิก / รพ. ยืนยันแล้ว ({approvedClinicsList.length})
         </h2>
-        {listedVets.length === 0 ? (
-          <div className="card text-center py-8 text-gray-400">ยังไม่มีสัตวแพทย์ในระบบ</div>
+        {approvedClinicsList.length === 0 ? (
+          <div className="card text-center py-8 text-gray-400">ยังไม่มีที่ยืนยันแล้ว</div>
         ) : (
-          <div className="space-y-3">
-            {listedVets.map(vet => {
-              const vetStatusColor = vet.status === 'approved'
-                ? 'border-l-primary-400 bg-primary-50/30'
-                : vet.status === 'rejected'
-                ? 'border-l-red-400 bg-red-50/30'
-                : vet.status === 'reviewing'
-                ? 'border-l-blue-400 bg-blue-50/30'
-                : 'border-l-amber-400 bg-amber-50/30'
-              const vetNeedsAction = vet.status === 'pending' || vet.status === 'reviewing'
-              const isVetExpanded = expandedVet === vet.user_id
-              return (
-                <div key={vet.user_id} className={`card border-l-4 ${vetStatusColor}`}>
-                  <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {vet.avatar_url ? (
-                        <img src={vet.avatar_url} alt={vet.full_name}
-                          className="w-10 h-10 rounded-full object-cover shrink-0" />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold shrink-0 text-sm">
-                          {vet.full_name?.[0] || 'H'}
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-semibold">{vet.full_name}</span>
-                          <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                            vet.status === 'approved' ? 'bg-green-100 text-green-700'
-                            : vet.status === 'reviewing' ? 'bg-blue-100 text-blue-700'
-                            : vet.status === 'rejected' ? 'bg-red-100 text-red-500'
-                            : 'bg-amber-100 text-amber-700'
-                          }`}>
-                            {vet.status === 'approved' ? <ShieldCheck className="w-3 h-3" /> : <ShieldX className="w-3 h-3" />}
-                            {vet.status === 'approved' ? 'ยืนยันแล้ว' : vet.status === 'reviewing' ? 'กำลังตรวจสอบ' : vet.status === 'rejected' ? 'ไม่ผ่าน' : 'รอตรวจสอบ'}
-                          </span>
-                        </div>
-                        {vet.license_number && (
-                          <p className="text-xs text-gray-400 mt-0.5">ใบอนุญาต: {vet.license_number}</p>
-                        )}
-                        {!vet.license_doc_url && (
-                          <p className="text-xs text-amber-600 mt-0.5">⚠️ ยังไม่แนบเอกสารใบอนุญาต</p>
-                        )}
-                        {vet.status === 'approved' && vet.verified_by_name && (
-                          <p className="text-xs text-gray-400 mt-0.5">ยืนยันโดย: {vet.verified_by_name}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {vetNeedsAction && (
-                        <button onClick={() => setExpandedVet(isVetExpanded ? null : vet.user_id)}
-                          className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 font-medium transition-colors">
-                          {isVetExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                          ตรวจสอบ
-                        </button>
-                      )}
-                      {/* super_admin: toggle admin role */}
-                      <button
-                        onClick={() => handleToggleAdmin(vet.user_id)}
-                        disabled={togglingAdmin === vet.user_id}
-                        title={vetRoles[vet.user_id] === 'admin' ? 'ถอด Admin' : 'แต่งตั้งเป็น Admin'}
-                        className={`flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 ${
-                          vetRoles[vet.user_id] === 'admin'
-                            ? 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                        }`}>
-                        <UserCog className="w-4 h-4" />
-                        <span className="hidden sm:block">{vetRoles[vet.user_id] === 'admin' ? 'Admin ✓' : 'Admin'}</span>
-                      </button>
-                      <Link href={`/admin/vet/${vet.user_id}`}
-                        className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium transition-colors">
-                        <Eye className="w-4 h-4" /> รายละเอียด
-                      </Link>
-                    </div>
-                  </div>
-
-                  {isVetExpanded && (
-                    <div className="mt-4 pt-4 border-t border-gray-100 space-y-4">
-                      {vet.license_doc_url ? (
-                        <div>
-                          <p className="text-xs font-medium text-gray-500 mb-2">เอกสารใบอนุญาต</p>
-                          {vet.license_doc_url.match(/\.(jpg|jpeg|png|webp)$/i) ? (
-                            <img src={vet.license_doc_url} alt="ใบอนุญาต"
-                              className="max-h-96 rounded-lg border border-gray-200 object-contain bg-gray-50" />
-                          ) : (
-                            <a href={vet.license_doc_url} target="_blank" rel="noreferrer"
-                              className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
-                              <FileText className="w-4 h-4" /> เปิดเอกสาร PDF
-                            </a>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-400 italic">ยังไม่มีเอกสารแนบ</p>
-                      )}
-                      <div className="space-y-3">
-                        <div className="flex gap-2">
-                          <button onClick={() => handleVetAction(vet.user_id, true)}
-                            disabled={approvingVet === vet.user_id}
-                            className="flex items-center gap-1 text-sm px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors font-medium">
-                            <CheckCircle className="w-4 h-4" /> ยืนยัน
-                          </button>
-                          <button onClick={() => handleVetAction(vet.user_id, false)}
-                            disabled={approvingVet === vet.user_id || !vetRejectReason[vet.user_id]?.trim()}
-                            className="flex items-center gap-1 text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors font-medium">
-                            <XCircle className="w-4 h-4" /> ปฏิเสธ
-                          </button>
-                        </div>
-                        <textarea
-                          placeholder="ระบุเหตุผลปฏิเสธ (จำเป็นก่อนกดปฏิเสธ)"
-                          value={vetRejectReason[vet.user_id] || ''}
-                          onChange={e => setVetRejectReason(prev => ({ ...prev, [vet.user_id]: e.target.value }))}
-                          rows={2}
-                          className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-red-300"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+          <>
+            <div className="space-y-3">
+              {(showAllApprovedClinics ? approvedClinicsList : approvedClinicsList.slice(0, 5)).map(renderClinicCard)}
+            </div>
+            {approvedClinicsList.length > 5 && (
+              <button onClick={() => setShowAllApprovedClinics(v => !v)}
+                className="mt-3 text-sm text-primary-600 hover:text-primary-700 flex items-center gap-1">
+                {showAllApprovedClinics
+                  ? <><ChevronUp className="w-4 h-4" /> ย่อ</>
+                  : <><ChevronDown className="w-4 h-4" /> ดูทั้งหมด ({approvedClinicsList.length})</>}
+              </button>
+            )}
+          </>
+        )}
+      </div>
+      {/* Vets — pending */}
+      <div id="sec-vets-pending">
+        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <Stethoscope className="w-5 h-5 text-amber-500" />
+          สัตวแพทย์รอตรวจสอบ ({pendingVetsList.length})
+        </h2>
+        {pendingVetsList.length === 0 ? (
+          <div className="card text-center py-8 text-gray-400">ไม่มีสัตวแพทย์รอตรวจสอบ</div>
+        ) : (
+          <div className="space-y-3">{pendingVetsList.map(renderVetCard)}</div>
         )}
       </div>
 
+      {/* Vets — approved */}
+      <div id="sec-vets-approved">
+        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <ShieldCheck className="w-5 h-5 text-green-500" />
+          สัตวแพทย์ยืนยันแล้ว ({approvedVetsList.length})
+        </h2>
+        {approvedVetsList.length === 0 ? (
+          <div className="card text-center py-8 text-gray-400">ยังไม่มีที่ยืนยันแล้ว</div>
+        ) : (
+          <>
+            <div className="space-y-3">
+              {(showAllApprovedVets ? approvedVetsList : approvedVetsList.slice(0, 5)).map(renderVetCard)}
+            </div>
+            {approvedVetsList.length > 5 && (
+              <button onClick={() => setShowAllApprovedVets(v => !v)}
+                className="mt-3 text-sm text-primary-600 hover:text-primary-700 flex items-center gap-1">
+                {showAllApprovedVets
+                  ? <><ChevronUp className="w-4 h-4" /> ย่อ</>
+                  : <><ChevronDown className="w-4 h-4" /> ดูทั้งหมด ({approvedVetsList.length})</>}
+              </button>
+            )}
+          </>
+        )}
+      </div>
       {/* Owner list */}
       {owners.length > 0 && (
-        <div>
+        <div id="sec-owners">
           <h2 className="text-lg font-bold mb-4">รายชื่อเจ้าของสัตว์ ({owners.length})</h2>
           <div className="space-y-2">
             {owners.map((o, i) => (
