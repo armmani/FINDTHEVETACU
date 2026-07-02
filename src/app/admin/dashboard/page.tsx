@@ -312,6 +312,15 @@ export default function AdminDashboard() {
 
   if (loading) return <LoadingScreen />
 
+  const STATUS_RANK: Record<string, number> = { pending: 0, reviewing: 0, rejected: 1, suspended: 1, approved: 2 }
+  const rankOf = (s: string) => STATUS_RANK[s] ?? 2
+  // ซ่อนหมอที่สมัครแต่ยังไม่ส่งโปรไฟล์ (pending + ยังไม่แนบใบอนุญาต)
+  const listedVets = [...vets]
+    .filter(v => v.license_doc_url || v.status !== 'pending')
+    .sort((a, b) => rankOf(a.status) - rankOf(b.status))
+  const listedClinics = [...clinics].sort((a, b) => rankOf(a.status) - rankOf(b.status))
+  const pendingVetCount = listedVets.filter(v => v.status === 'pending' || v.status === 'reviewing').length
+
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold">Admin Dashboard</h1>
@@ -398,7 +407,7 @@ export default function AdminDashboard() {
           <div className="card text-center py-8 text-gray-400">ยังไม่มีคลินิกในระบบ</div>
         ) : (
           <div className="space-y-3">
-            {clinics.map(clinic => {
+            {listedClinics.map(clinic => {
               const statusColor = clinic.status === 'approved'
                 ? 'border-l-primary-400 bg-primary-50/30'
                 : clinic.status === 'rejected'
@@ -518,18 +527,18 @@ export default function AdminDashboard() {
       {/* Vet profiles */}
       <div>
         <h2 className="text-lg font-bold mb-4">
-          รายชื่อสัตวแพทย์ ({vets.length})
-          {vets.filter(v => v.status === 'pending' || v.status === 'reviewing').length > 0 && (
+          รายชื่อสัตวแพทย์ ({listedVets.length})
+          {pendingVetCount > 0 && (
             <span className="ml-2 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-              รอตรวจสอบ {vets.filter(v => v.status === 'pending' || v.status === 'reviewing').length}
+              รอตรวจสอบ {pendingVetCount}
             </span>
           )}
         </h2>
-        {vets.length === 0 ? (
+        {listedVets.length === 0 ? (
           <div className="card text-center py-8 text-gray-400">ยังไม่มีสัตวแพทย์ในระบบ</div>
         ) : (
           <div className="space-y-3">
-            {vets.map(vet => {
+            {listedVets.map(vet => {
               const vetStatusColor = vet.status === 'approved'
                 ? 'border-l-primary-400 bg-primary-50/30'
                 : vet.status === 'rejected'

@@ -148,7 +148,17 @@ export default function VetProfilePage() {
       setRejectReason(data.reject_reason || null)
       setLicenseDocUrl(data.license_doc_url || null)
     }
-    setFullName((profile as any)?.full_name || '')
+
+    // default: ใส่ชื่อจากบัญชี (เช่น Google) ลงช่องภาษาที่ตรงกัน
+    const accountName = ((profile as any)?.full_name || '').trim()
+    const isThaiName = /[฀-๿]/.test(accountName)
+    if (accountName && !isThaiName) {
+      // ชื่ออังกฤษ → ใส่ช่องอังกฤษ (ถ้ายังว่าง), เว้นช่องไทยให้กรอกเอง
+      if (!data?.full_name_en) setFullNameEn(accountName)
+      setFullName('')
+    } else {
+      setFullName(accountName)
+    }
     setTelegramChatId((profile as any)?.telegram_chat_id || '')
     setAvatarUrl((profile as any)?.avatar_url || null)
 

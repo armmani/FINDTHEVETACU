@@ -34,7 +34,7 @@ export default async function HomeLayout({ children }: { children: React.ReactNo
   if (profile.role === 'admin') {
     const [{ count: c1 }, { count: c2 }] = await Promise.all([
       supabase.from('clinics').select('id', { count: 'exact', head: true }).in('status', ['pending', 'reviewing']),
-      supabase.from('vet_profiles').select('user_id', { count: 'exact', head: true }).in('status', ['pending', 'reviewing']),
+      supabase.from('vet_profiles').select('user_id', { count: 'exact', head: true }).in('status', ['pending', 'reviewing']).not('license_doc_url', 'is', null),
     ])
     pendingCount = (c1 || 0) + (c2 || 0)
   }

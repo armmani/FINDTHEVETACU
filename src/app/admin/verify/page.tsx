@@ -48,7 +48,7 @@ export default function AdminVerifyPage() {
       supabase.from('clinics').select('id, name, type, province, status, license_doc_url, owner_vet_id')
         .in('status', ['pending', 'reviewing']),
       supabase.from('vet_profiles').select('user_id, license_number, license_doc_url, status')
-        .in('status', ['pending', 'reviewing']),
+        .in('status', ['pending', 'reviewing']).not('license_doc_url', 'is', null),
     ])
 
     const clinicOwnerIds = Array.from(new Set((clinicData || []).map((c: any) => c.owner_vet_id).filter(Boolean)))
