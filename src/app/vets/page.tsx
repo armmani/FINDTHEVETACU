@@ -179,11 +179,7 @@ export default function VetsPage() {
                         : vet.title ? `${vet.title}${vet.full_name}` : vet.full_name}
                     </h3>
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        vet.is_available ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                      }`}>
-                        {vet.is_available ? t.vets.available : t.vets.unavailable}
-                      </span>
+                      {/* สถานะรับงาน — ซ่อนไว้ก่อน (ฟีเจอร์ยังไม่เปิด) */}
                       <ChevronRight className="w-4 h-4 text-gray-300" />
                     </div>
                   </div>
