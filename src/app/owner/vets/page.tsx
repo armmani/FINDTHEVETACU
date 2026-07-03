@@ -103,7 +103,7 @@ export default function OwnerVetsPage() {
     <div className="max-w-2xl mx-auto">
       <div className="mb-4">
         <h1 className="text-2xl font-bold">รายชื่อสัตวแพทย์</h1>
-        <p className="text-gray-500 text-sm mt-0.5">สัตวแพทย์ฝังเข็มที่ลงทะเบียนในระบบ FindTheVet</p>
+        <p className="text-gray-500 text-sm mt-0.5">สัตวแพทย์ที่ลงทะเบียนในระบบ FindTheVet</p>
       </div>
 
       {/* กล่องวิธีตรวจสอบใบอนุญาต */}

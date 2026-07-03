@@ -59,7 +59,7 @@ export default function LandingPage() {
             </div>
             <div className="space-y-5">
               {[
-                { icon: Search, step: '1', title: 'ค้นหาหมอใกล้คุณ', desc: 'ค้นหาสัตวแพทย์ฝังเข็มตามจังหวัด ดูโปรไฟล์และตารางออกตรวจ' },
+                { icon: Search, step: '1', title: 'ค้นหาหมอใกล้คุณ', desc: 'ค้นหาสัตวแพทย์ตามจังหวัด ดูโปรไฟล์และตารางออกตรวจ' },
                 { icon: Shield, step: '2', title: 'ตรวจสอบใบอนุญาต', desc: 'หมอทุกคนแสดงเลขใบอนุญาต พร้อมลิงก์ตรวจสอบจากสัตวแพทยสภา' },
                 { icon: Phone, step: '3', title: 'ติดต่อหมอได้เลย', desc: 'ดูเบอร์โทรและตารางออกตรวจ แล้วติดต่อนัดหมายโดยตรง' },
               ].map(({ icon: Icon, step, title, desc }) => (

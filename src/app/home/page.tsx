@@ -13,10 +13,10 @@ export default function HomePage() {
       </div>
 
       <p className="text-gray-700 dark:text-gray-300 text-xl font-semibold mb-2">
-        ค้นหาสัตวแพทย์ฝังเข็ม ได้ที่นี่
+        ค้นหาสัตวแพทย์ ได้ที่นี่
       </p>
       <p className="text-gray-400 text-sm mb-10 max-w-sm leading-relaxed">
-        รวมสัตวแพทย์ฝังเข็มที่ผ่านการยืนยัน พร้อมตารางออกตรวจ<br />และคลินิกสัตว์ทั่วประเทศ
+        รวมสัตวแพทย์ที่ผ่านการยืนยัน พร้อมตารางออกตรวจ<br />และคลินิก/โรงพยาบาลสัตว์ทั่วประเทศ
       </p>
 
       {/* 2 Big Buttons */}

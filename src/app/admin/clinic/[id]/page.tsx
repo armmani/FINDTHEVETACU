@@ -62,6 +62,7 @@ export default function AdminClinicDetailPage() {
   const [district, setDistrict] = useState('')
   const [subDistrict, setSubDistrict] = useState('')
   const [address, setAddress] = useState('')
+  const [type, setType] = useState<'clinic' | 'hospital'>('clinic')
 
   useEffect(() => {
     const load = async () => {
@@ -83,7 +84,8 @@ export default function AdminClinicDetailPage() {
         setOwnerId(c.owner_vet_id)
         setName(c.name || '')
         setNameEn(c.name_en || '')
-        setPhone(formatPhone(c.phone || ''))
+        setType(c.type || 'clinic')
+        setPhone(c.phone || '')
         setLineId(c.line_id || '')
         setFacebook(c.facebook || '')
         setWebsite(c.website || '')
@@ -108,6 +110,7 @@ export default function AdminClinicDetailPage() {
         updates: {
           name: name.trim(),
           name_en: nameEn.trim() || null,
+          type,
           phone: phone.trim() || null,
           line_id: lineId.trim() || null,
           facebook: facebook.trim() || null,
@@ -246,7 +249,10 @@ export default function AdminClinicDetailPage() {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label">ประเภท</label>
-            <input value={clinic.type === 'clinic' ? 'คลินิก' : 'โรงพยาบาลสัตว์'} disabled className="input bg-gray-50" />
+            <select value={type} onChange={e => setType(e.target.value as 'clinic' | 'hospital')} className="input">
+              <option value="clinic">คลินิก</option>
+              <option value="hospital">โรงพยาบาลสัตว์</option>
+            </select>
           </div>
           <div>
             <label className="label">ชื่อ (ภาษาไทย)</label>
