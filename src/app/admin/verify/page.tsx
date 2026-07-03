@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase'
 import { CheckCircle, XCircle, FileText, ChevronDown, ChevronUp, Eye, ShieldX } from 'lucide-react'
 import Link from 'next/link'
 import { AdminDashboardSkeleton } from '@/components/AdminSkeleton'
+import PetOwnershipRequestList from '@/components/admin/PetOwnershipRequestList'
 
 interface PendingClinic {
   id: string
@@ -188,6 +189,9 @@ export default function AdminVerifyPage() {
             </div>
         }
       </div>
+
+      {/* Pet ownership requests — อยู่ท้ายสุด ต่อจากคลินิกและสัตวแพทย์ */}
+      <PetOwnershipRequestList />
     </div>
   )
 }
