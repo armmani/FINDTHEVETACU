@@ -25,7 +25,7 @@ export default async function ClinicLayout({ children }: { children: React.React
   return (
     <div className="min-h-screen">
       <Navbar profile={profile as Profile} fullNameEn={vp?.full_name_en ?? null} />
-      <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
+      <main className="max-w-5xl mx-auto px-4 py-8 pb-24 sm:pb-8">{children}</main>
     </div>
   )
 }

@@ -30,7 +30,7 @@ export default async function VetsLayout({ children }: { children: React.ReactNo
   return (
     <div className="min-h-screen">
       <Navbar profile={profile as Profile} fullNameEn={fullNameEn} />
-      <main className="max-w-5xl mx-auto px-4 py-8">{children}</main>
+      <main className="max-w-5xl mx-auto px-4 py-8 pb-24 sm:pb-8">{children}</main>
     </div>
   )
 }
