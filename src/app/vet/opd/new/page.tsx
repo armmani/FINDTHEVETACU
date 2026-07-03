@@ -296,7 +296,7 @@ export default function NewOPDPage() {
                       className="card w-full text-left flex items-center gap-3 hover:shadow-md transition-shadow">
                       <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
                         {p.photo_url
-                          ? <img src={p.photo_url} alt={p.name} className="w-full h-full object-cover" />
+                          ? <Image src={p.photo_url} alt={p.name} width={48} height={48} className="w-full h-full object-cover" />
                           : <span className="text-2xl">{EMOJI[p.species] || '🐾'}</span>
                         }
                       </div>

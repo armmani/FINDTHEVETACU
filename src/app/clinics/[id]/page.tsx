@@ -9,6 +9,7 @@ import { Building2, MapPin, Phone, Clock, Globe, ArrowLeft, ExternalLink, Stetho
 import { useLang } from '@/contexts/LanguageContext'
 import { toProvinceEn } from '@/lib/provinces'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface Specialty {
   id: string
@@ -222,7 +223,7 @@ export default function ClinicDetailPage() {
             <Link key={v.vet_id} href={`/vets/${v.vet_id}`}
               className="flex items-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-xl p-3 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
               {v.profiles?.avatar_url ? (
-                <img src={v.profiles.avatar_url} alt={v.profiles.full_name}
+                <Image src={v.profiles.avatar_url} alt={v.profiles.full_name} width={40} height={40}
                   className="w-10 h-10 rounded-full object-cover border-2 border-gray-100" />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold">

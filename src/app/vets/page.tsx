@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Stethoscope, MapPin, ExternalLink, ShieldCheck, Search, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useLang } from '@/contexts/LanguageContext'
 import { toProvinceEn } from '@/lib/provinces'
 
@@ -163,7 +164,7 @@ export default function VetsPage() {
               <div className="flex gap-4 items-center">
                 <div className="shrink-0">
                   {vet.avatar_url ? (
-                    <img src={vet.avatar_url} alt={vet.full_name}
+                    <Image src={vet.avatar_url} alt={vet.full_name} width={56} height={56}
                       className="w-14 h-14 rounded-full object-cover border-2 border-gray-100" />
                   ) : (
                     <div className="w-14 h-14 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 text-xl font-bold">

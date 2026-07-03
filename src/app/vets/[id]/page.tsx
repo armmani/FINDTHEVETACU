@@ -5,6 +5,7 @@ import LoadingScreen from '@/components/LoadingScreen'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import Image from 'next/image'
 import { ShieldCheck, ExternalLink, MapPin, Calendar, ArrowLeft, Phone, Clock, Stethoscope } from 'lucide-react'
 import { useLang } from '@/contexts/LanguageContext'
 import { toProvinceEn } from '@/lib/provinces'
@@ -112,7 +113,7 @@ export default function VetDetailPage() {
       <div className="card flex flex-col items-center text-center gap-3">
         {vet.avatar_url ? (
           <button onClick={() => setLightbox(true)} className="relative group cursor-zoom-in">
-            <img src={vet.avatar_url} alt={vet.full_name}
+            <Image src={vet.avatar_url} alt={vet.full_name} width={96} height={96}
               className="w-24 h-24 rounded-full object-cover border-4 border-primary-100 group-hover:brightness-90 transition-all" />
             <div className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
               <span className="text-white text-xs bg-black/40 px-2 py-0.5 rounded-full">ขยาย</span>
@@ -249,8 +250,8 @@ export default function VetDetailPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          <img src={vet.avatar_url} alt={vet.full_name}
-            className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl"
+          <Image src={vet.avatar_url} alt={vet.full_name} width={800} height={800}
+            className="max-w-full max-h-[85vh] w-auto h-auto rounded-2xl object-contain shadow-2xl"
             onClick={e => e.stopPropagation()} />
         </div>
       )}
