@@ -128,14 +128,14 @@ export default function ClinicEditReviewList({ clinicId }: { clinicId?: string }
 
                 {expanded && (
                   <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-3">
-                    {/* diff */}
-                    <div className="space-y-1.5">
+                    {/* diff — ช่องที่แก้ตีกรอบแดง */}
+                    <div className="space-y-2">
                       {keys.map(k => (
-                        <div key={k} className="text-sm flex items-center gap-2 flex-wrap">
-                          <span className="text-xs text-gray-400 min-w-[80px]">{LABELS[k] || k}</span>
+                        <div key={k} className="text-sm flex items-center gap-2 flex-wrap border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 rounded-lg px-3 py-2">
+                          <span className="text-xs font-medium text-red-500 min-w-[80px]">{LABELS[k] || k}</span>
                           <span className="line-through text-gray-400">{fmtVal(k, r.clinics?.[k as keyof ClinicRef] as string)}</span>
-                          <ArrowRight className="w-3.5 h-3.5 text-gray-400" />
-                          <span className="font-medium text-primary-700 dark:text-primary-300">{fmtVal(k, r.proposed[k])}</span>
+                          <ArrowRight className="w-3.5 h-3.5 text-red-400" />
+                          <span className="font-semibold text-red-700 dark:text-red-300">{fmtVal(k, r.proposed[k])}</span>
                         </div>
                       ))}
                     </div>
