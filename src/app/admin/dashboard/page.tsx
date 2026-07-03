@@ -4,7 +4,7 @@ import LoadingScreen from '@/components/LoadingScreen'
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
-import { Users, Stethoscope, CalendarCheck, XCircle, CheckCircle, ShieldCheck, ShieldX, Building2, Plus, Trash2, Eye, FileText, ChevronDown, ChevronUp, UserCog } from 'lucide-react'
+import { Users, Stethoscope, CalendarCheck, XCircle, CheckCircle, ShieldCheck, ShieldX, Building2, Plus, Trash2, Eye, FileText, ChevronDown, ChevronUp, UserCog, Clock } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 import { AdminDashboardSkeleton } from '@/components/AdminSkeleton'
@@ -328,6 +328,7 @@ export default function AdminDashboard() {
   // แยกกลุ่ม: รอตรวจสอบ (ยังไม่ approved) กับ ยืนยันแล้ว
   const pendingClinicsList = listedClinics.filter(c => c.status !== 'approved')
   const approvedClinicsList = listedClinics.filter(c => c.status === 'approved')
+  const pendingClinicCount = clinics.filter(c => c.status === 'pending' || c.status === 'reviewing').length
   const pendingVetsList = listedVets.filter(v => v.status !== 'approved')
   const approvedVetsList = listedVets.filter(v => v.status === 'approved')
 
@@ -565,41 +566,46 @@ export default function AdminDashboard() {
     <div className="space-y-8">
       <h1 className="text-2xl font-bold">Admin Dashboard</h1>
 
-      {/* Stats row 1 */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Stats row 1 — สถานพยาบาล + เจ้าของ */}
+      <div className="grid grid-cols-2 gap-3">
+        <div onClick={() => scrollTo('sec-clinics-approved')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
+          <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-500 mx-auto mb-1 sm:mb-2" />
+          <p className="text-2xl sm:text-3xl font-bold">{clinics.length}</p>
+          <p className="text-xs sm:text-sm text-gray-500">สถานพยาบาลสัตว์</p>
+        </div>
         <div onClick={() => scrollTo('sec-owners')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
           <Users className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 mx-auto mb-1 sm:mb-2" />
           <p className="text-2xl sm:text-3xl font-bold">{stats?.totalOwners}</p>
           <p className="text-xs sm:text-sm text-gray-500">เจ้าของสัตว์</p>
         </div>
-        <div onClick={() => scrollTo('sec-clinics-pending')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
-          <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-500 mx-auto mb-1 sm:mb-2" />
-          <p className="text-2xl sm:text-3xl font-bold">{(stats?.totalClinics ?? 0) + (stats?.totalHospitals ?? 0)}</p>
-          <p className="text-xs sm:text-sm text-gray-500">สถานพยาบาล</p>
-        </div>
-        <div onClick={() => scrollTo('sec-vets-pending')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
-          <Stethoscope className="w-6 h-6 sm:w-8 sm:h-8 text-primary-500 mx-auto mb-1 sm:mb-2" />
-          <p className="text-2xl sm:text-3xl font-bold">{vets.length}</p>
-          <p className="text-xs sm:text-sm text-gray-500">สัตวแพทย์</p>
-        </div>
       </div>
 
-      {/* Stats row 2 */}
-      <div className="grid grid-cols-2 gap-3">
-        <div onClick={() => scrollTo('sec-clinics-pending')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
+      {/* Stats row 2 — คลินิก / รพ. / รอยืนยัน */}
+      <div className="grid grid-cols-3 gap-3">
+        <div onClick={() => scrollTo('sec-clinics-approved')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
           <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-500 mx-auto mb-1 sm:mb-2" />
           <p className="text-2xl sm:text-3xl font-bold">{stats?.totalClinics}</p>
           <p className="text-xs sm:text-sm text-gray-500">คลินิก</p>
         </div>
-        <div onClick={() => scrollTo('sec-clinics-pending')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
+        <div onClick={() => scrollTo('sec-clinics-approved')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
           <Building2 className="w-6 h-6 sm:w-8 sm:h-8 text-cyan-500 mx-auto mb-1 sm:mb-2" />
           <p className="text-2xl sm:text-3xl font-bold">{stats?.totalHospitals}</p>
           <p className="text-xs sm:text-sm text-gray-500">โรงพยาบาลสัตว์</p>
         </div>
+        <div onClick={() => scrollTo('sec-clinics-pending')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
+          <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500 mx-auto mb-1 sm:mb-2" />
+          <p className="text-2xl sm:text-3xl font-bold">{pendingClinicCount}</p>
+          <p className="text-xs sm:text-sm text-gray-500">สถานพยาบาลสัตว์รอยืนยัน</p>
+        </div>
       </div>
 
-      {/* Stats row 3 — vet verification */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Stats row 3 — สัตวแพทย์ */}
+      <div className="grid grid-cols-3 gap-3">
+        <div onClick={() => scrollTo('sec-vets-approved')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
+          <Stethoscope className="w-6 h-6 sm:w-8 sm:h-8 text-primary-500 mx-auto mb-1 sm:mb-2" />
+          <p className="text-2xl sm:text-3xl font-bold">{vets.length}</p>
+          <p className="text-xs sm:text-sm text-gray-500">สัตวแพทย์</p>
+        </div>
         <div onClick={() => scrollTo('sec-vets-approved')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
           <ShieldCheck className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 mx-auto mb-1 sm:mb-2" />
           <p className="text-2xl sm:text-3xl font-bold">{verifiedVetCount}</p>
@@ -608,7 +614,7 @@ export default function AdminDashboard() {
         <div onClick={() => scrollTo('sec-vets-pending')} className="card text-center cursor-pointer hover:shadow-md transition-shadow">
           <ShieldX className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500 mx-auto mb-1 sm:mb-2" />
           <p className="text-2xl sm:text-3xl font-bold">{unverifiedVetCount}</p>
-          <p className="text-xs sm:text-sm text-gray-500">ยังไม่ยืนยันตัวตน</p>
+          <p className="text-xs sm:text-sm text-gray-500">สัตวแพทย์ยังไม่ได้ยืนยันตัวตน</p>
         </div>
       </div>
 
