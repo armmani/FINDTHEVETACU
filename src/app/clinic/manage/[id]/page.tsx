@@ -124,6 +124,7 @@ export default function EditClinicPage() {
     const updates: Record<string, any> = {
       name: name.trim(),
       name_en: nameEn.trim() || null,
+      type,
       phone: phone.trim() || null,
       line_id: lineId.trim() || null,
       facebook: facebook.trim() || null,
