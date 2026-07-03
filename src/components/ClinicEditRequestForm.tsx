@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase'
+import { notifyAdmin } from '@/lib/telegram'
 import { Search, Loader2, Send, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -76,6 +77,11 @@ export default function ClinicEditRequestForm({ onDone }: { onDone: () => void }
     })
     setSending(false)
     if (error) { toast.error('ส่งคำขอไม่สำเร็จ: ' + error.message); return }
+
+    // แจ้งแอดมินผ่าน Telegram (in-app มี DB trigger จัดการอยู่แล้ว)
+    const fields = Object.keys(proposed).filter(k => k !== '_reason').map(k => FIELDS.find(f => f.key === k)?.label || k)
+    notifyAdmin(`✏️ <b>FindTheVet — คำขอแก้ข้อมูลคลินิก</b>\n\n<b>${selected.name}</b>\nขอแก้: ${fields.join(', ')}\nกรุณาตรวจสอบใน Admin → Feedback → ขอแก้ข้อมูล รพ.`)
+
     toast.success('ส่งคำขอแก้ข้อมูลแล้ว — แอดมินจะตรวจสอบก่อนอัปเดต')
     onDone()
   }
