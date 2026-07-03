@@ -65,8 +65,8 @@ export default function EditClinicPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      const { data: profile } = await supabase.from('profiles').select('full_name_th').eq('id', user.id).single()
-      setOwnerName((profile as any)?.full_name_th || '')
+      const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).single()
+      setOwnerName((profile as any)?.full_name || '')
 
       const { data } = await supabase.from('clinics').select('*').eq('id', id).eq('owner_vet_id', user.id).single()
       if (!data) { router.push('/clinic/manage'); return }
