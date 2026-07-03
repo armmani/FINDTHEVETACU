@@ -10,6 +10,7 @@ import toast from 'react-hot-toast'
 import { notifyAdmin } from '@/lib/telegram'
 import { AdminDetailSkeleton } from '@/components/AdminSkeleton'
 import { createNotification } from '@/lib/notifications'
+import ClinicEditReviewList from '@/components/admin/ClinicEditReviewList'
 import { formatPhone } from '@/lib/formatPhone'
 
 const DAY_TH = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์']
@@ -240,6 +241,9 @@ export default function AdminClinicDetailPage() {
           }
         </div>
       )}
+
+      {/* คำขอแก้ข้อมูล (diff ก่อน→หลัง) */}
+      <ClinicEditReviewList clinicId={id} />
 
       {/* แก้ไขข้อมูล */}
       <div className="card space-y-4">

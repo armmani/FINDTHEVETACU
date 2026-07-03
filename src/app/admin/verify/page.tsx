@@ -146,49 +146,10 @@ export default function AdminVerifyPage() {
                         </div>
                         <p className="text-sm text-gray-500 mt-0.5">{clinic.province} · {clinic.owner_name || '-'}</p>
                       </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => setExpandedClinic(isExp ? null : clinic.id)}
-                          className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 font-medium">
-                          {isExp ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />} ตรวจสอบ
-                        </button>
-                        <Link href={`/admin/clinic/${clinic.id}`} className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100">
-                          <Eye className="w-4 h-4" />
-                        </Link>
-                      </div>
+                      <Link href={`/admin/clinic/${clinic.id}`} className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium shrink-0">
+                        <Eye className="w-4 h-4" /> ดูรายละเอียด
+                      </Link>
                     </div>
-                    {isExp && (
-                      <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
-                        {clinic.owner_email && <p className="text-sm text-gray-500">✉️ {clinic.owner_email}</p>}
-                        {clinic.license_doc_url
-                          ? clinic.license_doc_url.match(/\.(jpg|jpeg|png|webp)$/i)
-                            ? <img src={clinic.license_doc_url} alt="ใบอนุญาต" className="max-h-80 rounded-lg border border-gray-200 object-contain bg-gray-50" />
-                            : <a href={clinic.license_doc_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"><FileText className="w-4 h-4" /> เปิดเอกสาร PDF</a>
-                          : <p className="text-sm text-gray-400 italic">ยังไม่มีเอกสารแนบ</p>
-                        }
-                        {clinic.status === 'pending' && (
-                          <button onClick={() => handleStartClinicReview(clinic.id)} disabled={busy === clinic.id}
-                            className="text-sm px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50">เริ่มตรวจสอบ</button>
-                        )}
-                        {clinic.status === 'reviewing' && (
-                          <div className="space-y-2">
-                            <div className="flex gap-2">
-                              <button onClick={() => handleClinic(clinic.id, true)} disabled={busy === clinic.id}
-                                className="flex items-center gap-1 text-sm px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 font-medium">
-                                <CheckCircle className="w-4 h-4" /> ยืนยัน
-                              </button>
-                              <button onClick={() => handleClinic(clinic.id, false)} disabled={busy === clinic.id || !clinicReject[clinic.id]?.trim()}
-                                className="flex items-center gap-1 text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 font-medium">
-                                <XCircle className="w-4 h-4" /> ปฏิเสธ
-                              </button>
-                            </div>
-                            <textarea placeholder="เหตุผลปฏิเสธ (จำเป็นก่อนกดปฏิเสธ)" rows={2}
-                              value={clinicReject[clinic.id] || ''}
-                              onChange={e => setClinicReject(p => ({ ...p, [clinic.id]: e.target.value }))}
-                              className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-red-300" />
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
                 )
               })}
@@ -217,42 +178,10 @@ export default function AdminVerifyPage() {
                           {vet.license_number && <p className="text-xs text-gray-400">ใบอนุญาต: {vet.license_number}</p>}
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <button onClick={() => setExpandedVet(isExp ? null : vet.user_id)}
-                          className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 font-medium">
-                          {isExp ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />} ตรวจสอบ
-                        </button>
-                        <Link href={`/admin/vet/${vet.user_id}`} className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100">
-                          <Eye className="w-4 h-4" />
-                        </Link>
-                      </div>
+                      <Link href={`/admin/vet/${vet.user_id}`} className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium shrink-0">
+                        <Eye className="w-4 h-4" /> ดูรายละเอียด
+                      </Link>
                     </div>
-                    {isExp && (
-                      <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
-                        {vet.license_doc_url
-                          ? vet.license_doc_url.match(/\.(jpg|jpeg|png|webp)$/i)
-                            ? <img src={vet.license_doc_url} alt="ใบอนุญาต" className="max-h-80 rounded-lg border border-gray-200 object-contain bg-gray-50" />
-                            : <a href={vet.license_doc_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"><FileText className="w-4 h-4" /> เปิดเอกสาร PDF</a>
-                          : <p className="text-sm text-gray-400 italic">ยังไม่มีเอกสารแนบ</p>
-                        }
-                        <div className="space-y-2">
-                          <div className="flex gap-2">
-                            <button onClick={() => handleVet(vet.user_id, true)} disabled={busy === vet.user_id}
-                              className="flex items-center gap-1 text-sm px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 font-medium">
-                              <CheckCircle className="w-4 h-4" /> ยืนยัน
-                            </button>
-                            <button onClick={() => handleVet(vet.user_id, false)} disabled={busy === vet.user_id || !vetReject[vet.user_id]?.trim()}
-                              className="flex items-center gap-1 text-sm px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 font-medium">
-                              <XCircle className="w-4 h-4" /> ปฏิเสธ
-                            </button>
-                          </div>
-                          <textarea placeholder="เหตุผลปฏิเสธ (จำเป็นก่อนกดปฏิเสธ)" rows={2}
-                            value={vetReject[vet.user_id] || ''}
-                            onChange={e => setVetReject(p => ({ ...p, [vet.user_id]: e.target.value }))}
-                            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-red-300" />
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )
               })}

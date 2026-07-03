@@ -27,7 +27,7 @@ interface Req {
 
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' })
 
-export default function ClinicEditReviewList() {
+export default function ClinicEditReviewList({ clinicId }: { clinicId?: string }) {
   const supabase = createClient()
   const [items, setItems] = useState<Req[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,14 +38,16 @@ export default function ClinicEditReviewList() {
 
   const load = async () => {
     setLoading(true)
-    const { data } = await supabase
+    let q = supabase
       .from('clinic_edit_requests')
       .select('*, clinics(id, name, name_en, type, phone, line_id, facebook, website, address_detail), profiles!requester_id(full_name)')
       .order('created_at', { ascending: false })
+    if (clinicId) q = q.eq('clinic_id', clinicId)
+    const { data } = await q
     setItems((data as any) || [])
     setLoading(false)
   }
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, [clinicId])
 
   const decide = async (r: Req, decision: 'approved' | 'rejected') => {
     const note = notes[r.id] || ''
