@@ -18,8 +18,10 @@ interface Clinic {
   province: string
   district: string | null
   opening_hours: Record<string, { open: string; close: string }> | null
-  clinic_specialties: { specialty_types: { name_th: string; name_en: string } | null }[]
+  clinic_specialties: { specialty_types: { id: string; name_th: string; name_en: string } | null }[]
 }
+
+interface SpecialtyType { id: string; name_th: string; name_en: string }
 
 const DAY_NAMES: Record<string, string> = {
   '1': 'จ', '2': 'อ', '3': 'พ', '4': 'พฤ', '5': 'ศ', '6': 'ส', '0': 'อา',
@@ -36,15 +38,21 @@ export default function ClinicsPage() {
   const [search, setSearch] = useState('')
   const [provinceFilter, setProvinceFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
+  const [specialtyFilter, setSpecialtyFilter] = useState('')
+  const [specialtyTypes, setSpecialtyTypes] = useState<SpecialtyType[]>([])
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from('clinics')
-        .select('id, name, name_en, type, phone, province, district, opening_hours, clinic_specialties(specialty_types(name_th, name_en))')
-        .eq('status', 'approved')
-        .order('name')
+      const [{ data }, { data: spData }] = await Promise.all([
+        supabase
+          .from('clinics')
+          .select('id, name, name_en, type, phone, province, district, opening_hours, clinic_specialties(specialty_types(id, name_th, name_en))')
+          .eq('status', 'approved')
+          .order('name'),
+        supabase.from('specialty_types').select('id, name_th, name_en').order('name_th'),
+      ])
       setClinics((data as unknown as Clinic[]) || [])
+      setSpecialtyTypes((spData as SpecialtyType[]) || [])
       setLoading(false)
     }
     load()
@@ -62,7 +70,8 @@ export default function ClinicsPage() {
       c.clinic_specialties.some(sp => sp.specialty_types?.name_th.toLowerCase().includes(s) || sp.specialty_types?.name_en.toLowerCase().includes(s))
     const matchProvince = !provinceFilter || c.province === provinceFilter
     const matchType = !typeFilter || c.type === typeFilter
-    return matchSearch && matchProvince && matchType
+    const matchSpecialty = !specialtyFilter || c.clinic_specialties.some(sp => sp.specialty_types?.id === specialtyFilter)
+    return matchSearch && matchProvince && matchType && matchSpecialty
   })
 
   const todayOpen = (hours: Record<string, { open: string; close: string }> | null) => {
@@ -100,14 +109,20 @@ export default function ClinicsPage() {
             <option value="hospital">{lang === 'en' ? 'Animal Hospital' : 'โรงพยาบาลสัตว์'}</option>
           </select>
         </div>
+        <select value={specialtyFilter} onChange={e => setSpecialtyFilter(e.target.value)} className="input w-full">
+          <option value="">{lang === 'en' ? 'All Specialties' : 'ทุกแผนกเฉพาะทาง'}</option>
+          {specialtyTypes.map(sp => (
+            <option key={sp.id} value={sp.id}>{lang === 'en' ? sp.name_en : sp.name_th}</option>
+          ))}
+        </select>
       </div>
 
       {filtered.length === 0 ? (
         <div className="card text-center py-12 text-gray-400">
           <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p>{search || provinceFilter || typeFilter ? 'ไม่พบคลินิกที่ตรงกัน' : 'ยังไม่มีคลินิกในระบบ'}</p>
-          {(search || provinceFilter || typeFilter) && (
-            <button onClick={() => { setSearch(''); setProvinceFilter(''); setTypeFilter('') }}
+          <p>{search || provinceFilter || typeFilter || specialtyFilter ? 'ไม่พบคลินิกที่ตรงกัน' : 'ยังไม่มีคลินิกในระบบ'}</p>
+          {(search || provinceFilter || typeFilter || specialtyFilter) && (
+            <button onClick={() => { setSearch(''); setProvinceFilter(''); setTypeFilter(''); setSpecialtyFilter('') }}
               className="text-primary-500 text-sm mt-2 hover:underline">ล้างการค้นหา</button>
           )}
         </div>
