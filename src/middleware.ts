@@ -37,6 +37,8 @@ export async function middleware(request: NextRequest) {
   return supabaseResponse
 }
 
+// ทุก layout ที่ป้องกันสิทธิ์ (home/vet/owner/admin/clinic/...) ตรวจ auth เองอยู่แล้วฝั่ง server
+// middleware นี้มีหน้าที่แค่เด้งคนที่ล็อกอินแล้วออกจากหน้า landing/login เท่านั้น
 export const config = {
-  matcher: ['/', '/auth/login', '/auth/register', '/home/:path*', '/vet/:path*', '/owner/:path*', '/admin/:path*', '/clinic/:path*'],
+  matcher: ['/', '/auth/login'],
 }
