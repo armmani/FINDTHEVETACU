@@ -73,7 +73,7 @@ export default function NotificationBell() {
       </button>
 
       {showNotif && (
-        <div className="absolute right-0 top-8 w-80 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden">
+        <div className="fixed right-2 top-16 w-[calc(100vw-1rem)] sm:absolute sm:right-0 sm:top-8 sm:w-80 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg z-50 overflow-hidden">
           <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
             <span className="font-semibold text-sm">การแจ้งเตือน</span>
             {notifications.length > 0 && (
