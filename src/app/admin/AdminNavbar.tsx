@@ -35,10 +35,12 @@ export default function AdminNavbar({ fullName, role }: { fullName: string; role
               <span className="hidden sm:block">Dashboard</span>
             </Link>
           ) : null}
-          <Link href="/admin/ownership" title="เชื่อมสัตว์เลี้ยง" className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1 text-sm">
-            <PawPrint className="w-4 h-4" />
-            <span className="hidden sm:block">เชื่อมสัตว์เลี้ยง</span>
-          </Link>
+          {role === 'super_admin' && (
+            <Link href="/admin/ownership" title="เชื่อมสัตว์เลี้ยง" className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1 text-sm">
+              <PawPrint className="w-4 h-4" />
+              <span className="hidden sm:block">เชื่อมสัตว์เลี้ยง</span>
+            </Link>
+          )}
           <Link href="/admin/feedback" title="Feedback" className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1 text-sm">
             <MessageSquarePlus className="w-4 h-4" />
             <span className="hidden sm:block">Feedback</span>
