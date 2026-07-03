@@ -24,7 +24,7 @@ export default function AdminNavbar({ fullName, role }: { fullName: string; role
   return (
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-40">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href="/admin/dashboard" className="flex items-center gap-2">
+        <Link href={role === 'super_admin' ? '/admin/dashboard' : '/admin/verify'} className="flex items-center gap-2">
           <Image src="/FindTheVet.png" alt="FindTheVet" width={120} height={36} className="h-8 w-auto" />
           <span className="text-xs bg-primary-100 text-primary-700 px-2 py-0.5 rounded-full font-medium">Admin</span>
         </Link>

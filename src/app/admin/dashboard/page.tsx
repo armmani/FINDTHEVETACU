@@ -3,6 +3,7 @@
 import LoadingScreen from '@/components/LoadingScreen'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { Users, Stethoscope, CalendarCheck, XCircle, CheckCircle, ShieldCheck, ShieldX, Building2, Plus, Trash2, Eye, FileText, ChevronDown, ChevronUp, UserCog, Clock } from 'lucide-react'
 import Link from 'next/link'
@@ -83,6 +84,7 @@ interface BookingRow {
 
 export default function AdminDashboard() {
   const supabase = createClient()
+  const router = useRouter()
   const [stats, setStats] = useState<Stats | null>(null)
   const [bookings, setBookings] = useState<BookingRow[]>([])
   const [vets, setVets] = useState<VetRow[]>([])
@@ -209,6 +211,13 @@ export default function AdminDashboard() {
   useEffect(() => { loadData() }, [])
 
   const loadData = async () => {
+    // Dashboard สงวนไว้เฉพาะ super_admin เท่านั้น
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: me } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+      if ((me as any)?.role !== 'super_admin') { router.replace('/admin/verify'); return }
+    }
+
     const [
       { count: ownerCount, data: ownerData },
       { count: vetCount },
