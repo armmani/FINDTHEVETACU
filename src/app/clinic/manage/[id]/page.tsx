@@ -2,7 +2,7 @@
 
 import LoadingScreen from '@/components/LoadingScreen'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import toast from 'react-hot-toast'
@@ -58,6 +58,7 @@ export default function EditClinicPage() {
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [newPhotoFile, setNewPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const original = useRef<Record<string, any>>({})
 
   useEffect(() => {
     const load = async () => {
@@ -85,6 +86,13 @@ export default function EditClinicPage() {
       setAddressDetail(data.address_detail || '')
       setOpeningHours(data.opening_hours || {})
       setPhotoUrl(data.photo_url || null)
+      original.current = {
+        name: data.name || '', name_en: data.name_en || '', type: data.type || 'clinic',
+        phone: data.phone || '', line_id: data.line_id || '', facebook: data.facebook || '',
+        website: data.website || '', province: data.province || '', district: data.district || '',
+        sub_district: data.sub_district || '', address_detail: data.address_detail || '',
+        opening_hours: data.opening_hours || {}, photo_url: data.photo_url || null,
+      }
       setLoading(false)
     }
     load()
@@ -119,6 +127,38 @@ export default function EditClinicPage() {
           updatedPhotoUrl = photoUrlData.publicUrl
         }
       }
+    }
+
+    // คลินิกที่ approved แล้ว → ส่งเป็น "คำขอแก้ไข" ให้แอดมินตรวจก่อน (ไม่เขียนทับทันที)
+    if (status === 'approved') {
+      const o = original.current
+      const next: Record<string, any> = {
+        name: name.trim(), name_en: nameEn.trim(), type,
+        phone: phone.trim(), line_id: lineId.trim(), facebook: facebook.trim(), website: website.trim(),
+        province, district, sub_district: subDistrict, address_detail: addressDetail.trim(),
+        opening_hours: openingHours, photo_url: updatedPhotoUrl,
+      }
+      const proposed: Record<string, any> = {}
+      for (const k of Object.keys(next)) {
+        const changed = (k === 'opening_hours')
+          ? JSON.stringify(next[k] || {}) !== JSON.stringify(o[k] || {})
+          : (next[k] ?? '') !== (o[k] ?? '')
+        if (changed) proposed[k] = next[k]
+      }
+      if (Object.keys(proposed).length === 0) { toast.error('ยังไม่มีการเปลี่ยนแปลงข้อมูล'); setSaving(false); return }
+
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setSaving(false); return }
+      const { error } = await supabase.from('clinic_edit_requests').insert({
+        clinic_id: id, requester_id: user.id, proposed,
+      })
+      if (error) { toast.error('ส่งคำขอไม่สำเร็จ: ' + error.message); setSaving(false); return }
+
+      notifyAdmin(`✏️ <b>FindTheVet — คำขอแก้ข้อมูลคลินิก</b>\n\n<b>${name.trim()}</b> ขอแก้ไขข้อมูล\nกรุณาตรวจสอบใน Admin`)
+      toast.success('ส่งคำขอแก้ไขแล้ว — แอดมินจะตรวจสอบก่อนอัปเดต')
+      setEditRequested(false)
+      setSaving(false)
+      return
     }
 
     const updates: Record<string, any> = {
