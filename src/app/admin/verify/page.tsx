@@ -8,6 +8,7 @@ import { CheckCircle, XCircle, FileText, ChevronDown, ChevronUp, Eye, ShieldX } 
 import Link from 'next/link'
 import { AdminDashboardSkeleton } from '@/components/AdminSkeleton'
 import PetOwnershipRequestList from '@/components/admin/PetOwnershipRequestList'
+import ClinicEditReviewList from '@/components/admin/ClinicEditReviewList'
 
 interface PendingClinic {
   id: string
@@ -190,7 +191,10 @@ export default function AdminVerifyPage() {
         }
       </div>
 
-      {/* Pet ownership requests — อยู่ท้ายสุด ต่อจากคลินิกและสัตวแพทย์ */}
+      {/* คำขอแก้ข้อมูล รพ./คลินิก */}
+      <ClinicEditReviewList />
+
+      {/* Pet ownership requests — อยู่ท้ายสุด */}
       <PetOwnershipRequestList />
     </div>
   )
