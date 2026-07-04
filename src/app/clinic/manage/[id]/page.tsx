@@ -28,6 +28,15 @@ const STATUS_CONFIG = {
 }
 
 interface DayHours { open: string; close: string }
+interface SpecialtyType { id: string; name_th: string; name_en: string }
+
+function sameOpeningHours(a: Record<string, DayHours> | null, b: Record<string, DayHours> | null) {
+  return JSON.stringify(a || {}) === JSON.stringify(b || {})
+}
+function sameIdSet(a: string[], b: string[]) {
+  const as = [...a].sort(), bs = [...b].sort()
+  return as.length === bs.length && as.every((v, i) => v === bs[i])
+}
 
 export default function EditClinicPage() {
   const { id } = useParams<{ id: string }>()
@@ -55,10 +64,14 @@ export default function EditClinicPage() {
   const [subDistrict, setSubDistrict] = useState('')
   const [addressDetail, setAddressDetail] = useState('')
   const [openingHours, setOpeningHours] = useState<Record<string, DayHours>>({})
+  const [is24Hours, setIs24Hours] = useState(false)
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [newPhotoFile, setNewPhotoFile] = useState<File | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const [specialtyTypes, setSpecialtyTypes] = useState<SpecialtyType[]>([])
+  const [specialtyIds, setSpecialtyIds] = useState<string[]>([])
   const original = useRef<Record<string, any>>({})
+  const origSpecialtyIds = useRef<string[]>([])
 
   useEffect(() => {
     const load = async () => {
@@ -85,6 +98,7 @@ export default function EditClinicPage() {
       setSubDistrict(data.sub_district || '')
       setAddressDetail(data.address_detail || '')
       setOpeningHours(data.opening_hours || {})
+      setIs24Hours(!!data.is_24_hours)
       setPhotoUrl(data.photo_url || null)
       original.current = {
         name: data.name || '', name_en: data.name_en || '', type: data.type || 'clinic',
@@ -92,7 +106,18 @@ export default function EditClinicPage() {
         website: data.website || '', province: data.province || '', district: data.district || '',
         sub_district: data.sub_district || '', address_detail: data.address_detail || '',
         opening_hours: data.opening_hours || {}, photo_url: data.photo_url || null,
+        is_24_hours: !!data.is_24_hours,
       }
+
+      const [{ data: spData }, { data: csData }] = await Promise.all([
+        supabase.from('specialty_types').select('id, name_th, name_en').order('name_th'),
+        supabase.from('clinic_specialties').select('specialty_type_id').eq('clinic_id', id),
+      ])
+      setSpecialtyTypes((spData as SpecialtyType[]) || [])
+      const ids = (csData || []).map((r: any) => r.specialty_type_id as string)
+      setSpecialtyIds(ids)
+      origSpecialtyIds.current = ids
+
       setLoading(false)
     }
     load()
@@ -107,6 +132,10 @@ export default function EditClinicPage() {
 
   const updateDayHours = (day: string, field: 'open' | 'close', val: string) => {
     setOpeningHours(prev => ({ ...prev, [day]: { ...prev[day], [field]: val } }))
+  }
+
+  const toggleSpecialty = (spId: string) => {
+    setSpecialtyIds(prev => prev.includes(spId) ? prev.filter(x => x !== spId) : [...prev, spId])
   }
 
   const handleSave = async () => {
@@ -132,19 +161,21 @@ export default function EditClinicPage() {
     // คลินิกที่ approved แล้ว → ส่งเป็น "คำขอแก้ไข" ให้แอดมินตรวจก่อน (ไม่เขียนทับทันที)
     if (status === 'approved') {
       const o = original.current
+      const nextOpeningHours = is24Hours ? null : openingHours
       const next: Record<string, any> = {
         name: name.trim(), name_en: nameEn.trim(), type,
         phone: phone.trim(), line_id: lineId.trim(), facebook: facebook.trim(), website: website.trim(),
         province, district, sub_district: subDistrict, address_detail: addressDetail.trim(),
-        opening_hours: openingHours, photo_url: updatedPhotoUrl,
+        opening_hours: nextOpeningHours, photo_url: updatedPhotoUrl, is_24_hours: is24Hours,
       }
       const proposed: Record<string, any> = {}
       for (const k of Object.keys(next)) {
         const changed = (k === 'opening_hours')
-          ? JSON.stringify(next[k] || {}) !== JSON.stringify(o[k] || {})
+          ? !sameOpeningHours(next[k], o[k])
           : (next[k] ?? '') !== (o[k] ?? '')
         if (changed) proposed[k] = next[k]
       }
+      if (!sameIdSet(specialtyIds, origSpecialtyIds.current)) proposed.specialty_type_ids = specialtyIds
       if (Object.keys(proposed).length === 0) { toast.error('ยังไม่มีการเปลี่ยนแปลงข้อมูล'); setSaving(false); return }
 
       const { data: { user } } = await supabase.auth.getUser()
@@ -173,7 +204,8 @@ export default function EditClinicPage() {
       district: district || null,
       sub_district: subDistrict || null,
       address_detail: addressDetail.trim() || null,
-      opening_hours: openingHours,
+      opening_hours: is24Hours ? null : openingHours,
+      is_24_hours: is24Hours,
       photo_url: updatedPhotoUrl,
       ...(wasRejected || (status === 'approved' && editRequested) ? { status: 'pending', reject_reason: null } : {}),
     }
@@ -186,6 +218,15 @@ export default function EditClinicPage() {
 
     if (!res.ok) { toast.error('บันทึกไม่สำเร็จ'); setSaving(false); return }
     setPhotoUrl(updatedPhotoUrl)
+
+    // แผนกที่ให้บริการ — แทนที่ทั้งชุด
+    await supabase.from('clinic_specialties').delete().eq('clinic_id', id)
+    if (specialtyIds.length > 0) {
+      await supabase.from('clinic_specialties').insert(
+        specialtyIds.map(sid => ({ clinic_id: id, specialty_type_id: sid, opening_hours: is24Hours ? null : openingHours }))
+      )
+    }
+    origSpecialtyIds.current = specialtyIds
 
     if (wasRejected || (status === 'approved' && editRequested)) {
       notifyAdmin(`🔄 <b>FindTheVet — ส่งข้อมูลใหม่</b>\n\n<b>${name.trim()}</b> แก้ไขและส่งข้อมูลใหม่อีกครั้ง\nกรุณาตรวจสอบใน Admin Dashboard`)
@@ -363,28 +404,58 @@ export default function EditClinicPage() {
       {/* เวลาเปิด-ปิด */}
       <div className="card space-y-3">
         <h2 className="font-semibold text-gray-700">เวลาเปิด-ปิด</h2>
-        <div className="flex flex-wrap gap-2">
-          {DAYS.map(d => (
-            <button key={d.key} disabled={isLocked} onClick={() => toggleDay(d.key)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                openingHours[d.key] ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 text-gray-500'
-              } ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}`}>
-              {d.label}
-            </button>
-          ))}
-        </div>
-        {DAYS.filter(d => openingHours[d.key]).map(d => (
-          <div key={d.key} className="flex items-center gap-2 text-sm">
-            <span className="w-16 text-gray-600 shrink-0">{d.label}</span>
-            <input type="time" disabled={isLocked} value={openingHours[d.key].open}
-              onChange={e => updateDayHours(d.key, 'open', e.target.value)}
-              className="input w-28 disabled:opacity-60" />
-            <span className="text-gray-400">–</span>
-            <input type="time" disabled={isLocked} value={openingHours[d.key].close}
-              onChange={e => updateDayHours(d.key, 'close', e.target.value)}
-              className="input w-28 disabled:opacity-60" />
+        <label className={`flex items-center gap-2 select-none ${isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+          <input type="checkbox" disabled={isLocked} checked={is24Hours} onChange={e => setIs24Hours(e.target.checked)}
+            className="w-4 h-4 rounded accent-primary-600" />
+          <span className="text-sm font-medium text-gray-700">เปิด 24 ชั่วโมง</span>
+        </label>
+        {is24Hours ? (
+          <p className="text-sm text-primary-600 bg-primary-50 rounded-lg px-3 py-2">🕐 เปิดให้บริการตลอด 24 ชั่วโมง</p>
+        ) : (
+          <>
+            <div className="flex flex-wrap gap-2">
+              {DAYS.map(d => (
+                <button key={d.key} disabled={isLocked} onClick={() => toggleDay(d.key)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                    openingHours[d.key] ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 text-gray-500'
+                  } ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                  {d.label}
+                </button>
+              ))}
+            </div>
+            {DAYS.filter(d => openingHours[d.key]).map(d => (
+              <div key={d.key} className="flex items-center gap-2 text-sm">
+                <span className="w-16 text-gray-600 shrink-0">{d.label}</span>
+                <input type="time" disabled={isLocked} value={openingHours[d.key].open}
+                  onChange={e => updateDayHours(d.key, 'open', e.target.value)}
+                  className="input w-28 disabled:opacity-60" />
+                <span className="text-gray-400">–</span>
+                <input type="time" disabled={isLocked} value={openingHours[d.key].close}
+                  onChange={e => updateDayHours(d.key, 'close', e.target.value)}
+                  className="input w-28 disabled:opacity-60" />
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+
+      {/* แผนกที่ให้บริการ */}
+      <div className="card space-y-3">
+        <h2 className="font-semibold text-gray-700">แผนกที่ให้บริการ</h2>
+        {specialtyTypes.length === 0 ? (
+          <p className="text-sm text-gray-400">ยังไม่มีแผนกในระบบ</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {specialtyTypes.map(sp => (
+              <button key={sp.id} type="button" disabled={isLocked} onClick={() => toggleSpecialty(sp.id)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                  specialtyIds.includes(sp.id) ? 'bg-primary-600 text-white border-primary-600' : 'border-gray-300 text-gray-500 hover:border-primary-400'
+                } ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                {sp.name_th}
+              </button>
+            ))}
           </div>
-        ))}
+        )}
       </div>
 
       {!isLocked && (
