@@ -13,7 +13,7 @@ import NotificationBell from '@/components/NotificationBell'
 
 function MobileTab({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   return (
-    <Link href={href} className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 text-[10px] font-medium transition-colors">
+    <Link href={href} className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-gray-500 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 text-[10px] font-medium transition-colors">
       {icon}
       <span>{label}</span>
     </Link>
@@ -114,7 +114,7 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
                 className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg border transition-colors
                   ${ownerMode
                     ? 'border-primary-400 text-primary-600 bg-primary-50 dark:bg-primary-950 dark:text-primary-400'
-                    : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-primary-400 hover:text-primary-600'
+                    : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-300 hover:border-primary-400 hover:text-primary-600'
                   }`}
               >
                 {ownerMode ? <Stethoscope className="w-3.5 h-3.5" /> : <PawPrint className="w-3.5 h-3.5" />}
@@ -137,7 +137,7 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
 
           {/* User first name — desktop only */}
           {profile.full_name && (
-            <span className="hidden sm:block text-sm text-gray-500 dark:text-gray-400 mr-2 max-w-[8rem] truncate">
+            <span className="hidden sm:block text-sm text-gray-500 dark:text-gray-300 mr-2 max-w-[8rem] truncate">
               {profile.full_name.trim().split(/\s+/)[0]}
             </span>
           )}
@@ -151,14 +151,14 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
           {/* Dark mode toggle */}
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="p-1.5 rounded-lg text-gray-500 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             title={t.nav.changeTheme}
           >
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
 
           <button onClick={handleSignOut}
-            className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+            className="p-1.5 rounded-lg text-gray-500 dark:text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
             title={t.nav.signOut}>
             <LogOut className="w-4 h-4" />
           </button>
@@ -184,7 +184,7 @@ export default function Navbar({ profile, fullNameEn, pendingCount = 0 }: Navbar
             <MobileTab href="/vet/opd" icon={<ClipboardList className="w-5 h-5" />} label="OPD" />
             <MobileTab href="/clinic/manage" icon={<House className="w-5 h-5" />} label={t.nav.myClinics} />
             <MobileTab href="/vet/profile" icon={<User className="w-5 h-5" />} label={t.nav.profile} />
-            <button onClick={toggleOwnerMode} className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 text-[10px] font-medium transition-colors">
+            <button onClick={toggleOwnerMode} className="flex-1 flex flex-col items-center justify-center py-2 gap-0.5 text-gray-500 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 text-[10px] font-medium transition-colors">
               <ArrowLeftRight className="w-5 h-5" />
               <span>เจ้าของ</span>
             </button>

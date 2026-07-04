@@ -61,7 +61,7 @@ export default function NotificationBell() {
     <div className="relative" ref={notifRef}>
       <button
         onClick={handleOpenNotif}
-        className="relative p-1.5 rounded-lg text-gray-500 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        className="relative p-1.5 rounded-lg text-gray-500 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         title="การแจ้งเตือน"
       >
         <Bell className="w-4 h-4" />
