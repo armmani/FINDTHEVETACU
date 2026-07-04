@@ -15,7 +15,8 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
     .eq('id', user.id)
     .single()
 
-  if (!profile || profile.role !== 'owner') redirect('/vet/dashboard')
+  // หมอ/แอดมินที่สลับเป็น "โหมดเจ้าของ" ต้องเข้าหน้านี้ได้ด้วย ไม่ใช่แค่ role owner จริง
+  if (!profile || !['owner', 'vet', 'admin'].includes(profile.role)) redirect('/auth/login')
 
   return (
     <div className="min-h-screen">
