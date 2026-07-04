@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { Building2, MapPin, Phone, Search, ChevronRight, Clock } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useLang } from '@/contexts/LanguageContext'
 import { toProvinceEn } from '@/lib/provinces'
 
@@ -17,6 +18,7 @@ interface Clinic {
   phone: string | null
   province: string
   district: string | null
+  photo_url: string | null
   opening_hours: Record<string, { open: string; close: string }> | null
   clinic_specialties: { specialty_types: { id: string; name_th: string; name_en: string } | null }[]
 }
@@ -46,7 +48,7 @@ export default function ClinicsPage() {
       const [{ data }, { data: spData }] = await Promise.all([
         supabase
           .from('clinics')
-          .select('id, name, name_en, type, phone, province, district, opening_hours, clinic_specialties(specialty_types(id, name_th, name_en))')
+          .select('id, name, name_en, type, phone, province, district, photo_url, opening_hours, clinic_specialties(specialty_types(id, name_th, name_en))')
           .eq('status', 'approved')
           .order('name'),
         supabase.from('specialty_types').select('id, name_th, name_en').order('name_th'),
@@ -134,6 +136,16 @@ export default function ClinicsPage() {
               <Link key={clinic.id} href={`/clinics/${clinic.id}`}
                 className="card block hover:shadow-md transition-shadow">
                 <div className="flex items-start justify-between gap-3">
+                  <div className="shrink-0">
+                    {clinic.photo_url ? (
+                      <Image src={clinic.photo_url} alt={clinic.name} width={56} height={56}
+                        className="w-14 h-14 rounded-xl object-cover border border-gray-100 dark:border-gray-700" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-xl bg-primary-50 dark:bg-primary-950 flex items-center justify-center text-primary-500">
+                        <Building2 className="w-6 h-6" />
+                      </div>
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold">

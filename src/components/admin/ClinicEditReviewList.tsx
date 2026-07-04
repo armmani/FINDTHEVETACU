@@ -10,9 +10,10 @@ const LABELS: Record<string, string> = {
   name: 'ชื่อ', name_en: 'ชื่อ (อังกฤษ)', type: 'ประเภท', phone: 'เบอร์โทร',
   line_id: 'LINE ID', facebook: 'Facebook', website: 'เว็บไซต์', address_detail: 'ที่อยู่',
   province: 'จังหวัด', district: 'อำเภอ/เขต', sub_district: 'ตำบล/แขวง',
-  opening_hours: 'เวลาทำการ', photo_url: 'รูปภาพ',
+  opening_hours: 'เวลาทำการ', photo_url: 'รูปภาพ', is_24_hours: 'เปิด 24 ชั่วโมง',
+  specialty_type_ids: 'แผนกที่ให้บริการ',
 }
-const SPECIAL = new Set(['opening_hours', 'photo_url'])  // แสดงแค่ว่า "แก้ไข" ไม่โชว์ค่าดิบ
+const SPECIAL = new Set(['opening_hours', 'photo_url', 'specialty_type_ids'])  // แสดงแบบพิเศษ ไม่ใช้ fmtVal ตรงๆ
 const TYPE_LABEL = (v: string) => (v === 'hospital' ? 'โรงพยาบาลสัตว์' : v === 'clinic' ? 'คลินิก' : v)
 
 type Status = 'pending' | 'approved' | 'rejected'
@@ -21,6 +22,7 @@ interface ClinicRef {
   id: string; name: string; name_en: string | null; type: string; phone: string | null
   line_id: string | null; facebook: string | null; website: string | null; address_detail: string | null
   province: string | null; district: string | null; sub_district: string | null
+  is_24_hours?: boolean
 }
 interface Req {
   id: string; clinic_id: string; requester_id: string; proposed: Record<string, any>
@@ -28,6 +30,7 @@ interface Req {
   clinics: ClinicRef | null
   profiles: { full_name: string } | null
 }
+interface SpecialtyType { id: string; name_th: string; name_en: string }
 
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' })
 
@@ -39,16 +42,37 @@ export default function ClinicEditReviewList({ clinicId }: { clinicId?: string }
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [notes, setNotes] = useState<Record<string, string>>({})
   const [saving, setSaving] = useState<string | null>(null)
+  const [specialtyTypes, setSpecialtyTypes] = useState<SpecialtyType[]>([])
+  const [currentSpecialtyIds, setCurrentSpecialtyIds] = useState<Record<string, string[]>>({})
+
+  useEffect(() => {
+    supabase.from('specialty_types').select('id, name_th, name_en')
+      .then(({ data }) => setSpecialtyTypes((data as SpecialtyType[]) || []))
+  }, [])
+
+  const specialtyName = (id: string) => specialtyTypes.find(s => s.id === id)?.name_th || id
 
   const load = async () => {
     setLoading(true)
     let q = supabase
       .from('clinic_edit_requests')
-      .select('*, clinics(id, name, name_en, type, phone, line_id, facebook, website, address_detail, province, district, sub_district), profiles!requester_id(full_name)')
+      .select('*, clinics(id, name, name_en, type, phone, line_id, facebook, website, address_detail, province, district, sub_district, is_24_hours), profiles!requester_id(full_name)')
       .order('created_at', { ascending: false })
     if (clinicId) q = q.eq('clinic_id', clinicId)
     const { data } = await q
-    setItems((data as any) || [])
+    const list = (data as any) || []
+    setItems(list)
+
+    // ดึงแผนกปัจจุบันของแต่ละคลินิกที่มีคำขอแก้ specialty_type_ids
+    const clinicIds = Array.from(new Set(
+      list.filter((r: Req) => 'specialty_type_ids' in r.proposed).map((r: Req) => r.clinic_id)
+    )) as string[]
+    if (clinicIds.length > 0) {
+      const { data: csData } = await supabase.from('clinic_specialties').select('clinic_id, specialty_type_id').in('clinic_id', clinicIds)
+      const map: Record<string, string[]> = {}
+      ;(csData || []).forEach((r: any) => { (map[r.clinic_id] ||= []).push(r.specialty_type_id) })
+      setCurrentSpecialtyIds(map)
+    }
     setLoading(false)
   }
   useEffect(() => { load() }, [clinicId])
@@ -137,10 +161,26 @@ export default function ClinicEditReviewList({ clinicId }: { clinicId?: string }
                       {keys.map(k => (
                         <div key={k} className="text-sm flex items-center gap-2 flex-wrap border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 rounded-lg px-3 py-2">
                           <span className="text-xs font-medium text-red-500 min-w-[80px]">{LABELS[k] || k}</span>
-                          {SPECIAL.has(k) ? (
-                            k === 'photo_url'
-                              ? <img src={r.proposed[k]} alt="รูปใหม่" className="h-16 rounded-lg border border-red-200 object-cover" />
-                              : <span className="font-semibold text-red-700 dark:text-red-300">มีการแก้ไข</span>
+                          {k === 'photo_url' ? (
+                            <img src={r.proposed[k]} alt="รูปใหม่" className="h-16 rounded-lg border border-red-200 object-cover" />
+                          ) : k === 'is_24_hours' ? (
+                            <>
+                              <span className="line-through text-gray-400">{r.clinics?.is_24_hours ? 'เปิด 24 ชม.' : 'ไม่เปิด 24 ชม.'}</span>
+                              <ArrowRight className="w-3.5 h-3.5 text-red-400" />
+                              <span className="font-semibold text-red-700 dark:text-red-300">{r.proposed[k] ? 'เปิด 24 ชม.' : 'ไม่เปิด 24 ชม.'}</span>
+                            </>
+                          ) : k === 'specialty_type_ids' ? (
+                            <>
+                              <span className="line-through text-gray-400">
+                                {(currentSpecialtyIds[r.clinic_id] || []).map(specialtyName).join(', ') || '—'}
+                              </span>
+                              <ArrowRight className="w-3.5 h-3.5 text-red-400" />
+                              <span className="font-semibold text-red-700 dark:text-red-300">
+                                {((r.proposed[k] as string[]) || []).map(specialtyName).join(', ') || '—'}
+                              </span>
+                            </>
+                          ) : SPECIAL.has(k) ? (
+                            <span className="font-semibold text-red-700 dark:text-red-300">มีการแก้ไข</span>
                           ) : (
                             <>
                               <span className="line-through text-gray-400">{fmtVal(k, r.clinics?.[k as keyof ClinicRef] as string)}</span>
