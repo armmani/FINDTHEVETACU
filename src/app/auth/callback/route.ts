@@ -46,17 +46,8 @@ export async function GET(request: NextRequest) {
     await supabase.auth.updateUser({ data: { role: pendingRole } })
 
     if (pendingRole === 'vet') {
+      // สร้าง vet_profile เปล่าๆ ไว้ก่อน — ยังไม่แจ้ง admin จนกว่าจะกรอกโปรไฟล์และแนบใบอนุญาตจริง
       await supabase.from('vet_profiles').upsert({ user_id: user.id })
-      const name = user.user_metadata?.full_name || user.email || 'ไม่ระบุ'
-      await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: process.env.NEXT_PUBLIC_ADMIN_TELEGRAM_CHAT_ID,
-          text: `🩺 FindTheVet — หมอใหม่รอยืนยัน!\n\n${name} สมัครด้วย Google\nกรุณาตรวจสอบใบอนุญาตและยืนยันตัวตนใน Admin Dashboard`,
-          parse_mode: 'HTML',
-        }),
-      }).catch(() => {})
       const res = makeRedirect(`${origin}/vet/profile`)
       res.cookies.set('pending_oauth_role', '', { maxAge: 0, path: '/' })
       return res

@@ -9,7 +9,6 @@ import { formatPhone } from '@/lib/formatPhone'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
 import type { Role } from '@/lib/types'
-import { notifyAdmin } from '@/lib/telegram'
 
 export default function RegisterPage() {
   return <Suspense><RegisterForm /></Suspense>
@@ -96,10 +95,9 @@ function RegisterForm() {
       await supabase.from('profiles').update({ phone }).eq('id', userId)
     }
 
-    // ถ้าเป็นหมอ สร้าง vet_profile เปล่าๆ แล้วแจ้ง admin
+    // ถ้าเป็นหมอ สร้าง vet_profile เปล่าๆ ไว้ก่อน — ยังไม่แจ้ง admin จนกว่าจะกรอกโปรไฟล์และแนบใบอนุญาตจริง
     if (role === 'vet') {
       await supabase.from('vet_profiles').upsert({ user_id: userId })
-      notifyAdmin(`🩺 <b>FindTheVet — หมอใหม่รอยืนยัน!</b>\n\n<b>${fullName}</b> สมัครเป็นสัตวแพทย์\nกรุณาตรวจสอบใบอนุญาตและยืนยันตัวตนใน Admin Dashboard`)
     }
 
     toast.success('ยืนยันอีเมลสำเร็จ!')

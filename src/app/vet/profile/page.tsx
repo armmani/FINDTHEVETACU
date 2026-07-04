@@ -252,6 +252,9 @@ export default function VetProfilePage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
+    // เช็คก่อนอัปโหลด: นี่คือการส่งโปรไฟล์ครั้งแรกไหม (ยังไม่เคยมีใบอนุญาตแนบมาก่อน)
+    const isFirstSubmission = !licenseDocUrl
+
     // upload license doc ถ้ามีไฟล์ใหม่
     let finalDocUrl = licenseDocUrl
     if (licenseFile) {
@@ -294,7 +297,10 @@ export default function VetProfilePage() {
       }).eq('id', user.id),
     ])
 
-    if (wasRejected) {
+    if (isFirstSubmission && finalDocUrl) {
+      const { notifyAdmin } = await import('@/lib/telegram')
+      notifyAdmin(`🩺 <b>FindTheVet — หมอใหม่รอยืนยัน!</b>\n\n<b>${fullName}</b> ส่งโปรไฟล์และใบอนุญาตแล้ว\nกรุณาตรวจสอบใบอนุญาตและยืนยันตัวตนใน Admin Dashboard`)
+    } else if (wasRejected) {
       const { notifyAdmin } = await import('@/lib/telegram')
       notifyAdmin(`🔄 <b>FindTheVet — หมอส่งข้อมูลใหม่</b>\n\n<b>${fullName}</b> แก้ไขและส่งข้อมูลใหม่อีกครั้ง\nกรุณาตรวจสอบใน Admin Dashboard`)
       setVetStatus('pending')
