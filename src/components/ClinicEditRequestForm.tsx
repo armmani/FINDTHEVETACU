@@ -73,11 +73,12 @@ export default function ClinicEditRequestForm({ onDone }: { onDone: () => void }
     if (selected || query.trim().length < 2) { setResults([]); setSearching(false); return }
     setSearching(true)
     timer.current = setTimeout(async () => {
+      const term = query.trim().replace(/[,()%\\]/g, '\\$&')
       const { data } = await supabase
         .from('clinics')
-        .select('id, name, type, province')
+        .select('id, name, name_en, type, province')
         .eq('status', 'approved')
-        .ilike('name', `%${query.trim()}%`)
+        .or(`name.ilike.%${term}%,name_en.ilike.%${term}%`)
         .order('name')
         .limit(8)
       setResults((data as ClinicRow[]) || [])
