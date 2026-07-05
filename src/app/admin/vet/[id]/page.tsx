@@ -30,6 +30,7 @@ interface VetDetail {
   is_verified: boolean
   full_name: string
   email: string
+  provider: string | null
   avatar_url: string | null
 }
 
@@ -47,7 +48,7 @@ export default function AdminVetDetailPage() {
     const load = async () => {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('id, full_name, avatar_url')
+        .select('id, full_name, avatar_url, email, provider')
         .eq('id', id)
         .single()
 
@@ -61,7 +62,8 @@ export default function AdminVetDetailPage() {
         setVet({
           ...vetData,
           full_name: (profile as any).full_name || '',
-          email: '',
+          email: (profile as any).email || '',
+          provider: (profile as any).provider || null,
           avatar_url: (profile as any).avatar_url || null,
         })
         setRejectReason(vetData.reject_reason || '')
@@ -143,6 +145,16 @@ export default function AdminVetDetailPage() {
         }
         <div>
           <p className="font-bold text-lg">{vet.full_name}</p>
+          {vet.email && (
+            <p className="text-sm text-gray-500 flex items-center gap-1.5 flex-wrap">
+              <span>{vet.email}</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                vet.provider === 'google' ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-500'
+              }`}>
+                {vet.provider === 'google' ? 'Google' : 'อีเมล/รหัสผ่าน'}
+              </span>
+            </p>
+          )}
           {vet.license_number && <p className="text-sm text-gray-500">ใบอนุญาต: {vet.license_number}</p>}
           {vet.university && <p className="text-sm text-gray-500">{vet.university}{vet.graduation_year ? ` · รุ่น ${vet.graduation_year}` : ''}</p>}
           {vet.is_verified && (

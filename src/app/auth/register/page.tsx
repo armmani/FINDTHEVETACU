@@ -90,10 +90,8 @@ function RegisterForm() {
     const userId = data.user?.id
     if (!userId) { setLoading(false); return }
 
-    // อัปเดต phone ถ้ามี
-    if (phone) {
-      await supabase.from('profiles').update({ phone }).eq('id', userId)
-    }
+    // บันทึกว่าสมัครด้วยอีเมล/รหัสผ่าน (ไม่ใช่ Google) + เบอร์โทรถ้ามี
+    await supabase.from('profiles').update({ provider: 'email', ...(phone ? { phone } : {}) }).eq('id', userId)
 
     // ถ้าเป็นหมอ สร้าง vet_profile เปล่าๆ ไว้ก่อน — ยังไม่แจ้ง admin จนกว่าจะกรอกโปรไฟล์และแนบใบอนุญาตจริง
     if (role === 'vet') {

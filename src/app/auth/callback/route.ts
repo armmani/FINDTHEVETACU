@@ -39,6 +39,9 @@ export async function GET(request: NextRequest) {
     return res
   }
 
+  // เส้นทางนี้มาจาก Google OAuth เสมอ — บันทึกไว้ให้ super_admin เห็นว่าสมัคร/ล็อกอินด้วยอะไร
+  await supabase.from('profiles').update({ provider: 'google' }).eq('id', user.id)
+
   // ถ้ามี pending_oauth_role cookie (มาจากหน้าสมัคร)
   const pendingRole = request.cookies.get('pending_oauth_role')?.value
   if (pendingRole) {

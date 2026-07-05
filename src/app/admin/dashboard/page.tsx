@@ -49,6 +49,8 @@ interface VetRow {
   reject_reason: string | null
   verified_by: string | null
   verified_by_name?: string | null
+  email?: string | null
+  provider?: string | null
 }
 
 interface ClinicRow {
@@ -247,11 +249,11 @@ export default function AdminDashboard() {
     // ดึง profiles ของ vet แยก (รวม role สำหรับแสดง admin badge)
     const vetIds = (vetData || []).map((v: any) => v.user_id)
     const verifierIds = Array.from(new Set((vetData || []).map((v: any) => v.verified_by).filter(Boolean))) as string[]
-    let vetProfileMap: Record<string, { full_name: string; avatar_url: string | null; role: string }> = {}
+    let vetProfileMap: Record<string, { full_name: string; avatar_url: string | null; role: string; email: string | null; provider: string | null }> = {}
     let verifierNameMap: Record<string, string> = {}
     const lookupIds = Array.from(new Set([...vetIds, ...verifierIds]))
     if (lookupIds.length > 0) {
-      const { data: vetProfiles } = await supabase.from('profiles').select('id, full_name, avatar_url, role').in('id', lookupIds)
+      const { data: vetProfiles } = await supabase.from('profiles').select('id, full_name, avatar_url, role, email, provider').in('id', lookupIds)
       ;(vetProfiles || []).forEach((p: any) => {
         vetProfileMap[p.id] = p
         verifierNameMap[p.id] = p.full_name
@@ -264,6 +266,8 @@ export default function AdminDashboard() {
       ...v,
       full_name: vetProfileMap[v.user_id]?.full_name || '',
       avatar_url: vetProfileMap[v.user_id]?.avatar_url || null,
+      email: vetProfileMap[v.user_id]?.email || null,
+      provider: vetProfileMap[v.user_id]?.provider || null,
       is_verified: v.is_verified || false,
       status: v.status || 'pending',
       verified_by_name: v.verified_by ? (verifierNameMap[v.verified_by] || null) : null,
@@ -431,6 +435,16 @@ export default function AdminDashboard() {
                   {vet.status === 'approved' ? 'ยืนยันแล้ว' : vet.status === 'reviewing' ? 'กำลังตรวจสอบ' : vet.status === 'rejected' ? 'ไม่ผ่าน' : 'รอตรวจสอบ'}
                 </span>
               </div>
+              {vet.email && (
+                <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1 flex-wrap">
+                  <span>{vet.email}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                    vet.provider === 'google' ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    {vet.provider === 'google' ? 'Google' : 'อีเมล/รหัสผ่าน'}
+                  </span>
+                </p>
+              )}
               {vet.license_number && (
                 <p className="text-xs text-gray-400 mt-0.5">ใบอนุญาต: {vet.license_number}</p>
               )}
