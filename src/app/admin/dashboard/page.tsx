@@ -367,8 +367,8 @@ export default function AdminDashboard() {
     const needsAction = clinic.status === 'pending' || clinic.status === 'reviewing'
     return (
       <div key={clinic.id} className={`card border-l-4 ${statusColor}`}>
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex-1 min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="w-full sm:w-auto sm:flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold">{clinic.name}</span>
               <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
@@ -382,7 +382,7 @@ export default function AdminDashboard() {
               {clinic.province} · {clinic.owner_name || '-'}
             </p>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 flex-wrap shrink-0">
             {needsAction && (
               <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-lg">ต้องตรวจสอบ</span>
             )}
@@ -408,8 +408,8 @@ export default function AdminDashboard() {
     const isVetExpanded = expandedVet === vet.user_id
     return (
       <div key={vet.user_id} className={`card border-l-4 ${vetStatusColor}`}>
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3 w-full sm:w-auto sm:flex-1 min-w-0">
             {vet.avatar_url ? (
               <img src={vet.avatar_url} alt={vet.full_name}
                 className="w-10 h-10 rounded-full object-cover shrink-0" />
@@ -418,10 +418,10 @@ export default function AdminDashboard() {
                 {vet.full_name?.[0] || 'H'}
               </div>
             )}
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold">{vet.full_name}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${
+                <span className="font-semibold whitespace-nowrap">{vet.full_name}</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0 ${
                   vet.status === 'approved' ? 'bg-green-100 text-green-700'
                   : vet.status === 'reviewing' ? 'bg-blue-100 text-blue-700'
                   : vet.status === 'rejected' ? 'bg-red-100 text-red-500'
@@ -442,7 +442,7 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 flex-wrap shrink-0">
             {vetNeedsAction && (
               <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-lg">ต้องตรวจสอบ</span>
             )}
