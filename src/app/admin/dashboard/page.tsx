@@ -342,8 +342,11 @@ export default function AdminDashboard() {
   const pendingClinicsList = listedClinics.filter(c => c.status !== 'approved')
   const approvedClinicsList = listedClinics.filter(c => c.status === 'approved')
   const pendingClinicCount = clinics.filter(c => c.status === 'pending' || c.status === 'reviewing').length
-  const pendingVetsList = listedVets.filter(v => v.status !== 'approved')
-  const approvedVetsList = listedVets.filter(v => v.status === 'approved')
+  // สัตวแพทย์ที่ได้รับสิทธิ์ Admin — แยกออกมาเป็นกลุ่มต่างหาก ไม่ปนกับหมอทั่วไป
+  const adminVetsList = listedVets.filter(v => vetRoles[v.user_id] === 'admin')
+  const nonAdminVets = listedVets.filter(v => vetRoles[v.user_id] !== 'admin')
+  const pendingVetsList = nonAdminVets.filter(v => v.status !== 'approved')
+  const approvedVetsList = nonAdminVets.filter(v => v.status === 'approved')
 
   const scrollTo = (elId: string) =>
     document.getElementById(elId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -609,6 +612,20 @@ export default function AdminDashboard() {
           </>
         )}
       </div>
+
+      {/* สัตวแพทย์ที่เป็น Admin — แยกจากหมอทั่วไป */}
+      <div id="sec-vets-admin">
+        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <UserCog className="w-5 h-5 text-purple-500" />
+          สัตวแพทย์ที่เป็น Admin ({adminVetsList.length})
+        </h2>
+        {adminVetsList.length === 0 ? (
+          <div className="card text-center py-8 text-gray-400">ยังไม่มีสัตวแพทย์ที่เป็น Admin</div>
+        ) : (
+          <div className="space-y-3">{adminVetsList.map(renderVetCard)}</div>
+        )}
+      </div>
+
       {/* Vets — pending */}
       <div id="sec-vets-pending">
         <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
