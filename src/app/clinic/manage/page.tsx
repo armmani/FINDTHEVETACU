@@ -54,9 +54,14 @@ export default function ManageClinicsPage() {
           <h1 className="text-2xl font-bold">คลินิกของฉัน</h1>
           <p className="text-gray-500 text-sm mt-0.5">จัดการข้อมูลคลินิกและโรงพยาบาลสัตว์</p>
         </div>
-        <Link href="/clinic/manage/new" className="btn-primary flex items-center gap-2 text-sm">
-          <Plus className="w-4 h-4" /> เพิ่มคลินิก
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link href="/clinic/claim" className="flex items-center gap-2 text-sm px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+            หาคลินิกที่มีอยู่แล้ว
+          </Link>
+          <Link href="/clinic/manage/new" className="btn-primary flex items-center gap-2 text-sm">
+            <Plus className="w-4 h-4" /> เพิ่มคลินิก
+          </Link>
+        </div>
       </div>
 
       {clinics.length === 0 ? (

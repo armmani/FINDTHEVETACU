@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/notify-pets",
       "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/notify-vet-onboarding",
+      "schedule": "0 2 * * *"
     }
   ]
 }

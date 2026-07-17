@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { AdminDashboardSkeleton } from '@/components/AdminSkeleton'
 import PetOwnershipRequestList from '@/components/admin/PetOwnershipRequestList'
 import ClinicEditReviewList from '@/components/admin/ClinicEditReviewList'
+import ClinicOwnershipRequestList from '@/components/admin/ClinicOwnershipRequestList'
 
 interface PendingClinic {
   id: string
@@ -50,7 +51,7 @@ export default function AdminVerifyPage() {
       supabase.from('clinics').select('id, name, type, province, status, license_doc_url, owner_vet_id')
         .in('status', ['pending', 'reviewing']),
       supabase.from('vet_profiles').select('user_id, license_number, license_doc_url, status')
-        .in('status', ['pending', 'reviewing']).not('license_doc_url', 'is', null),
+        .in('status', ['pending', 'reviewing']),
     ])
 
     const clinicOwnerIds = Array.from(new Set((clinicData || []).map((c: any) => c.owner_vet_id).filter(Boolean)))
@@ -178,6 +179,9 @@ export default function AdminVerifyPage() {
                         <div>
                           <p className="font-semibold">{vet.full_name}</p>
                           {vet.license_number && <p className="text-xs text-gray-400">ใบอนุญาต: {vet.license_number}</p>}
+                          {!vet.license_doc_url && (
+                            <span className="inline-block mt-0.5 text-xs bg-red-50 text-red-500 px-2 py-0.5 rounded-full">ยังไม่แนบเอกสาร</span>
+                          )}
                         </div>
                       </div>
                       <Link href={`/admin/vet/${vet.user_id}`} className="flex items-center gap-1 text-sm px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium shrink-0">
@@ -193,6 +197,9 @@ export default function AdminVerifyPage() {
 
       {/* คำขอแก้ข้อมูล รพ./คลินิก */}
       <ClinicEditReviewList />
+
+      {/* คำขอเชื่อมโรงพยาบาล/คลินิก */}
+      <ClinicOwnershipRequestList />
 
       {/* Pet ownership requests — อยู่ท้ายสุด */}
       <PetOwnershipRequestList />

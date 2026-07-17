@@ -40,6 +40,7 @@ interface ClinicDetail {
   sub_district: string | null
   address_detail: string | null
   opening_hours: Record<string, { open: string; close: string }> | null
+  owner_vet_id: string | null
   clinic_specialties: Specialty[]
 }
 
@@ -75,10 +76,11 @@ export default function ClinicDetailPage() {
   const [clinic, setClinic] = useState<ClinicDetail | null>(null)
   const [vets, setVets] = useState<VetInClinic[]>([])
   const [loading, setLoading] = useState(true)
+  const [isVetViewer, setIsVetViewer] = useState(false)
 
   useEffect(() => {
     const load = async () => {
-      const [{ data: c }, { data: schedules }] = await Promise.all([
+      const [{ data: c }, { data: schedules }, { data: { user } }] = await Promise.all([
         supabase
           .from('clinics')
           .select('*, clinic_specialties(*, specialty_types(name_th, name_en))')
@@ -89,9 +91,15 @@ export default function ClinicDetailPage() {
           .from('vet_schedules')
           .select('vet_id, vet_profiles!inner(title, full_name_en, is_available, profiles!inner(full_name, avatar_url))')
           .eq('clinic_id', id),
+        supabase.auth.getUser(),
       ])
 
       setClinic(c as ClinicDetail)
+
+      if (user) {
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+        setIsVetViewer(profile?.role === 'vet')
+      }
 
       if (schedules) {
         const seen = new Set<string>()
@@ -141,6 +149,14 @@ export default function ClinicDetailPage() {
           {typeLabel}
         </span>
       </div>
+
+      {!clinic.owner_vet_id && isVetViewer && (
+        <Link href={`/clinic/claim?clinic_id=${clinic.id}`}
+          className="card flex items-center justify-between gap-3 border-dashed border-primary-200 hover:border-primary-400 transition-colors">
+          <span className="text-sm text-gray-600 dark:text-gray-300">นี่คือคลินิกของคุณใช่ไหม?</span>
+          <span className="text-sm font-semibold text-primary-600 whitespace-nowrap">ขอเชื่อมเป็นเจ้าของ →</span>
+        </Link>
+      )}
 
       {/* ที่อยู่ & ติดต่อ */}
       <div className="card space-y-3">

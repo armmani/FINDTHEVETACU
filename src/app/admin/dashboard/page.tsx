@@ -104,6 +104,7 @@ export default function AdminDashboard() {
   const [expandedClinic, setExpandedClinic] = useState<string | null>(null)
   const [expandedVet, setExpandedVet] = useState<string | null>(null)
   const [showAllApprovedClinics, setShowAllApprovedClinics] = useState(false)
+  const [showAllUnclaimedClinics, setShowAllUnclaimedClinics] = useState(false)
   const [showAllApprovedVets, setShowAllApprovedVets] = useState(false)
   const [vetRejectReason, setVetRejectReason] = useState<Record<string, string>>({})
   const [approvingVet, setApprovingVet] = useState<string | null>(null)
@@ -338,9 +339,10 @@ export default function AdminDashboard() {
   const verifiedVetCount = vets.filter(v => v.status === 'approved').length
   const unverifiedVetCount = vets.length - verifiedVetCount
 
-  // แยกกลุ่ม: รอตรวจสอบ (ยังไม่ approved) กับ ยืนยันแล้ว
+  // แยกกลุ่ม: รอตรวจสอบ (ยังไม่ approved) / ยืนยันแล้ว (มีเจ้าของ) / นำเข้าอัตโนมัติ (approved แต่ยังไม่มีเจ้าของยืนยัน)
   const pendingClinicsList = listedClinics.filter(c => c.status !== 'approved')
-  const approvedClinicsList = listedClinics.filter(c => c.status === 'approved')
+  const approvedClinicsList = listedClinics.filter(c => c.status === 'approved' && c.owner_vet_id)
+  const unclaimedClinicsList = listedClinics.filter(c => c.status === 'approved' && !c.owner_vet_id)
   const pendingClinicCount = clinics.filter(c => c.status === 'pending' || c.status === 'reviewing').length
   // สัตวแพทย์ที่ได้รับสิทธิ์ Admin — แยกออกมาเป็นกลุ่มต่างหาก ไม่ปนกับหมอทั่วไป
   const adminVetsList = listedVets.filter(v => vetRoles[v.user_id] === 'admin')
@@ -352,21 +354,27 @@ export default function AdminDashboard() {
     document.getElementById(elId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
   const renderClinicCard = (clinic: ClinicRow) => {
-    const statusColor = clinic.status === 'approved'
+    const isUnclaimed = clinic.status === 'approved' && !clinic.owner_vet_id
+    const statusColor = isUnclaimed
+      ? 'border-l-gray-300 bg-gray-50/30'
+      : clinic.status === 'approved'
       ? 'border-l-primary-400 bg-primary-50/30'
       : clinic.status === 'rejected'
       ? 'border-l-red-400 bg-red-50/30'
       : clinic.status === 'reviewing'
       ? 'border-l-blue-400 bg-blue-50/30'
       : 'border-l-amber-400 bg-amber-50/30'
-    const statusBadge = clinic.status === 'approved'
+    const statusBadge = isUnclaimed
+      ? 'bg-gray-100 text-gray-600'
+      : clinic.status === 'approved'
       ? 'bg-green-100 text-green-700'
       : clinic.status === 'rejected'
       ? 'bg-red-100 text-red-600'
       : clinic.status === 'reviewing'
       ? 'bg-blue-100 text-blue-700'
       : 'bg-amber-100 text-amber-700'
-    const statusLabel = clinic.status === 'approved' ? 'ยืนยันแล้ว'
+    const statusLabel = isUnclaimed ? 'รอเจ้าของยืนยัน'
+      : clinic.status === 'approved' ? 'ยืนยันแล้ว'
       : clinic.status === 'rejected' ? 'ไม่ผ่าน'
       : clinic.status === 'reviewing' ? 'กำลังตรวจสอบ'
       : 'รอตรวจสอบ'
@@ -607,6 +615,31 @@ export default function AdminDashboard() {
                 {showAllApprovedClinics
                   ? <><ChevronUp className="w-4 h-4" /> ย่อ</>
                   : <><ChevronDown className="w-4 h-4" /> ดูทั้งหมด ({approvedClinicsList.length})</>}
+              </button>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Clinics — นำเข้าอัตโนมัติ (approved แต่ยังไม่มีเจ้าของมายืนยัน) */}
+      <div id="sec-clinics-unclaimed">
+        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <Building2 className="w-5 h-5 text-gray-400" />
+          นำเข้าอัตโนมัติ — รอเจ้าของยืนยัน ({unclaimedClinicsList.length})
+        </h2>
+        {unclaimedClinicsList.length === 0 ? (
+          <div className="card text-center py-8 text-gray-400">ไม่มีคลินิก/รพ. ที่นำเข้าแบบยังไม่มีเจ้าของ</div>
+        ) : (
+          <>
+            <div className="space-y-3">
+              {(showAllUnclaimedClinics ? unclaimedClinicsList : unclaimedClinicsList.slice(0, 5)).map(renderClinicCard)}
+            </div>
+            {unclaimedClinicsList.length > 5 && (
+              <button onClick={() => setShowAllUnclaimedClinics(v => !v)}
+                className="mt-3 text-sm text-primary-600 hover:text-primary-700 flex items-center gap-1">
+                {showAllUnclaimedClinics
+                  ? <><ChevronUp className="w-4 h-4" /> ย่อ</>
+                  : <><ChevronDown className="w-4 h-4" /> ดูทั้งหมด ({unclaimedClinicsList.length})</>}
               </button>
             )}
           </>

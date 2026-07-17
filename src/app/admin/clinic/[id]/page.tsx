@@ -390,9 +390,15 @@ export default function AdminClinicDetailPage() {
         {/* approved → ระงับชั่วคราวได้ */}
         {clinic.status === 'approved' && (
           <div className="space-y-2">
-            <p className="text-sm text-green-600 font-medium flex items-center gap-1">
-              <CheckCircle className="w-4 h-4" /> คลินิกนี้ผ่านการยืนยันแล้ว
-            </p>
+            {ownerId ? (
+              <p className="text-sm text-green-600 font-medium flex items-center gap-1">
+                <CheckCircle className="w-4 h-4" /> คลินิกนี้ผ่านการยืนยันแล้ว
+              </p>
+            ) : (
+              <p className="text-sm text-gray-500 font-medium flex items-center gap-1">
+                <Building2 className="w-4 h-4" /> นำเข้าอัตโนมัติ — ยังไม่มีเจ้าของมายืนยัน
+              </p>
+            )}
             <button onClick={() => handleApprove(false)} disabled={approving}
               className="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-medium transition-colors text-sm">
               <XCircle className="w-4 h-4" /> ระงับชั่วคราว

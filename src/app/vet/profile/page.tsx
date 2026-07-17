@@ -324,12 +324,43 @@ export default function VetProfilePage() {
 
   if (loading) return <LoadingScreen />
 
+  const licenseValid = /^\d{2}-\d{4,5}\/\d{4}$/.test(licenseNumber.trim())
+  const hasLocation = !!(locationLat && locationLng)
+  const hasDoc = !!(licenseDocUrl || licenseFile)
+  const checklist = [
+    { label: 'เลขใบอนุญาตถูกต้อง', done: licenseValid },
+    { label: 'ระบุที่ตั้ง', done: hasLocation },
+    { label: 'แนบเอกสารยืนยันตัวตน', done: hasDoc },
+  ]
+  const profileIncomplete = !checklist.every(c => c.done)
+
   return (
     <div className="max-w-lg mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">ตั้งค่าโปรไฟล์หมอ</h1>
         <p className="text-gray-500 text-sm mt-0.5">กำหนดข้อมูลและที่ตั้งของคุณ</p>
       </div>
+
+      {/* เช็คลิสต์ความครบถ้วน — โชว์เฉพาะตอนยังกรอกไม่ครบและยังไม่เคยส่งตรวจ */}
+      {vetStatus === 'pending' && profileIncomplete && (
+        <div className="card mb-4 bg-amber-50 border border-amber-100">
+          <div className="flex items-center gap-3 mb-2">
+            <Info className="w-5 h-5 text-amber-500 shrink-0" />
+            <div>
+              <p className="font-semibold text-sm text-amber-700">กรอกข้อมูลให้ครบเพื่อเริ่มใช้งาน</p>
+              <p className="text-xs mt-0.5 text-amber-600">เหลืออีก {checklist.filter(c => !c.done).length} จาก {checklist.length} ขั้นตอน</p>
+            </div>
+          </div>
+          <ul className="space-y-1 mt-2 pl-8">
+            {checklist.map(c => (
+              <li key={c.label} className={`text-xs flex items-center gap-2 ${c.done ? 'text-green-600' : 'text-amber-700'}`}>
+                {c.done ? <Check className="w-3.5 h-3.5 shrink-0" /> : <span className="w-3.5 h-3.5 rounded-full border-2 border-amber-400 inline-block shrink-0" />}
+                {c.label}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* สถานะการยืนยัน */}
       {vetStatus === 'approved' && (
@@ -350,7 +381,7 @@ export default function VetProfilePage() {
           </div>
         </div>
       )}
-      {vetStatus === 'pending' && (
+      {vetStatus === 'pending' && !profileIncomplete && (
         <div className="card mb-4 flex items-center gap-3 bg-amber-50 border border-amber-100">
           <ShieldX className="w-5 h-5 text-amber-500 shrink-0" />
           <div>
@@ -460,6 +491,23 @@ export default function VetProfilePage() {
                 className="input resize-none" rows={3} placeholder="ประสบการณ์ ความเชี่ยวชาญ ฯลฯ" />
             </div>
           </div>
+        </div>
+
+        {/* เอกสารยืนยันตัวตน — ย้ายมาไว้ต้นๆ ฟอร์ม จะได้ไม่ถูกมองข้าม */}
+        <div className="card space-y-3">
+          <h2 className="font-semibold text-gray-800">เอกสารยืนยันตัวตน <span className="text-red-500">*</span></h2>
+          <p className="text-xs text-gray-500">อัปโหลดรูปใบประกอบวิชาชีพ หรือบัตรประจำตัวสัตวแพทย์</p>
+          {licenseDocUrl && (
+            <a href={licenseDocUrl} target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-blue-500 hover:underline">
+              ดูเอกสารที่อัปโหลดแล้ว →
+            </a>
+          )}
+          <input type="file" accept="image/*,.pdf"
+            disabled={vetStatus === 'reviewing'}
+            onChange={e => setLicenseFile(e.target.files?.[0] || null)}
+            className="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-600 hover:file:bg-primary-100 disabled:opacity-50" />
+          {licenseFile && <p className="text-xs text-green-600">✓ {licenseFile.name}</p>}
         </div>
 
         {/* การศึกษา */}
@@ -585,23 +633,6 @@ export default function VetProfilePage() {
               {testingTelegram ? '...' : 'ทดสอบ'}
             </button>
           </div>
-        </div>
-
-        {/* เอกสารยืนยันตัวตน */}
-        <div className="card space-y-3">
-          <h2 className="font-semibold text-gray-800">เอกสารยืนยันตัวตน *</h2>
-          <p className="text-xs text-gray-500">อัปโหลดรูปใบประกอบวิชาชีพ หรือบัตรประจำตัวสัตวแพทย์</p>
-          {licenseDocUrl && (
-            <a href={licenseDocUrl} target="_blank" rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-blue-500 hover:underline">
-              ดูเอกสารที่อัปโหลดแล้ว →
-            </a>
-          )}
-          <input type="file" accept="image/*,.pdf"
-            disabled={vetStatus === 'reviewing'}
-            onChange={e => setLicenseFile(e.target.files?.[0] || null)}
-            className="block w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary-50 file:text-primary-600 hover:file:bg-primary-100 disabled:opacity-50" />
-          {licenseFile && <p className="text-xs text-green-600">✓ {licenseFile.name}</p>}
         </div>
 
         <button type="submit" disabled={saving || saved || vetStatus === 'reviewing'}
