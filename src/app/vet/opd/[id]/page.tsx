@@ -1,14 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { ArrowLeft, ClipboardList, CalendarDays, Scale, Pencil, X, Check, Plus, Lock, UserPlus, Search, Printer, Upload } from 'lucide-react'
+import { ArrowLeft, ClipboardList, CalendarDays, Scale, Pencil, X, Check, Plus, Lock, UserPlus, Search, Printer, Upload, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import LoadingScreen from '@/components/LoadingScreen'
 import SearchableSelect, { SelectOption } from '@/components/SearchableSelect'
 import toast from 'react-hot-toast'
+import { openConversation } from '@/lib/chat'
 
 const EMOJI: Record<string, string> = { สุนัข: '🐕', แมว: '🐈', กระต่าย: '🐇', นก: '🐦', ปลา: '🐟', อื่นๆ: '🐾' }
 const SPECIES = ['สุนัข', 'แมว', 'กระต่าย', 'นก', 'ปลา', 'อื่นๆ']
@@ -64,7 +65,7 @@ interface PetInfo {
   id: string; name: string; species: string; breed: string | null
   gender: string | null; neutered: boolean; photo_url: string | null
   birthdate: string | null
-  medical_tags: string[]; profiles: { full_name: string } | null
+  medical_tags: string[]; owner_id: string | null; profiles: { full_name: string } | null
 }
 interface OPDRecord {
   id: string; vet_id: string; record_date: string; created_at: string
@@ -82,6 +83,7 @@ interface OPDRecord {
 export default function OPDDetailPage() {
   const { id } = useParams<{ id: string }>()
   const supabase = createClient()
+  const router = useRouter()
   const [record, setRecord] = useState<OPDRecord | null>(null)
   const [vetTitle, setVetTitle] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -122,7 +124,7 @@ export default function OPDDetailPage() {
   useEffect(() => {
     supabase
       .from('opd_records')
-      .select('*, pets(id, name, species, breed, gender, neutered, photo_url, birthdate, medical_tags, profiles!owner_id(full_name)), clinics(name), vet:profiles!vet_id(full_name)')
+      .select('*, pets(id, name, species, breed, gender, neutered, photo_url, birthdate, medical_tags, owner_id, profiles!owner_id(full_name)), clinics(name), vet:profiles!vet_id(full_name)')
       .eq('id', id)
       .single()
       .then(({ data }) => {
@@ -160,6 +162,12 @@ export default function OPDDetailPage() {
     }, 350)
     return () => clearTimeout(t)
   }, [ownerQuery, showLinkOwner])
+
+  const handleChatOwner = async (ownerId: string) => {
+    const convoId = await openConversation(ownerId)
+    if (!convoId) { toast.error('เปิดแชทไม่ได้'); return }
+    router.push(`/messages/${convoId}`)
+  }
 
   const handleSendLinkRequest = async (owner: { id: string; full_name: string }) => {
     if (!record?.pets?.id) return
@@ -336,7 +344,15 @@ export default function OPDDetailPage() {
               {pet?.neutered ? ' · ทำหมันแล้ว' : ''}
             </p>
             {ownerName
-              ? <p className="text-xs text-gray-400 mt-0.5">เจ้าของ: {ownerName}</p>
+              ? <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-xs text-gray-400">เจ้าของ: {ownerName}</p>
+                  {pet?.owner_id && (
+                    <button onClick={() => handleChatOwner(pet.owner_id!)}
+                      className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-700 border border-primary-200 rounded-md px-1.5 py-0.5 hover:bg-primary-50 dark:hover:bg-primary-950 transition-colors">
+                      <MessageCircle className="w-3 h-3" /> ทักแชท
+                    </button>
+                  )}
+                </div>
               : <div className="flex items-center gap-2 mt-0.5">
                   <p className="text-xs text-amber-500">ยังไม่มีเจ้าของในระบบ</p>
                   {!linkSent

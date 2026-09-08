@@ -7,9 +7,11 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { geocodeAddress, PLATFORM_ACUPUNCTURE_FEE, PLATFORM_RATE_LABEL } from '@/lib/distance'
 import toast from 'react-hot-toast'
-import { MapPin, Save, Info, Search, Send, ShieldCheck, ShieldX, Lock, Calendar, ExternalLink, X, Check } from 'lucide-react'
+import { MapPin, Save, Info, Search, Send, ShieldCheck, ShieldX, Lock, Calendar, ExternalLink, X, Check, Phone, MessageCircle, Facebook, Briefcase, Zap } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import PhotoUpload from '@/components/PhotoUpload'
+import { JOB_TYPES } from '@/lib/partTime'
+import { PROVINCE_EN } from '@/lib/provinces'
 
 const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false })
 
@@ -98,7 +100,21 @@ export default function VetProfilePage() {
   const [locationLat, setLocationLat] = useState<number | null>(null)
   const [locationLng, setLocationLng] = useState<number | null>(null)
   const [isAvailable, setIsAvailable] = useState(true)
+  const [phone, setPhone] = useState('')
+  const [lineId, setLineId] = useState('')
+  const [facebookUrl, setFacebookUrl] = useState('')
   const [showPhone, setShowPhone] = useState(true)
+  const [showLine, setShowLine] = useState(false)
+  const [showFacebook, setShowFacebook] = useState(false)
+  const [allowChat, setAllowChat] = useState(true)
+  const [ptOpen, setPtOpen] = useState(false)
+  const [ptUrgent, setPtUrgent] = useState(false)
+  const [ptJobTypes, setPtJobTypes] = useState<string[]>([])
+  const [ptProvinces, setPtProvinces] = useState<string[]>([])
+  const [ptNote, setPtNote] = useState('')
+  const [ptRateNote, setPtRateNote] = useState('')
+  const [ptProvinceInput, setPtProvinceInput] = useState('')
+  const [savingPartTime, setSavingPartTime] = useState(false)
   const [isVerified, setIsVerified] = useState(false)
   const [vetStatus, setVetStatus] = useState<'pending' | 'reviewing' | 'approved' | 'rejected'>('pending')
   const [rejectReason, setRejectReason] = useState<string | null>(null)
@@ -122,12 +138,21 @@ export default function VetProfilePage() {
     if (!user) return
     setUserId(user.id)
 
-    const [{ data }, { data: profile }, { data: spTypes }, { data: vetSp }] = await Promise.all([
+    const [{ data }, { data: profile }, { data: spTypes }, { data: vetSp }, { data: partTime }] = await Promise.all([
       supabase.from('vet_profiles').select('*').eq('user_id', user.id).single(),
-      supabase.from('profiles').select('full_name, telegram_chat_id, avatar_url').eq('id', user.id).single(),
+      supabase.from('profiles').select('full_name, telegram_chat_id, avatar_url, phone, line_id, facebook_url').eq('id', user.id).single(),
       supabase.from('specialty_types').select('*').order('name_th'),
       supabase.from('vet_specialties').select('specialty_type_id').eq('vet_id', user.id),
+      supabase.from('vet_part_time').select('*').eq('vet_id', user.id).maybeSingle(),
     ])
+    if (partTime) {
+      setPtOpen(partTime.is_open ?? false)
+      setPtUrgent(partTime.urgent_ok ?? false)
+      setPtJobTypes(partTime.job_types || [])
+      setPtProvinces(partTime.provinces || [])
+      setPtNote(partTime.note || '')
+      setPtRateNote(partTime.rate_note || '')
+    }
     setSpecialtyTypes((spTypes || []) as any)
     setVetSpecialties((vetSp || []).map((s: any) => s.specialty_type_id))
     if (data) {
@@ -143,6 +168,9 @@ export default function VetProfilePage() {
       setLocationLng(data.location_lng)
       setIsAvailable(data.is_available)
       setShowPhone(data.show_phone ?? true)
+      setShowLine(data.show_line ?? false)
+      setShowFacebook(data.show_facebook ?? false)
+      setAllowChat(data.allow_chat ?? true)
       setIsVerified(data.is_verified || false)
       setVetStatus(data.status || 'pending')
       setRejectReason(data.reject_reason || null)
@@ -161,6 +189,9 @@ export default function VetProfilePage() {
     }
     setTelegramChatId((profile as any)?.telegram_chat_id || '')
     setAvatarUrl((profile as any)?.avatar_url || null)
+    setPhone((profile as any)?.phone || '')
+    setLineId((profile as any)?.line_id || '')
+    setFacebookUrl((profile as any)?.facebook_url || '')
 
     const [{ data: schedulesData }, { data: clinicsData }] = await Promise.all([
       supabase.from('vet_schedules').select('*').eq('vet_id', user.id).order('created_at'),
@@ -237,6 +268,35 @@ export default function VetProfilePage() {
     toast.success(newVal ? 'เปิดรับงานแล้ว' : 'ปิดรับงานแล้ว')
   }
 
+  const togglePtJob = (key: string) => {
+    setPtJobTypes(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])
+  }
+
+  const addPtProvince = (p: string) => {
+    if (!p || ptProvinces.includes(p)) { setPtProvinceInput(''); return }
+    setPtProvinces(prev => [...prev, p])
+    setPtProvinceInput('')
+  }
+
+  const handleSavePartTime = async () => {
+    setSavingPartTime(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setSavingPartTime(false); return }
+    const { error } = await supabase.from('vet_part_time').upsert({
+      vet_id: user.id,
+      is_open: ptOpen,
+      urgent_ok: ptUrgent,
+      job_types: ptJobTypes,
+      provinces: ptProvinces,
+      note: ptNote.trim() || null,
+      rate_note: ptRateNote.trim() || null,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'vet_id' })
+    setSavingPartTime(false)
+    if (error) { toast.error('บันทึกไม่สำเร็จ'); return }
+    toast.success(ptOpen ? 'เปิดรับงานพาร์ทไทม์แล้ว' : 'ปิดรับงานพาร์ทไทม์แล้ว')
+  }
+
   const toggleEdu = (key: string) => {
     setAdditionalEdu(prev =>
       prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
@@ -286,7 +346,8 @@ export default function VetProfilePage() {
         additional_education: additionalEdu,
         acupuncture_fee: PLATFORM_ACUPUNCTURE_FEE, travel_rate: 8,
         location_name: locationName, location_lat: locationLat, location_lng: locationLng,
-        is_available: isAvailable, show_phone: showPhone,
+        is_available: isAvailable,
+        show_phone: showPhone, show_line: showLine, show_facebook: showFacebook, allow_chat: allowChat,
         license_doc_url: finalDocUrl,
         ...(wasRejected ? { status: 'pending', reject_reason: null } : {}),
       }, { onConflict: 'user_id' }),
@@ -294,6 +355,9 @@ export default function VetProfilePage() {
         full_name: fullName.trim() || null,
         telegram_chat_id: telegramChatId || null,
         avatar_url: avatarUrl || null,
+        phone: phone.trim() || null,
+        line_id: lineId.trim() || null,
+        facebook_url: facebookUrl.trim() || null,
       }).eq('id', user.id),
     ])
 
@@ -414,19 +478,96 @@ export default function VetProfilePage() {
         </div>
       </div>
 
-      {/* แสดงเบอร์โทรในหน้าค้นหา */}
-      <div className="card mb-4">
-        <div className="flex items-center justify-between">
+      {/* รับงานพาร์ทไทม์ — เห็นเฉพาะหมอด้วยกัน */}
+      <div id="parttime" className="card mb-4 scroll-mt-20 space-y-4">
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="font-semibold text-sm">แสดงเบอร์โทรในหน้าค้นหา</p>
+            <p className="font-semibold text-sm flex items-center gap-1.5">
+              <Briefcase className="w-4 h-4 text-primary-500" /> รับงานพาร์ทไทม์
+            </p>
             <p className="text-xs text-gray-400 mt-0.5">
-              {showPhone ? 'เจ้าของสัตว์เห็นเบอร์โทรของคุณได้' : 'ซ่อนเบอร์โทรจากหน้าค้นหา'}
+              เปิดไว้เพื่อให้<span className="font-medium">หมอด้วยกัน</span>หาคุณเจอเวลาต้องการคนช่วยเคส — เจ้าของสัตว์ไม่เห็นส่วนนี้
             </p>
           </div>
-          <button type="button" onClick={() => setShowPhone(v => !v)}
-            className={`w-11 h-6 rounded-full relative transition-colors ${showPhone ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'}`}>
-            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${showPhone ? 'left-6' : 'left-1'}`} />
+          <button type="button" onClick={() => setPtOpen(v => !v)}
+            className={`w-11 h-6 rounded-full relative transition-colors shrink-0 ${ptOpen ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'}`}>
+            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${ptOpen ? 'left-6' : 'left-1'}`} />
           </button>
+        </div>
+
+        {ptOpen && (
+          <div className="space-y-4 pt-1 border-t border-gray-100 dark:border-gray-800">
+            <button type="button" onClick={() => setPtUrgent(v => !v)}
+              className={`w-full flex items-center justify-center gap-1.5 text-sm font-medium py-2 rounded-lg border-2 transition-colors mt-3 ${
+                ptUrgent
+                  ? 'border-amber-400 bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                  : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-amber-300'
+              }`}>
+              <Zap className="w-4 h-4" /> รับงานด่วน / เรียกกะทันหันได้
+            </button>
+
+            <div>
+              <label className="label">ประเภทงานที่รับ</label>
+              <div className="flex flex-wrap gap-1.5">
+                {JOB_TYPES.map(j => (
+                  <button key={j.key} type="button" onClick={() => togglePtJob(j.key)}
+                    className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
+                      ptJobTypes.includes(j.key)
+                        ? 'border-primary-400 bg-primary-50 text-primary-700 dark:bg-primary-950 dark:text-primary-300'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-500 hover:border-primary-300'
+                    }`}>
+                    {j.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="label">จังหวัดที่สะดวกไป</label>
+              <div className="flex gap-2">
+                <select value={ptProvinceInput} onChange={e => addPtProvince(e.target.value)} className="input flex-1">
+                  <option value="">-- เลือกจังหวัด --</option>
+                  {Object.keys(PROVINCE_EN).filter(p => !ptProvinces.includes(p)).map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
+              {ptProvinces.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {ptProvinces.map(p => (
+                    <span key={p} className="text-xs bg-primary-50 text-primary-700 dark:bg-primary-950 dark:text-primary-300 px-2 py-1 rounded-full flex items-center gap-1">
+                      {p}
+                      <button type="button" onClick={() => setPtProvinces(prev => prev.filter(x => x !== p))}
+                        className="hover:text-red-500">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="label">รายละเอียดเพิ่มเติม</label>
+              <textarea value={ptNote} onChange={e => setPtNote(e.target.value)} rows={3}
+                className="input resize-none"
+                placeholder="เช่น ว่างเสาร์-อาทิตย์ รับเคสผ่าตัดเล็ก แจ้งล่วงหน้า 1 วัน" />
+            </div>
+
+            <div>
+              <label className="label">ค่าตอบแทนที่ต้องการ <span className="text-gray-400 font-normal">(ไม่บังคับ)</span></label>
+              <input type="text" value={ptRateNote} onChange={e => setPtRateNote(e.target.value)}
+                className="input" placeholder="เช่น 1,500 บ./เวร หรือ คุยกันได้" />
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={handleSavePartTime} disabled={savingPartTime}
+            className="btn-primary text-sm py-2 px-4 disabled:opacity-50">
+            {savingPartTime ? 'กำลังบันทึก...' : 'บันทึกสถานะรับงาน'}
+          </button>
+          <a href="/vet/parttime" className="text-sm text-primary-600 hover:underline">ดูบอร์ดหมอพาร์ทไทม์ →</a>
         </div>
       </div>
 
@@ -490,6 +631,80 @@ export default function VetProfilePage() {
               <textarea value={bio} onChange={e => setBio(e.target.value)}
                 className="input resize-none" rows={3} placeholder="ประสบการณ์ ความเชี่ยวชาญ ฯลฯ" />
             </div>
+          </div>
+        </div>
+
+        {/* ช่องทางติดต่อ — เปิด/ปิดได้ทีละช่อง */}
+        <div className="card space-y-4">
+          <div>
+            <h2 className="font-semibold text-gray-800 dark:text-gray-100">ช่องทางติดต่อ</h2>
+            <p className="text-xs text-gray-400 mt-0.5">
+              เลือกได้เองว่าจะให้เจ้าของสัตว์เห็นช่องทางไหนบ้าง ช่องที่ปิดไว้จะไม่แสดงในโปรไฟล์สาธารณะ
+            </p>
+          </div>
+
+          {/* เบอร์โทร */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <label className="label mb-0 flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-gray-400" /> เบอร์โทรศัพท์
+              </label>
+              <button type="button" onClick={() => setShowPhone(v => !v)}
+                className={`w-11 h-6 rounded-full relative transition-colors shrink-0 ${showPhone ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'}`}>
+                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${showPhone ? 'left-6' : 'left-1'}`} />
+              </button>
+            </div>
+            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+              className="input" placeholder="เช่น 081-234-5678" />
+            <p className="text-xs text-gray-400">{showPhone ? 'แสดงในโปรไฟล์สาธารณะ' : 'ซ่อนอยู่ — คนอื่นไม่เห็นเบอร์นี้'}</p>
+          </div>
+
+          {/* LINE */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <label className="label mb-0 flex items-center gap-1.5">
+                <MessageCircle className="w-3.5 h-3.5 text-gray-400" /> LINE ID
+              </label>
+              <button type="button" onClick={() => setShowLine(v => !v)}
+                className={`w-11 h-6 rounded-full relative transition-colors shrink-0 ${showLine ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'}`}>
+                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${showLine ? 'left-6' : 'left-1'}`} />
+              </button>
+            </div>
+            <input type="text" value={lineId} onChange={e => setLineId(e.target.value)}
+              className="input" placeholder="เช่น @drsomchai" />
+            <p className="text-xs text-gray-400">{showLine ? 'แสดงในโปรไฟล์สาธารณะ' : 'ซ่อนอยู่ — คนอื่นไม่เห็น LINE นี้'}</p>
+          </div>
+
+          {/* Facebook */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-3">
+              <label className="label mb-0 flex items-center gap-1.5">
+                <Facebook className="w-3.5 h-3.5 text-gray-400" /> Facebook
+              </label>
+              <button type="button" onClick={() => setShowFacebook(v => !v)}
+                className={`w-11 h-6 rounded-full relative transition-colors shrink-0 ${showFacebook ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'}`}>
+                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${showFacebook ? 'left-6' : 'left-1'}`} />
+              </button>
+            </div>
+            <input type="text" value={facebookUrl} onChange={e => setFacebookUrl(e.target.value)}
+              className="input" placeholder="ลิงก์เพจ หรือชื่อโปรไฟล์ Facebook" />
+            <p className="text-xs text-gray-400">{showFacebook ? 'แสดงในโปรไฟล์สาธารณะ' : 'ซ่อนอยู่ — คนอื่นไม่เห็น Facebook นี้'}</p>
+          </div>
+
+          {/* แชทในระบบ */}
+          <div className="flex items-center justify-between gap-3 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <div>
+              <p className="font-semibold text-sm">รับข้อความในระบบ</p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {allowChat
+                  ? 'เจ้าของสัตว์และหมอคนอื่นทักแชทหาคุณในเว็บได้'
+                  : 'ปิดรับข้อความใหม่ — ห้องแชทเดิมยังคุยต่อได้'}
+              </p>
+            </div>
+            <button type="button" onClick={() => setAllowChat(v => !v)}
+              className={`w-11 h-6 rounded-full relative transition-colors shrink-0 ${allowChat ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'}`}>
+              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${allowChat ? 'left-6' : 'left-1'}`} />
+            </button>
           </div>
         </div>
 

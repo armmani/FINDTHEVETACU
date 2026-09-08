@@ -5,7 +5,8 @@ import LoadingScreen from '@/components/LoadingScreen'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
-import { ShieldCheck, ExternalLink, MapPin, Calendar, ArrowLeft, Phone, Clock } from 'lucide-react'
+import { ShieldCheck, ExternalLink, MapPin, Calendar, ArrowLeft, Phone, Clock, MessageCircle, Facebook } from 'lucide-react'
+import ChatButton from '@/components/ChatButton'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -37,7 +38,12 @@ interface VetDetail {
   full_name: string
   avatar_url: string | null
   phone: string | null
+  line_id: string | null
+  facebook_url: string | null
   show_phone: boolean
+  show_line: boolean
+  show_facebook: boolean
+  allow_chat: boolean
   schedules: VetSchedule[]
 }
 
@@ -58,16 +64,20 @@ export default function VetDetailPage() {
   const [vet, setVet] = useState<VetDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [lightbox, setLightbox] = useState(false)
+  const [me, setMe] = useState('')
 
   useEffect(() => {
     const load = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) setMe(user.id)
       const [{ data: vp }, { data: schedules }] = await Promise.all([
         supabase
           .from('vet_profiles')
           .select(`
             user_id, bio, license_number, additional_education,
-            is_available, location_name, acupuncture_fee, travel_rate, show_phone,
-            profiles!inner(full_name, avatar_url, phone)
+            is_available, location_name, acupuncture_fee, travel_rate,
+            show_phone, show_line, show_facebook, allow_chat,
+            profiles!inner(full_name, avatar_url, phone, line_id, facebook_url)
           `)
           .eq('user_id', id)
           .single(),
@@ -80,7 +90,12 @@ export default function VetDetailPage() {
         full_name: (vp as any).profiles?.full_name || '',
         avatar_url: (vp as any).profiles?.avatar_url || null,
         phone: (vp as any).profiles?.phone || null,
+        line_id: (vp as any).profiles?.line_id || null,
+        facebook_url: (vp as any).profiles?.facebook_url || null,
         show_phone: (vp as any).show_phone ?? true,
+        show_line: (vp as any).show_line ?? false,
+        show_facebook: (vp as any).show_facebook ?? false,
+        allow_chat: (vp as any).allow_chat ?? true,
         schedules: (schedules as VetSchedule[]) || [],
       })
       setLoading(false)
@@ -90,6 +105,15 @@ export default function VetDetailPage() {
 
   if (loading) return <LoadingScreen />
   if (!vet) return <div className="text-center py-20 text-gray-400">ไม่พบข้อมูลหมอ</div>
+
+  const hasContact =
+    (vet.show_phone && !!vet.phone) ||
+    (vet.show_line && !!vet.line_id) ||
+    (vet.show_facebook && !!vet.facebook_url)
+  const canChat = vet.allow_chat && !!me && me !== vet.user_id
+  const fbHref = vet.facebook_url?.startsWith('http')
+    ? vet.facebook_url
+    : `https://facebook.com/${(vet.facebook_url || '').replace(/^@/, '')}`
 
   return (
     <div className="max-w-lg mx-auto space-y-4">
@@ -154,14 +178,42 @@ export default function VetDetailPage() {
         </div>
       )}
 
-      {/* เบอร์ติดต่อหมอ */}
-      {vet.phone && vet.show_phone && (
-        <div className="card flex items-center gap-3">
-          <Phone className="w-4 h-4 text-primary-500 shrink-0" />
-          <div>
-            <p className="text-sm text-gray-500">เบอร์ติดต่อหมอ</p>
-            <a href={`tel:${vet.phone}`} className="font-semibold text-primary-600 hover:underline">{vet.phone}</a>
-          </div>
+      {/* ช่องทางติดต่อ — หมอเลือกเปิด/ปิดได้เอง */}
+      {(hasContact || canChat) && (
+        <div className="card space-y-3">
+          <p className="text-sm font-semibold text-gray-500">ช่องทางติดต่อ</p>
+
+          {vet.show_phone && vet.phone && (
+            <a href={`tel:${vet.phone}`} className="flex items-center gap-3 group">
+              <Phone className="w-4 h-4 text-primary-500 shrink-0" />
+              <div>
+                <p className="text-xs text-gray-400">เบอร์ติดต่อหมอ</p>
+                <span className="font-semibold text-primary-600 group-hover:underline">{vet.phone}</span>
+              </div>
+            </a>
+          )}
+
+          {vet.show_line && vet.line_id && (
+            <div className="flex items-center gap-3">
+              <MessageCircle className="w-4 h-4 text-green-500 shrink-0" />
+              <div>
+                <p className="text-xs text-gray-400">LINE</p>
+                <span className="font-semibold">{vet.line_id}</span>
+              </div>
+            </div>
+          )}
+
+          {vet.show_facebook && vet.facebook_url && (
+            <a href={fbHref} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 group">
+              <Facebook className="w-4 h-4 text-blue-500 shrink-0" />
+              <div>
+                <p className="text-xs text-gray-400">Facebook</p>
+                <span className="font-semibold text-blue-600 group-hover:underline break-all">{vet.facebook_url}</span>
+              </div>
+            </a>
+          )}
+
+          {canChat && <ChatButton targetUserId={vet.user_id} className="w-full" />}
         </div>
       )}
 
