@@ -151,14 +151,14 @@ export default function PetsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">สัตว์เลี้ยงของฉัน</h1>
         <div className="flex items-center gap-2">
-          <Link href="/owner/pets/claim" className="btn-secondary flex items-center gap-1.5 text-sm">
-            <LinkIcon className="w-4 h-4" /> เชื่อมสัตว์เลี้ยง
+          <Link href="/owner/pets/claim" className="btn-secondary flex flex-1 sm:flex-none items-center justify-center gap-1.5 text-sm whitespace-nowrap">
+            <LinkIcon className="w-4 h-4 shrink-0" /> เชื่อมสัตว์เลี้ยง
           </Link>
-          <button onClick={() => setShowForm(v => !v)} className="btn-primary flex items-center gap-2">
-            {showForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+          <button onClick={() => setShowForm(v => !v)} className="btn-primary flex flex-1 sm:flex-none items-center justify-center gap-2 whitespace-nowrap">
+            {showForm ? <X className="w-4 h-4 shrink-0" /> : <Plus className="w-4 h-4 shrink-0" />}
             {showForm ? 'ยกเลิก' : 'เพิ่มสัตว์เลี้ยง'}
           </button>
         </div>
