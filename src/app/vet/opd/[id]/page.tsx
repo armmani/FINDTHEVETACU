@@ -61,6 +61,7 @@ function MedicalTags({ tags }: { tags: string[] }) {
   )
 }
 
+interface Visit { id: string; record_date: string; dx: string | null; created_at: string }
 interface PetInfo {
   id: string; name: string; species: string; breed: string | null
   gender: string | null; neutered: boolean; photo_url: string | null
@@ -108,6 +109,7 @@ export default function OPDDetailPage() {
   const [searchingOwner, setSearchingOwner] = useState(false)
   const [sendingLink, setSendingLink] = useState(false)
   const [linkSent, setLinkSent] = useState(false)
+  const [visits, setVisits] = useState<Visit[]>([])
 
   // OPD edit
   const [editingOPD, setEditingOPD] = useState(false)
@@ -130,9 +132,18 @@ export default function OPDDetailPage() {
       .then(({ data }) => {
         setRecord(data as any); setLoading(false)
         const vetId = (data as any)?.vet_id
+        const petId = (data as any)?.pet_id
         if (vetId) {
           supabase.from('vet_profiles').select('title').eq('user_id', vetId).single()
             .then(({ data: vp }) => setVetTitle((vp as any)?.title || null))
+        }
+        // ประวัติการตรวจครั้งอื่นของสัตว์ตัวเดียวกัน (โดยหมอคนนี้)
+        if (petId && vetId) {
+          supabase.from('opd_records')
+            .select('id, record_date, dx, created_at')
+            .eq('pet_id', petId).eq('vet_id', vetId)
+            .order('record_date', { ascending: false }).order('created_at', { ascending: false })
+            .then(({ data: rows }) => setVisits((rows as Visit[]) || []))
         }
       })
   }, [id])
@@ -500,6 +511,42 @@ export default function OPDDetailPage() {
           </div>
         )}
       </div>
+
+      {/* ประวัติการตรวจของสัตว์ตัวนี้ — กดข้ามไปดูครั้งอื่นได้ */}
+      {visits.length > 1 && (
+        <div className="card space-y-2">
+          <div className="flex items-center gap-2">
+            <CalendarDays className="w-4 h-4 text-primary-500" />
+            <p className="text-sm font-semibold text-gray-500">ประวัติการตรวจของ {pet?.name} ({visits.length} ครั้ง)</p>
+          </div>
+          <div className="space-y-1.5">
+            {visits.map((v, i) => {
+              const isCurrent = v.id === record.id
+              return (
+                <Link key={v.id} href={`/vet/opd/${v.id}`}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2 transition-colors ${
+                    isCurrent
+                      ? 'bg-primary-50 dark:bg-primary-950 border border-primary-200 dark:border-primary-800 pointer-events-none'
+                      : 'hover:bg-gray-50 dark:hover:bg-gray-800 border border-transparent'
+                  }`}>
+                  <span className={`text-xs font-medium shrink-0 w-14 text-center rounded-full py-0.5 ${
+                    isCurrent ? 'bg-primary-500 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'
+                  }`}>
+                    ครั้งที่ {visits.length - i}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{fmtDate(v.record_date)}</p>
+                    {v.dx && <p className="text-xs text-gray-400 truncate">Dx: {v.dx}</p>}
+                  </div>
+                  {isCurrent
+                    ? <span className="text-xs text-primary-600 dark:text-primary-400 shrink-0">กำลังดูอยู่</span>
+                    : <ArrowLeft className="w-4 h-4 text-gray-300 rotate-180 shrink-0" />}
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* OPD fields */}
       <div className="space-y-3">
