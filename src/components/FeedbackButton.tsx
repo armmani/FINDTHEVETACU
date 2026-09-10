@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { MessageSquarePlus, X, Send, Image as ImageIcon, Loader2, Sparkles, ChevronDown, ChevronUp } from 'lucide-react'
 import { createClient } from '@/lib/supabase'
 import toast from 'react-hot-toast'
@@ -11,8 +12,13 @@ interface ChangelogItem { id: string; summary: string; resolved_at: string }
 const fmtChangelog = (d: string) =>
   new Date(d).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' })
 
+// หน้าที่มีช่องพิมพ์ข้อความติดขอบล่าง — ปุ่มลอยจะไปทับปุ่มส่ง เลยซ่อนไว้
+const CHAT_ROUTES = ['/messages/', '/chat/', '/vet/appointment/', '/owner/appointment/']
+
 export default function FeedbackButton() {
   const supabase = createClient()
+  const pathname = usePathname()
+  const onChatPage = CHAT_ROUTES.some(r => pathname?.startsWith(r))
   const [open, setOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -68,7 +74,7 @@ export default function FeedbackButton() {
     setMessage(''); setImageFile(null); setImagePreview(null); setOpen(false)
   }
 
-  if (!loggedIn) return null
+  if (!loggedIn || onChatPage) return null
 
   return (
     <>
