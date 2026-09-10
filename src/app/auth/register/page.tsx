@@ -9,6 +9,7 @@ import { formatPhone } from '@/lib/formatPhone'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
 import type { Role } from '@/lib/types'
+import { PDPA_VERSION } from '@/lib/pdpa'
 
 export default function RegisterPage() {
   return <Suspense><RegisterForm /></Suspense>
@@ -92,6 +93,14 @@ function RegisterForm() {
 
     // บันทึกว่าสมัครด้วยอีเมล/รหัสผ่าน (ไม่ใช่ Google) + เบอร์โทรถ้ามี
     await supabase.from('profiles').update({ provider: 'email', ...(phone ? { phone } : {}) }).eq('id', userId)
+
+    // เก็บหลักฐานการยินยอม PDPA (best-effort — ไม่ให้ล้มการสมัคร)
+    supabase.from('consent_logs').insert({
+      user_id: userId,
+      policy_version: PDPA_VERSION,
+      method: 'email',
+      user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+    }).then(() => {}, () => {})
 
     // ถ้าเป็นหมอ สร้าง vet_profile เปล่าๆ ไว้ก่อน — ยังไม่แจ้ง admin จนกว่าจะกรอกโปรไฟล์และแนบใบอนุญาตจริง
     if (role === 'vet') {

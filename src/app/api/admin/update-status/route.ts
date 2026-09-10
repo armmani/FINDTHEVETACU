@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/supabaseServer'
+import { writeAudit } from '@/lib/audit'
 
 export async function POST(request: NextRequest) {
   try {
@@ -54,6 +55,14 @@ export async function POST(request: NextRequest) {
 
     const { error } = await adminSupabase.from(table).update(updates).eq(idField, id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    await writeAudit({
+      actorId: user.id,
+      action: `${table}.${status}`,
+      entity: table,
+      entityId: String(id),
+      meta: rejectReason ? { rejectReason } : undefined,
+    })
 
     return NextResponse.json({ ok: true })
   } catch (err: any) {

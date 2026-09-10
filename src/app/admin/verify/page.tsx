@@ -10,6 +10,7 @@ import { AdminDashboardSkeleton } from '@/components/AdminSkeleton'
 import PetOwnershipRequestList from '@/components/admin/PetOwnershipRequestList'
 import ClinicEditReviewList from '@/components/admin/ClinicEditReviewList'
 import ClinicOwnershipRequestList from '@/components/admin/ClinicOwnershipRequestList'
+import AccountDeletionRequestList from '@/components/admin/AccountDeletionRequestList'
 
 interface PendingClinic {
   id: string
@@ -201,8 +202,11 @@ export default function AdminVerifyPage() {
       {/* คำขอเชื่อมโรงพยาบาล/คลินิก */}
       <ClinicOwnershipRequestList />
 
-      {/* Pet ownership requests — อยู่ท้ายสุด */}
+      {/* Pet ownership requests */}
       <PetOwnershipRequestList />
+
+      {/* คำขอลบบัญชี / ข้อมูล (PDPA) — ท้ายสุด */}
+      <AccountDeletionRequestList />
     </div>
   )
 }

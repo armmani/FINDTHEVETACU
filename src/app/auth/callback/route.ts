@@ -48,6 +48,14 @@ export async function GET(request: NextRequest) {
     await supabase.from('profiles').update({ role: pendingRole }).eq('id', user.id)
     await supabase.auth.updateUser({ data: { role: pendingRole } })
 
+    // สมัครใหม่ผ่าน Google = ยอมรับ PDPA (checkbox บังคับที่หน้าสมัคร) — เก็บหลักฐาน best-effort
+    await supabase.from('consent_logs').insert({
+      user_id: user.id,
+      policy_version: '2026-09-10',
+      method: 'google',
+      user_agent: request.headers.get('user-agent'),
+    })
+
     if (pendingRole === 'vet') {
       // สร้าง vet_profile เปล่าๆ ไว้ก่อน — ยังไม่แจ้ง admin จนกว่าจะกรอกโปรไฟล์และแนบใบอนุญาตจริง
       await supabase.from('vet_profiles').upsert({ user_id: user.id })

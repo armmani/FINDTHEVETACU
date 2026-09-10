@@ -8,6 +8,7 @@ import { Save, Send, User, Lock, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 import PhotoUpload from '@/components/PhotoUpload'
 import { formatPhone } from '@/lib/formatPhone'
+import AccountDeletionSection from '@/components/AccountDeletionSection'
 
 export default function OwnerSettingsPage() {
   const supabase = createClient()
@@ -208,6 +209,8 @@ export default function OwnerSettingsPage() {
           </button>
         </div>
       </div>
+
+      <AccountDeletionSection />
     </div>
   )
 }

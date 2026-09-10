@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createServerSupabaseClient } from '@/lib/supabaseServer'
+import { writeAudit } from '@/lib/audit'
 
 export async function POST(request: NextRequest) {
   const supabase = createServerSupabaseClient()
@@ -40,6 +41,14 @@ export async function POST(request: NextRequest) {
 
   const { error } = await adminSupabase.from('clinics').update(updates).eq('id', clinicId)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  await writeAudit({
+    actorId: user.id,
+    action: 'clinics.update',
+    entity: 'clinics',
+    entityId: String(clinicId),
+    meta: { fields: Object.keys(updates || {}), byAdmin: isAdmin },
+  })
 
   return NextResponse.json({ ok: true })
 }

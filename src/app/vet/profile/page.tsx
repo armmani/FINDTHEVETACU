@@ -10,6 +10,7 @@ import toast from 'react-hot-toast'
 import { MapPin, Save, Info, Search, Send, ShieldCheck, ShieldX, Lock, Calendar, ExternalLink, X, Check, Phone, MessageCircle, Facebook, Briefcase, Zap } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import PhotoUpload from '@/components/PhotoUpload'
+import AccountDeletionSection from '@/components/AccountDeletionSection'
 import { JOB_TYPES } from '@/lib/partTime'
 import { PROVINCE_EN } from '@/lib/provinces'
 
@@ -1010,6 +1011,10 @@ export default function VetProfilePage() {
           <Lock className="w-4 h-4" />
           {changingPassword ? 'กำลังเปลี่ยน...' : 'เปลี่ยนรหัสผ่าน'}
         </button>
+      </div>
+
+      <div className="mt-5">
+        <AccountDeletionSection />
       </div>
     </div>
   )
