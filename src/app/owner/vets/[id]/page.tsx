@@ -32,6 +32,7 @@ interface VetDetail {
   license_number: string | null
   additional_education: string[]
   is_available: boolean
+  is_hidden: boolean
   location_name: string | null
   acupuncture_fee: number | null
   travel_rate: number | null
@@ -75,7 +76,7 @@ export default function VetDetailPage() {
           .from('vet_profiles')
           .select(`
             user_id, bio, license_number, additional_education,
-            is_available, location_name, acupuncture_fee, travel_rate,
+            is_available, is_hidden, location_name, acupuncture_fee, travel_rate,
             show_phone, show_line, show_facebook, allow_chat,
             profiles!inner(full_name, avatar_url, phone, line_id, facebook_url)
           `)
@@ -105,6 +106,14 @@ export default function VetDetailPage() {
 
   if (loading) return <LoadingScreen />
   if (!vet) return <div className="text-center py-20 text-gray-400">ไม่พบข้อมูลหมอ</div>
+  if (vet.is_hidden && me !== vet.user_id) {
+    return (
+      <div className="max-w-lg mx-auto text-center py-20 px-4">
+        <p className="text-gray-500 font-medium">โปรไฟล์นี้ถูกซ่อนชั่วคราว</p>
+        <p className="text-sm text-gray-400 mt-1">สัตวแพทย์ท่านนี้ปิดการแสดงโปรไฟล์ไว้ชั่วคราว</p>
+      </div>
+    )
+  }
 
   const hasContact =
     (vet.show_phone && !!vet.phone) ||

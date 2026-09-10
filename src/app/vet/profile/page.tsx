@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { geocodeAddress, PLATFORM_ACUPUNCTURE_FEE, PLATFORM_RATE_LABEL } from '@/lib/distance'
 import toast from 'react-hot-toast'
-import { MapPin, Save, Info, Search, Send, ShieldCheck, ShieldX, Lock, Calendar, ExternalLink, X, Check, Phone, MessageCircle, Facebook, Briefcase, Zap } from 'lucide-react'
+import { MapPin, Save, Info, Search, Send, ShieldCheck, ShieldX, Lock, Calendar, ExternalLink, X, Check, Phone, MessageCircle, Facebook, Briefcase, Zap, Eye, EyeOff } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import PhotoUpload from '@/components/PhotoUpload'
 import AccountDeletionSection from '@/components/AccountDeletionSection'
@@ -101,6 +101,7 @@ export default function VetProfilePage() {
   const [locationLat, setLocationLat] = useState<number | null>(null)
   const [locationLng, setLocationLng] = useState<number | null>(null)
   const [isAvailable, setIsAvailable] = useState(true)
+  const [isHidden, setIsHidden] = useState(false)
   const [phone, setPhone] = useState('')
   const [lineId, setLineId] = useState('')
   const [facebookUrl, setFacebookUrl] = useState('')
@@ -168,6 +169,7 @@ export default function VetProfilePage() {
       setLocationLat(data.location_lat)
       setLocationLng(data.location_lng)
       setIsAvailable(data.is_available)
+      setIsHidden(data.is_hidden ?? false)
       setShowPhone(data.show_phone ?? true)
       setShowLine(data.show_line ?? false)
       setShowFacebook(data.show_facebook ?? false)
@@ -269,6 +271,15 @@ export default function VetProfilePage() {
     toast.success(newVal ? 'เปิดรับงานแล้ว' : 'ปิดรับงานแล้ว')
   }
 
+  const handleToggleHidden = async () => {
+    const newVal = !isHidden
+    setIsHidden(newVal)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('vet_profiles').update({ is_hidden: newVal }).eq('user_id', user.id)
+    toast.success(newVal ? 'ซ่อนโปรไฟล์จากหน้าค้นหาแล้ว' : 'แสดงโปรไฟล์ในหน้าค้นหาแล้ว')
+  }
+
   const togglePtJob = (key: string) => {
     setPtJobTypes(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])
   }
@@ -347,7 +358,7 @@ export default function VetProfilePage() {
         additional_education: additionalEdu,
         acupuncture_fee: PLATFORM_ACUPUNCTURE_FEE, travel_rate: 8,
         location_name: locationName, location_lat: locationLat, location_lng: locationLng,
-        is_available: isAvailable,
+        is_available: isAvailable, is_hidden: isHidden,
         show_phone: showPhone, show_line: showLine, show_facebook: showFacebook, allow_chat: allowChat,
         license_doc_url: finalDocUrl,
         ...(wasRejected ? { status: 'pending', reject_reason: null } : {}),
@@ -466,16 +477,24 @@ export default function VetProfilePage() {
         </div>
       )}
 
-      {/* สถานะรับงาน — inactive ก่อน */}
-      <div className="card mb-4 opacity-50 cursor-not-allowed select-none">
-        <div className="flex items-center justify-between">
+      {/* แสดงตัวในระบบค้นหา — ซ่อน/แสดงโปรไฟล์ชั่วคราวได้ */}
+      <div className="card mb-4">
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="font-semibold text-sm">สถานะรับงาน</p>
-            <p className="text-xs text-gray-400 mt-0.5">ฟีเจอร์นี้ยังไม่เปิดใช้งาน</p>
+            <p className="font-semibold text-sm flex items-center gap-1.5">
+              {isHidden ? <EyeOff className="w-4 h-4 text-gray-400" /> : <Eye className="w-4 h-4 text-primary-500" />}
+              แสดงตัวในระบบค้นหา
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {isHidden
+                ? 'ตอนนี้ถูกซ่อนอยู่ — เจ้าของสัตว์จะไม่เห็นคุณในหน้าค้นหาหมอ (ข้อมูลยังอยู่ครบ เปิดกลับได้ทุกเมื่อ)'
+                : 'เจ้าของสัตว์ค้นเจอโปรไฟล์คุณได้ ปิดเพื่อซ่อนตัวชั่วคราวโดยไม่ลบข้อมูล'}
+            </p>
           </div>
-          <div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 rounded-full relative">
-            <div className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow" />
-          </div>
+          <button type="button" onClick={handleToggleHidden}
+            className={`w-11 h-6 rounded-full relative transition-colors shrink-0 ${!isHidden ? 'bg-primary-500' : 'bg-gray-200 dark:bg-gray-700'}`}>
+            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${!isHidden ? 'left-6' : 'left-1'}`} />
+          </button>
         </div>
       </div>
 

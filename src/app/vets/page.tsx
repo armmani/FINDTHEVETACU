@@ -65,6 +65,7 @@ export default function VetsPage() {
           .from('vet_profiles')
           .select(`user_id, title, full_name_en, bio, license_number, additional_education, is_available, location_name, profiles!inner(full_name, avatar_url)`)
           .eq('is_verified', true)
+          .eq('is_hidden', false)
           .order('is_available', { ascending: false }),
         supabase.from('vet_schedules').select('*').order('created_at', { ascending: true }),
       ])
